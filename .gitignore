@@ -1,0 +1,6 @@
+build*/
+/docs/
+*.pyc
+*.o
+*.exe
+*.zip
