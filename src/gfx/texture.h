@@ -14,6 +14,8 @@ struct Texture {
 			bgfx::copy(data, size)
 		);
 
+		if (!bgfx::isValid(handle)) throw std::runtime_error("texture is not valid");
+
 		sampler = bgfx::createUniform("s_tex", bgfx::UniformType::Sampler);
 	}
 
