@@ -13,6 +13,8 @@ struct Vertex {
 			.add(bgfx::Attrib::Normal,3,bgfx::AttribType::Float)
 			.add(bgfx::Attrib::TexCoord0,2,bgfx::AttribType::Float)
 			.end();
+		printf("DEBUG: Vertex size: %zu\n", sizeof(Vertex));
+		printf("DEBUG: Stride: %u\n", layout.getStride());
 	}
 };
 
@@ -26,12 +28,12 @@ struct Mesh {
 		Vertex::init(layout);
 
 		vbh = bgfx::createVertexBuffer(
-			bgfx::makeRef(v.data(), v.size()*sizeof(Vertex)),
+			bgfx::copy(v.data(), v.size()*sizeof(Vertex)),
 			layout
 		);
 
 		ibh = bgfx::createIndexBuffer(
-			bgfx::makeRef(i.data(), i.size()*sizeof(uint32_t))
+			bgfx::copy(i.data(), i.size()*sizeof(uint32_t))
 		);
 
 		indexCount = (uint32_t)i.size();

@@ -88,7 +88,8 @@ int main() {
 	// =====================
 	// glTFロード
 	// =====================
-	auto res = GltfLoader::load("glTF/Shinano.gltf");
+	// auto res = GltfLoader::load("glTF/Shinano.gltf");
+	auto res = GltfLoader::load("glTF-cube/cube.gltf");
 
 	// shader（UV対応のやつ必要）
 	auto program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
@@ -129,8 +130,13 @@ int main() {
 		bgfx::setVertexBuffer(0, res.mesh.vbh);
 		bgfx::setIndexBuffer(res.mesh.ibh);
 		
-        bgfx::setState(BGFX_STATE_DEFAULT);
-
+		bgfx::setState(
+			BGFX_STATE_WRITE_RGB	|
+			BGFX_STATE_WRITE_A  	|
+			BGFX_STATE_WRITE_Z		|
+			BGFX_STATE_DEPTH_TEST_LESS
+		);
+		
 		bgfx::submit(0, program);
 
         bgfx::frame();

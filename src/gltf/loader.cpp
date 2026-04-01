@@ -31,7 +31,7 @@ struct PosColorVertex {
 };
 
 
-Model load(const char* path) {
+Model sampleLoad() {
 	Model r;
 
 	PosColorVertex vertices[] = {
@@ -59,7 +59,8 @@ Model load(const char* path) {
     );
 
     auto ibh = bgfx::createIndexBuffer(
-        bgfx::copy(indices, sizeof(indices))
+        bgfx::copy(indices, sizeof(indices)),
+		BGFX_BUFFER_INDEX32
     );
 
 	r.mesh.vbh = vbh;
@@ -68,8 +69,10 @@ Model load(const char* path) {
 	return r;
 }
 
-/*
+
 Model load(const char* path) {
+	// return sampleLoad();
+
 	tinygltf::Model model;
 	tinygltf::TinyGLTF loader;
 
@@ -184,18 +187,29 @@ Model load(const char* path) {
 
 		const uint8_t* data = ib.data.data() + iv.byteOffset + ia.byteOffset;
 
+		size_t stride = ia.ByteStride(iv);
+		if (stride == 0) {
+			switch (ia.componentType) {
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:  stride = 1; break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: stride = 2; break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:   stride = 4; break;
+			}
+		}
+
 		for (size_t i = 0; i < ia.count; i++) {
+			const uint8_t* ptr = data + stride * i;
+
 			uint32_t index = 0;
 
 			switch (ia.componentType) {
 			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-				index = *(reinterpret_cast<const uint8_t*>(data + i));
+				index = *reinterpret_cast<const uint8_t*>(ptr);
 				break;
 			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-				index = *(reinterpret_cast<const uint16_t*>(data + i * 2));
+				index = *reinterpret_cast<const uint16_t*>(ptr);
 				break;
 			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-				index = *(reinterpret_cast<const uint32_t*>(data + i * 4));
+				index = *reinterpret_cast<const uint32_t*>(ptr);
 				break;
 			default:
 				throw std::runtime_error("unsupported index type");
@@ -203,8 +217,8 @@ Model load(const char* path) {
 
 			idx.push_back(index);
 		}
-	}
-	else {
+
+	} else {
 		// indexなし → 連番
 		for (uint32_t i = 0; i < posAcc.count; i++)
 			idx.push_back(i);
@@ -235,6 +249,6 @@ Model load(const char* path) {
 
 	return r;
 }
-*/
+
 
 }
