@@ -21,9 +21,9 @@ struct Vertex {
 struct Mesh {
 	bgfx::VertexBufferHandle vbh{};
 	bgfx::IndexBufferHandle ibh{};
-	uint32_t indexCount{};
+	uint16_t indexCount{};
 
-	void create(const std::vector<Vertex>& v, const std::vector<uint32_t>& i) {
+	void create(const std::vector<Vertex>& v, const std::vector<uint16_t>& i) {
 		bgfx::VertexLayout layout;
 		Vertex::init(layout);
 
@@ -33,10 +33,10 @@ struct Mesh {
 		);
 
 		ibh = bgfx::createIndexBuffer(
-			bgfx::copy(i.data(), i.size()*sizeof(uint32_t))
+			bgfx::copy(i.data(), i.size()*sizeof(uint16_t))
 		);
 
-		indexCount = (uint32_t)i.size();
+		indexCount = (uint16_t)i.size();
 	}
 
 	void submit(bgfx::ProgramHandle program) {

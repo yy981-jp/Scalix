@@ -20,7 +20,7 @@ const float* getFloat(const tinygltf::Model& m, const tinygltf::Accessor& a) {
 
 struct PosColorVertex {
     float x, y, z;
-    uint32_t abgr;
+    uint16_t abgr;
 
     static void init(bgfx::VertexLayout& layout) {
         layout.begin()
@@ -30,7 +30,7 @@ struct PosColorVertex {
     }
 };
 
-
+/*
 Model sampleLoad() {
 	Model r;
 
@@ -68,7 +68,7 @@ Model sampleLoad() {
 
 	return r;
 }
-
+*/
 
 Model load(const char* path) {
 	// return sampleLoad();
@@ -178,7 +178,7 @@ Model load(const char* path) {
 	}
 
 	// ===== index =====
-	std::vector<uint32_t> idx;
+	std::vector<uint16_t> idx;
 
 	if (prim.indices >= 0) {
 		const auto& ia = model.accessors[prim.indices];
@@ -199,7 +199,7 @@ Model load(const char* path) {
 		for (size_t i = 0; i < ia.count; i++) {
 			const uint8_t* ptr = data + stride * i;
 
-			uint32_t index = 0;
+			uint16_t index = 0;
 
 			switch (ia.componentType) {
 			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
@@ -209,7 +209,8 @@ Model load(const char* path) {
 				index = *reinterpret_cast<const uint16_t*>(ptr);
 				break;
 			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-				index = *reinterpret_cast<const uint32_t*>(ptr);
+				throw std::runtime_error("32bit index is unsupported now");
+				index = *reinterpret_cast<const uint16_t*>(ptr);
 				break;
 			default:
 				throw std::runtime_error("unsupported index type");
@@ -220,7 +221,7 @@ Model load(const char* path) {
 
 	} else {
 		// indexなし → 連番
-		for (uint32_t i = 0; i < posAcc.count; i++)
+		for (uint16_t i = 0; i < posAcc.count; i++)
 			idx.push_back(i);
 	}
 
