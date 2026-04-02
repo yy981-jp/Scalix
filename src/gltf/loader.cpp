@@ -12,7 +12,7 @@ void GltfLoaderImpl::parse() {
 
 		// ===== NODE =====
 		Node node;
-		node.meshIndex = n.mesh;
+		node.meshStartIndex = scalixModel.meshes.size();  // 現在のメッシュ数を開始インデックスとして記録
 
 		// translation
 		if (!n.translation.empty()) {
@@ -39,9 +39,6 @@ void GltfLoaderImpl::parse() {
 			node.scale[1] = (float)n.scale[1];
 			node.scale[2] = (float)n.scale[2];
 		}
-
-		scalixModel.nodes.push_back(node);
-
 
 		const auto& mesh = model.meshes[n.mesh];
 
@@ -195,6 +192,10 @@ void GltfLoaderImpl::parse() {
 			
 			scalixModel.meshes.push_back(mesh);
 		}
+		
+		// ノードのメッシュ数を設定
+		node.meshCount = scalixModel.meshes.size() - node.meshStartIndex;
+		scalixModel.nodes.push_back(node);
 	}
 }
 
@@ -232,26 +233,26 @@ void GltfLoaderImpl::load() {
 		}
 		
 		// テクスチャ → イメージの参照を取得
-		if (texIdx < 0 || texIdx >= static_cast<int>(model.textures.size())) {
-			printf("Warning: Material[%zu] invalid texture index %d\n", matIdx, texIdx);
-			continue;
-		}
+		// if (texIdx < 0 || texIdx >= static_cast<int>(model.textures.size())) {
+		// 	printf("Warning: Material[%zu] invalid texture index %d\n", matIdx, texIdx);
+		// 	continue;
+		// }
 		
 		int imgIdx = model.textures[texIdx].source;
-		if (imgIdx < 0 || imgIdx >= static_cast<int>(model.images.size())) {
-			printf("Warning: Material[%zu] texture invalid image index %d\n", matIdx, imgIdx);
-			continue;
-		}
+		// if (imgIdx < 0 || imgIdx >= static_cast<int>(model.images.size())) {
+		// 	printf("Warning: Material[%zu] texture invalid image index %d\n", matIdx, imgIdx);
+		// 	continue;
+		// }
 		
 		scalixModel.materialToImage[matIdx] = imgIdx;
-		printf("Material[%zu] -> Texture[%d] -> Image[%d]\n", matIdx, texIdx, imgIdx);
+		// printf("Material[%zu] -> Texture[%d] -> Image[%d]\n", matIdx, texIdx, imgIdx);
 	}
 	
 	// ===== イメージから一意のテクスチャを読み込み =====
 	std::set<int> uniqueImages;
-	for (int imgIdx : scalixModel.materialToImage) {
-		if (imgIdx >= 0) {
-			uniqueImages.insert(imgIdx);
+	for (int idx : scalixModel.materialToImage) {
+		if (idx >= 0) {
+			uniqueImages.insert(idx);
 		}
 	}
 	
@@ -262,7 +263,7 @@ void GltfLoaderImpl::load() {
 		}
 
 		const auto& img = model.images[imgIdx];
-		printf("Loading image[%d]: %dx%d, components=%d\n", imgIdx, img.width, img.height, img.component);
+		// printf("Loading image[%d]: %dx%d, components=%d\n", imgIdx, img.width, img.height, img.component);
 
 		try {
 			Texture tex;
@@ -281,7 +282,7 @@ void GltfLoaderImpl::load() {
 				scalixModel.textures.resize(imgIdx + 1);
 			}
 			scalixModel.textures[imgIdx] = tex;
-			printf("Texture[%d] created successfully\n", imgIdx);
+			// printf("Texture[%d] created successfully\n", imgIdx);
 		} catch (const std::exception& e) {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
 		}

@@ -40,182 +40,187 @@ bgfx::ProgramHandle loadProgram(const char* vs, const char* fs) {
 }
 
 int main() {
-	SDL_Init(SDL_INIT_VIDEO);
+	try {
+		SDL_Init(SDL_INIT_VIDEO);
 
-	SDL_Window* window = SDL_CreateWindow(
-		"Scalix",
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
-		800, 600,
-		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
-	);
-
-	// =====================
-	// bgfx初期化
-	// =====================
-	SDL_SysWMinfo wmi;
-	SDL_VERSION(&wmi.version);
-	if (!SDL_GetWindowWMInfo(window, &wmi)) throw std::runtime_error("GetWMInfo");
-
-	bgfx::PlatformData pd{};
-
-#if defined(_WIN32)
-	pd.nwh = wmi.info.win.window;
-#elif defined(__linux__)
-	pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-#elif defined(__APPLE__)
-	pd.nwh = wmi.info.cocoa.window;
-#endif
-
-	bgfx::setPlatformData(pd);
-
-	bgfx::Init init{};
-	init.type = bgfx::RendererType::Direct3D11;
-
-    init.platformData.nwh = pd.nwh;
-
-	init.resolution.width = 800;
-	init.resolution.height = 600;
-	init.resolution.reset = BGFX_RESET_VSYNC;
-
-	if (!bgfx::init(init))
-		throw std::runtime_error("bgfx init failed");
-
-	bgfx::setViewClear(0,
-		BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
-		0x303030ff, 1.0f, 0);
-
-	// =====================
-	// glTFロード
-	// =====================
-	auto res = loadGltf("glTF/Shinano.gltf");
-	// auto res = loadGltf("glTF-boots/boots.gltf");
-	// auto res = GltfLoader::load("glTF-cube/cube.gltf");
-
-	printf("=== Model Data ===\n");
-	printf("Meshes: %zu\n", res.meshes.size());
-	printf("Nodes: %zu\n", res.nodes.size());
-	printf("Textures: %zu\n", res.textures.size());
-	
-	for (size_t i = 0; i < res.nodes.size(); i++) {
-		printf("Node[%zu]: meshIdx=%d, pos=(%f,%f,%f), scale=(%f,%f,%f)\n",
-			i, res.nodes[i].meshIndex,
-			res.nodes[i].pos[0], res.nodes[i].pos[1], res.nodes[i].pos[2],
-			res.nodes[i].scale[0], res.nodes[i].scale[1], res.nodes[i].scale[2]);
-		printf("          rot=(%f,%f,%f,%f)\n",
-			res.nodes[i].rot[0], res.nodes[i].rot[1], res.nodes[i].rot[2], res.nodes[i].rot[3]);
-	}
-	
-	for (size_t i = 0; i < res.meshes.size(); i++) {
-		printf("Mesh[%zu]: materialIdx=%d\n", i, res.meshes[i].materialIndex);
-	}
-	printf("==================\n\n");
-
-	// shader（UV対応のやつ必要）
-	auto program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
-
-	// =====================
-	// ループ
-	// =====================
-    bool running = true;
-    float time = 0.0f;
-
-    while (running) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) running = false;
-        }
-
-        time += 0.01f;
-
-		// ===== カメラ =====
-		bgfx::setViewRect(0, 0, 0, 800, 600);
-
-		float view[16];
-		float proj[16];
-
-		bx::mtxLookAt(view,
-			bx::Vec3{0.0f, 0.0f, -3.0f},
-			bx::Vec3{0.0f, 0.0f, 0.0f}
+		SDL_Window* window = SDL_CreateWindow(
+			"Scalix",
+			SDL_WINDOWPOS_CENTERED,
+			SDL_WINDOWPOS_CENTERED,
+			800, 600,
+			SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 		);
 
-		bx::mtxProj(proj, 60.0f, 800.0f/600.0f, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+		// =====================
+		// bgfx初期化
+		// =====================
+		SDL_SysWMinfo wmi;
+		SDL_VERSION(&wmi.version);
+		if (!SDL_GetWindowWMInfo(window, &wmi)) throw std::runtime_error("GetWMInfo");
 
-		bgfx::setViewTransform(0, view, proj);
+		bgfx::PlatformData pd{};
 
-		// ===== ノードごと描画 =====
-		for (const auto& node : res.nodes) {
+#if defined(_WIN32)
+		pd.nwh = wmi.info.win.window;
+#elif defined(__linux__)
+		pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
+#elif defined(__APPLE__)
+		pd.nwh = wmi.info.cocoa.window;
+#endif
 
-			if (node.meshIndex < 0 || node.meshIndex >= static_cast<int>(res.meshes.size())) {
-				continue;
+		bgfx::setPlatformData(pd);
+
+		bgfx::Init init{};
+		init.type = bgfx::RendererType::Direct3D11;
+
+		init.platformData.nwh = pd.nwh;
+
+		init.resolution.width = 800;
+		init.resolution.height = 600;
+		init.resolution.reset = BGFX_RESET_VSYNC;
+
+		if (!bgfx::init(init))
+			throw std::runtime_error("bgfx init failed");
+
+		bgfx::setViewClear(0,
+			BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
+			0x303030ff, 1.0f, 0);
+
+		// =====================
+		// glTFロード
+		// =====================
+		auto res = loadGltf("glTF/Shinano.gltf");
+
+		// printf("=== Model Data ===\n");
+		// printf("Meshes: %zu\n", res.meshes.size());
+		// printf("Nodes: %zu\n", res.nodes.size());
+		// printf("Textures: %zu\n", res.textures.size());
+		
+		// for (size_t i = 0; i < res.meshes.size(); i++) {
+		// 	printf("Mesh[%zu]: materialIdx=%d\n", i, res.meshes[i].materialIndex);
+		// }
+
+		auto program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
+
+		// =====================
+		// ループ
+		// =====================
+		bool running = true;
+		float time = 0.0f;
+
+		while (running) {
+			SDL_Event e;
+			while (SDL_PollEvent(&e)) {
+				if (e.type == SDL_QUIT) running = false;
 			}
 
-			// --- nodeの変換行列 ---
-			float nodeMtx[16];
-			float t[16], r[16], s[16];
+			time += 0.01f;
 
-			bx::mtxIdentity(t);
-			bx::mtxIdentity(r);
-			bx::mtxIdentity(s);
+			// ===== カメラ =====
+			bgfx::setViewRect(0, 0, 0, 800, 600);
 
-			// translation
-			t[12] = node.pos[0];
-			t[13] = node.pos[1];
-			t[14] = node.pos[2];
+			float view[16];
+			float proj[16];
 
-			// rotation
-			if (node.hasRotation) {
-				bx::Quaternion q = {
-					node.rot[0],
-					node.rot[1],
-					node.rot[2],
-					node.rot[3]
-				};
-				bx::mtxFromQuaternion(r, q);
-			}
+			bx::mtxLookAt(view,
+				bx::Vec3{0.0f, 0.7f, -1.5f},
+				bx::Vec3{0.0f, 0.7f, 0.0f}
+			);
 
-			// scale
-			s[0]  = node.scale[0];
-			s[5]  = node.scale[1];
-			s[10] = node.scale[2];
+			bx::mtxProj(proj, 60.0f, 800.0f/600.0f, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
 
-			// 合成
-			float tmp[16];
-			bx::mtxMul(tmp, r, s);     // R * S
-			bx::mtxMul(nodeMtx, t, tmp); // T * (R * S)
+			bgfx::setViewTransform(0, view, proj);
 
-			// --- 自転（時間回転） ---
-			float anim[16];
-			bx::mtxRotateY(anim, time);
+			// ===== ノードごと描画 =====
+			for (const auto& node : res.nodes) {
 
-			float final[16];
-			bx::mtxMul(final, nodeMtx, anim);
+				if (node.meshStartIndex < 0 || node.meshCount <= 0) {
+					continue;
+				}
 
-			// --- 描画 ---
-			const Mesh& m = res.meshes[node.meshIndex];
+				// --- nodeの変換行列 ---
+				float nodeMtx[16];
+				float t[16], r[16], s[16];
 
-			bgfx::setTransform(final);
+				bx::mtxIdentity(t);
+				bx::mtxIdentity(r);
+				bx::mtxIdentity(s);
 
-			bgfx::setVertexBuffer(0, m.vbh);
-			bgfx::setIndexBuffer(m.ibh);
+				// translation
+				t[12] = node.pos[0];
+				t[13] = node.pos[1];
+				t[14] = node.pos[2];
 
-			// テクスチャバインド（マテリアル → イメージ → テクスチャ）
-			if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(res.materialToImage.size())) {
-				int imgIdx = res.materialToImage[m.materialIndex];
-				if (imgIdx >= 0 && imgIdx < static_cast<int>(res.textures.size()) && res.textures[imgIdx].isValid()) {
-					res.textures[imgIdx].bind();
+				// rotation
+				if (node.hasRotation) {
+					bx::Quaternion q = {
+						node.rot[0],
+						node.rot[1],
+						node.rot[2],
+						node.rot[3]
+					};
+					bx::mtxFromQuaternion(r, q);
+				}
+
+				// scale
+				s[0]  = node.scale[0];
+				s[5]  = node.scale[1];
+				s[10] = node.scale[2];
+
+				// 合成
+				float tmp[16];
+				bx::mtxMul(tmp, r, s);     // R * S
+				bx::mtxMul(nodeMtx, t, tmp); // T * (R * S)
+
+				// --- 自転（時間回転） ---
+				float anim[16];
+				bx::mtxRotateY(anim, time);
+
+				float final[16];
+				bx::mtxMul(final, nodeMtx, anim);
+
+				// === 複数primitiveを描画 ===
+				for (int i = 0; i < node.meshCount; i++) {
+					const Mesh& m = res.meshes[node.meshStartIndex + i];
+
+					bgfx::setTransform(final);
+
+					bgfx::setVertexBuffer(0, m.vbh);
+					bgfx::setIndexBuffer(m.ibh);
+
+					// テクスチャバインド（マテリアル → イメージ → テクスチャ）
+					if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(res.materialToImage.size())) {
+						int imgIdx = res.materialToImage[m.materialIndex];
+						if (imgIdx >= 0 && imgIdx < static_cast<int>(res.textures.size()) && res.textures[imgIdx].isValid()) {
+							res.textures[imgIdx].bind();
+						}
+					}
+
+					bgfx::setState(
+						BGFX_STATE_WRITE_RGB	|
+						BGFX_STATE_WRITE_A  	|
+						BGFX_STATE_WRITE_Z		|
+						BGFX_STATE_DEPTH_TEST_LESS
+					);
+
+					bgfx::submit(0, program);
 				}
 			}
 
-			bgfx::setState(BGFX_STATE_DEFAULT);
-
-			bgfx::submit(0, program);
+			bgfx::frame();
 		}
 
-        bgfx::frame();
-    }
+		bgfx::shutdown();
+		SDL_DestroyWindow(window);
+		SDL_Quit();
+		
+		return 0;
 
-    bgfx::shutdown();
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+	} catch (const std::exception& e) {
+		printf("Exception: %s\n", e.what());
+		return 1;
+	} catch (...) {
+		printf("Unknown exception occurred\n");
+		return 1;
+	}
 }
