@@ -72,7 +72,7 @@ int main() {
 	bgfx::Init init{};
 	init.type = bgfx::RendererType::Direct3D11;
 
-    init.platformData.nwh = (void*)wmi.info.win.window;
+    init.platformData.nwh = pd.nwh;
 
 	init.resolution.width = 800;
 	init.resolution.height = 600;
@@ -89,7 +89,8 @@ int main() {
 	// glTFロード
 	// =====================
 	// auto res = GltfLoader::load("glTF/Shinano.gltf");
-	auto res = GltfLoader::load("glTF-cube/cube.gltf");
+	auto res = loadGltf("glTF-boots/boots.gltf");
+	// auto res = GltfLoader::load("glTF-cube/cube.gltf");
 
 	// shader（UV対応のやつ必要）
 	auto program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
@@ -114,7 +115,7 @@ int main() {
         float proj[16];
 
         bx::mtxLookAt(view,
-            bx::Vec3{0.0f, 0.0f, -5.0f},
+            bx::Vec3{0.0f, 0.0f, -1.0f},
             bx::Vec3{0.0f, 0.0f, 0.0f}
         );
 

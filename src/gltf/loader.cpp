@@ -5,75 +5,154 @@
 #include "loader.h"
 
 
-namespace GltfLoader {
+void GltfLoaderImpl::parse() {
+	for (const auto& node : model.nodes) {
+		if (node.mesh < 0) continue;
+
+		const auto& mesh = model.meshes[node.mesh];
+
+		for (const auto& prim : mesh.primitives) {
+			// TRIANGLESのみ対応
+			if (prim.mode != TINYGLTF_MODE_TRIANGLES)
+				throw std::runtime_error("only TRIANGLES supported");
+
+			auto& attrs = prim.attributes;
+
+			// ===== POSITION =====
+			if (!attrs.count("POSITION"))
+				throw std::runtime_error("no POSITION");
+
+			posAcc = model.accessors[attrs.at("POSITION")];
+			posView = model.bufferViews[posAcc.bufferView];
+			posBuf = model.buffers[posView.buffer];
+
+			posStride = posAcc.ByteStride(posView);
+			if (posStride == 0) posStride = sizeof(float) * 3;
+
+			posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
+
+			// ===== NORMAL（任意）=====
+			if (attrs.count("NORMAL")) {
+				const auto& norAcc = model.accessors[attrs.at("NORMAL")];
+				const auto& norView = model.bufferViews[norAcc.bufferView];
+				const auto& norBuf = model.buffers[norView.buffer];
+
+				norStride = norAcc.ByteStride(norView);
+				if (norStride == 0) norStride = sizeof(float) * 3;
+
+				norPtr = reinterpret_cast<const float*>(
+					norBuf.data.data() + norView.byteOffset + norAcc.byteOffset
+				);
+			}
+
+			// ===== UV（任意）=====
+			if (attrs.count("TEXCOORD_0")) {
+				const auto& uvAcc = model.accessors[attrs.at("TEXCOORD_0")];
+				const auto& uvView = model.bufferViews[uvAcc.bufferView];
+				const auto& uvBuf = model.buffers[uvView.buffer];
+
+				uvStride = uvAcc.ByteStride(uvView);
+				if (uvStride == 0) uvStride = sizeof(float) * 2;
+
+				uvPtr = reinterpret_cast<const float*>(
+					uvBuf.data.data() + uvView.byteOffset + uvAcc.byteOffset
+				);
+			}
+
+			// ===== index =====
+			std::vector<uint16_t> idx;
+
+			if (prim.indices >= 0) {
+				const auto& ia = model.accessors[prim.indices];
+				const auto& iv = model.bufferViews[ia.bufferView];
+				const auto& ib = model.buffers[iv.buffer];
+
+				const uint8_t* data = ib.data.data() + iv.byteOffset + ia.byteOffset;
+
+				size_t stride = ia.ByteStride(iv);
+				if (stride == 0) {
+					switch (ia.componentType) {
+						case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:  stride = 1; break;
+						case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: stride = 2; break;
+						case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:   stride = 4; break;
+					}
+				}
+
+				for (size_t i = 0; i < ia.count; i++) {
+					const uint8_t* ptr = data + stride * i;
+
+					uint16_t index = 0;
+
+					switch (ia.componentType) {
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+						throw std::runtime_error("8bit index is unsupported now");
+						index = *reinterpret_cast<const uint8_t*>(ptr);
+						break;
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+						index = *reinterpret_cast<const uint16_t*>(ptr);
+						break;
+					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+						throw std::runtime_error("32bit index is unsupported now");
+						index = *reinterpret_cast<const uint16_t*>(ptr);
+						break;
+					default:
+						throw std::runtime_error("unsupported index type");
+					}
+
+					idx.push_back(index);
+				}
+
+			} else {
+				// indexなし → 連番
+				for (uint16_t i = 0; i < posAcc.count; i++)
+					idx.push_back(i);
+			}
+
+			// ===== 頂点生成 =====
+			v.reserve(posAcc.count);
+
+			for (size_t i = 0; i < posAcc.count; i++) {
+				const float* p = reinterpret_cast<const float*>(posPtr + posStride * i);
+
+				Vertex vert{};
+				vert.x = p[0];
+				vert.y = p[1];
+				vert.z = p[2];
+
+				if (norPtr) {
+					const float* n = reinterpret_cast<const float*>(
+						reinterpret_cast<const uint8_t*>(norPtr) + norStride * i
+					);
+					vert.nx = n[0];
+					vert.ny = n[1];
+					vert.nz = n[2];
+				}
+
+				if (uvPtr) {
+					const float* u = reinterpret_cast<const float*>(
+						reinterpret_cast<const uint8_t*>(uvPtr) + uvStride * i
+					);
+					vert.u = u[0];
+					vert.v = u[1];
+				}
+
+				v.push_back(vert);
+			}
 
 
-const float* getFloat(const tinygltf::Model& m, const tinygltf::Accessor& a) {
-	const auto& view = m.bufferViews[a.bufferView];
-	const auto& buf  = m.buffers[view.buffer];
+			if (v.empty())
+				throw std::runtime_error("vertex empty");
 
-	return reinterpret_cast<const float*>(
-		buf.data.data() + view.byteOffset + a.byteOffset
-	);
+			scalixModel.mesh.create(v, idx);
+		}
+	}
 }
 
 
-struct PosColorVertex {
-    float x, y, z;
-    uint16_t abgr;
+GltfLoaderImpl::GltfLoaderImpl(const std::string& path): path(path) {}
 
-    static void init(bgfx::VertexLayout& layout) {
-        layout.begin()
-            .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-            .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-            .end();
-    }
-};
 
-/*
-Model sampleLoad() {
-	Model r;
-
-	PosColorVertex vertices[] = {
-		{-1,  1,  1, 0xff0000ff}, { 1,  1,  1, 0xff00ff00}, { -1, -1,  1, 0xffff0000},
-		{ 1, -1,  1, 0xffffffff},
-		{-1,  1, -1, 0xff00ffff}, { 1,  1, -1, 0xffff00ff},
-		{-1, -1, -1, 0xffffff00}, { 1, -1, -1, 0xff888888},
-	};
-
-	uint16_t indices[] = {
-		0,1,2, 1,3,2,
-		4,6,5, 5,6,7,
-		0,2,4, 4,2,6,
-		1,5,3, 5,7,3,
-		0,4,1, 4,5,1,
-		2,3,6, 6,3,7
-	};
-
-    bgfx::VertexLayout layout;
-    PosColorVertex::init(layout);
-
-    auto vbh = bgfx::createVertexBuffer(
-        bgfx::copy(vertices, sizeof(vertices)),
-        layout
-    );
-
-    auto ibh = bgfx::createIndexBuffer(
-        bgfx::copy(indices, sizeof(indices)),
-		BGFX_BUFFER_INDEX32
-    );
-
-	r.mesh.vbh = vbh;
-	r.mesh.ibh = ibh;
-
-	return r;
-}
-*/
-
-Model load(const char* path) {
-	// return sampleLoad();
-
-	tinygltf::Model model;
+void GltfLoaderImpl::load() {
 	tinygltf::TinyGLTF loader;
 
 	std::string err, warn;
@@ -84,148 +163,11 @@ Model load(const char* path) {
 	if (model.meshes.empty())
 		throw std::runtime_error("no mesh");
 
-	Model r;
-
 	const auto& mesh = model.meshes[0];
 	if (mesh.primitives.empty())
 		throw std::runtime_error("no primitive");
 
-	const auto& prim = mesh.primitives[0];
-
-	// TRIANGLESのみ対応
-	if (prim.mode != TINYGLTF_MODE_TRIANGLES)
-		throw std::runtime_error("only TRIANGLES supported");
-
-	auto& attrs = prim.attributes;
-
-	// ===== POSITION =====
-	if (!attrs.count("POSITION"))
-		throw std::runtime_error("no POSITION");
-
-	const auto& posAcc = model.accessors[attrs.at("POSITION")];
-	const auto& posView = model.bufferViews[posAcc.bufferView];
-	const auto& posBuf = model.buffers[posView.buffer];
-
-	size_t posStride = posAcc.ByteStride(posView);
-	if (posStride == 0) posStride = sizeof(float) * 3;
-
-	const uint8_t* posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
-
-	// ===== NORMAL（任意）=====
-	const float* norPtr = nullptr;
-	size_t norStride = 0;
-
-	if (attrs.count("NORMAL")) {
-		const auto& norAcc = model.accessors[attrs.at("NORMAL")];
-		const auto& norView = model.bufferViews[norAcc.bufferView];
-		const auto& norBuf = model.buffers[norView.buffer];
-
-		norStride = norAcc.ByteStride(norView);
-		if (norStride == 0) norStride = sizeof(float) * 3;
-
-		norPtr = reinterpret_cast<const float*>(
-			norBuf.data.data() + norView.byteOffset + norAcc.byteOffset
-		);
-	}
-
-	// ===== UV（任意）=====
-	const float* uvPtr = nullptr;
-	size_t uvStride = 0;
-
-	if (attrs.count("TEXCOORD_0")) {
-		const auto& uvAcc = model.accessors[attrs.at("TEXCOORD_0")];
-		const auto& uvView = model.bufferViews[uvAcc.bufferView];
-		const auto& uvBuf = model.buffers[uvView.buffer];
-
-		uvStride = uvAcc.ByteStride(uvView);
-		if (uvStride == 0) uvStride = sizeof(float) * 2;
-
-		uvPtr = reinterpret_cast<const float*>(
-			uvBuf.data.data() + uvView.byteOffset + uvAcc.byteOffset
-		);
-	}
-
-	// ===== 頂点生成 =====
-	std::vector<Vertex> v;
-	v.reserve(posAcc.count);
-
-	for (size_t i = 0; i < posAcc.count; i++) {
-		const float* p = reinterpret_cast<const float*>(posPtr + posStride * i);
-
-		Vertex vert{};
-		vert.x = p[0];
-		vert.y = p[1];
-		vert.z = p[2];
-
-		if (norPtr) {
-			const float* n = reinterpret_cast<const float*>(
-				reinterpret_cast<const uint8_t*>(norPtr) + norStride * i
-			);
-			vert.nx = n[0];
-			vert.ny = n[1];
-			vert.nz = n[2];
-		}
-
-		if (uvPtr) {
-			const float* u = reinterpret_cast<const float*>(
-				reinterpret_cast<const uint8_t*>(uvPtr) + uvStride * i
-			);
-			vert.u = u[0];
-			vert.v = u[1];
-		}
-
-		v.push_back(vert);
-	}
-
-	// ===== index =====
-	std::vector<uint16_t> idx;
-
-	if (prim.indices >= 0) {
-		const auto& ia = model.accessors[prim.indices];
-		const auto& iv = model.bufferViews[ia.bufferView];
-		const auto& ib = model.buffers[iv.buffer];
-
-		const uint8_t* data = ib.data.data() + iv.byteOffset + ia.byteOffset;
-
-		size_t stride = ia.ByteStride(iv);
-		if (stride == 0) {
-			switch (ia.componentType) {
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:  stride = 1; break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: stride = 2; break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:   stride = 4; break;
-			}
-		}
-
-		for (size_t i = 0; i < ia.count; i++) {
-			const uint8_t* ptr = data + stride * i;
-
-			uint16_t index = 0;
-
-			switch (ia.componentType) {
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-				index = *reinterpret_cast<const uint8_t*>(ptr);
-				break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-				index = *reinterpret_cast<const uint16_t*>(ptr);
-				break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-				throw std::runtime_error("32bit index is unsupported now");
-				index = *reinterpret_cast<const uint16_t*>(ptr);
-				break;
-			default:
-				throw std::runtime_error("unsupported index type");
-			}
-
-			idx.push_back(index);
-		}
-
-	} else {
-		// indexなし → 連番
-		for (uint16_t i = 0; i < posAcc.count; i++)
-			idx.push_back(i);
-	}
-
-	r.mesh.create(v, idx);
+	parse();
 
 	// ===== texture（超シンプル）=====
 	if (!model.images.empty()) {
@@ -241,15 +183,10 @@ Model load(const char* path) {
 				rgba[i*4+2] = img.image[i*comp+2];
 				rgba[i*4+3] = 255;
 			}
-			r.texture.create(img.width, img.height, 4, rgba.data(), rgba.size());
+			scalixModel.texture.create(img.width, img.height, 4, rgba.data(), rgba.size());
 		}
 		else {
-			r.texture.create(img.width, img.height, 4, img.image.data(), img.image.size());
+			scalixModel.texture.create(img.width, img.height, 4, img.image.data(), img.image.size());
 		}
 	}
-
-	return r;
-}
-
-
 }

@@ -13,8 +13,6 @@ struct Vertex {
 			.add(bgfx::Attrib::Normal,3,bgfx::AttribType::Float)
 			.add(bgfx::Attrib::TexCoord0,2,bgfx::AttribType::Float)
 			.end();
-		printf("DEBUG: Vertex size: %zu\n", sizeof(Vertex));
-		printf("DEBUG: Stride: %u\n", layout.getStride());
 	}
 };
 
