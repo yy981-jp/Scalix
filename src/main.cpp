@@ -92,6 +92,21 @@ int main() {
 	auto res = loadGltf("glTF-boots/boots.gltf");
 	// auto res = GltfLoader::load("glTF-cube/cube.gltf");
 
+	printf("=== Model Data ===\n");
+	printf("Meshes: %zu\n", res.meshes.size());
+	printf("Nodes: %zu\n", res.nodes.size());
+	printf("Textures: %zu\n", res.textures.size());
+	
+	for (size_t i = 0; i < res.nodes.size(); i++) {
+		printf("Node[%zu]: meshIdx=%d, pos=(%f,%f,%f), scale=(%f,%f,%f)\n",
+			i, res.nodes[i].meshIndex,
+			res.nodes[i].pos[0], res.nodes[i].pos[1], res.nodes[i].pos[2],
+			res.nodes[i].scale[0], res.nodes[i].scale[1], res.nodes[i].scale[2]);
+		printf("          rot=(%f,%f,%f,%f)\n",
+			res.nodes[i].rot[0], res.nodes[i].rot[1], res.nodes[i].rot[2], res.nodes[i].rot[3]);
+	}
+	printf("==================\n\n");
+
 	// shader（UV対応のやつ必要）
 	auto program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 
@@ -109,36 +124,81 @@ int main() {
 
         time += 0.01f;
 
-        bgfx::setViewRect(0, 0, 0, 800, 600);
+		// ===== カメラ =====
+		bgfx::setViewRect(0, 0, 0, 800, 600);
 
-        float view[16];
-        float proj[16];
+		float view[16];
+		float proj[16];
 
-        bx::mtxLookAt(view,
-            bx::Vec3{0.0f, 0.0f, -1.0f},
-            bx::Vec3{0.0f, 0.0f, 0.0f}
-        );
-
-        bx::mtxProj(proj, 60.0f, 800.0f/600.0f, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
-
-        bgfx::setViewTransform(0, view, proj);
-
-        float model[16];
-        bx::mtxRotateY(model, time);
-
-        bgfx::setTransform(model);
-
-		bgfx::setVertexBuffer(0, res.mesh.vbh);
-		bgfx::setIndexBuffer(res.mesh.ibh);
-		
-		bgfx::setState(
-			BGFX_STATE_WRITE_RGB	|
-			BGFX_STATE_WRITE_A  	|
-			BGFX_STATE_WRITE_Z		|
-			BGFX_STATE_DEPTH_TEST_LESS
+		bx::mtxLookAt(view,
+			bx::Vec3{0.0f, 0.0f, -3.0f},
+			bx::Vec3{0.0f, 0.0f, 0.0f}
 		);
-		
-		bgfx::submit(0, program);
+
+		bx::mtxProj(proj, 60.0f, 800.0f/600.0f, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+
+		bgfx::setViewTransform(0, view, proj);
+
+		// ===== ノードごと描画 =====
+		for (const auto& node : res.nodes) {
+
+			if (node.meshIndex < 0 || node.meshIndex >= static_cast<int>(res.meshes.size())) {
+				continue;
+			}
+
+			// --- nodeの変換行列 ---
+			float nodeMtx[16];
+			float t[16], r[16], s[16];
+
+			bx::mtxIdentity(t);
+			bx::mtxIdentity(r);
+			bx::mtxIdentity(s);
+
+			// translation
+			t[12] = node.pos[0];
+			t[13] = node.pos[1];
+			t[14] = node.pos[2];
+
+			// rotation
+			if (node.hasRotation) {
+				bx::Quaternion q = {
+					node.rot[0],
+					node.rot[1],
+					node.rot[2],
+					node.rot[3]
+				};
+				bx::mtxFromQuaternion(r, q);
+			}
+
+			// scale
+			s[0]  = node.scale[0];
+			s[5]  = node.scale[1];
+			s[10] = node.scale[2];
+
+			// 合成
+			float tmp[16];
+			bx::mtxMul(tmp, r, s);     // R * S
+			bx::mtxMul(nodeMtx, t, tmp); // T * (R * S)
+
+			// --- 自転（時間回転） ---
+			float anim[16];
+			bx::mtxRotateY(anim, time);
+
+			float final[16];
+			bx::mtxMul(final, nodeMtx, anim);
+
+			// --- 描画 ---
+			const Mesh& m = res.meshes[node.meshIndex];
+
+			bgfx::setTransform(final);
+
+			bgfx::setVertexBuffer(0, m.vbh);
+			bgfx::setIndexBuffer(m.ibh);
+
+			bgfx::setState(BGFX_STATE_DEFAULT);
+
+			bgfx::submit(0, program);
+		}
 
         bgfx::frame();
     }

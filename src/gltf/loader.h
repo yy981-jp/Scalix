@@ -1,13 +1,9 @@
 #pragma once
 #include "../gfx/mesh.h"
 #include "../gfx/texture.h"
+#include "../core/model.h"
 #include <tinygltf/tiny_gltf.h>
 
-
-struct Model {
-	Mesh mesh;
-	Texture texture;
-};
 
 class GltfLoaderImpl {
 	const std::string& path;

@@ -6,10 +6,43 @@
 
 
 void GltfLoaderImpl::parse() {
-	for (const auto& node : model.nodes) {
-		if (node.mesh < 0) continue;
+	for (const auto& n : model.nodes) {
+		if (n.mesh < 0) continue;
 
-		const auto& mesh = model.meshes[node.mesh];
+		// ===== NODE =====
+		Node node;
+		node.meshIndex = n.mesh;
+
+		// translation
+		if (!n.translation.empty()) {
+			node.hasTranslation = true;
+			node.pos[0] = (float)n.translation[0];
+			node.pos[1] = (float)n.translation[1];
+			node.pos[2] = (float)n.translation[2];
+		}
+
+		// rotation
+		if (!n.rotation.empty()) {
+			node.hasRotation = true;
+			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
+			node.rot[0] = -(float)n.rotation[0];
+			node.rot[1] = -(float)n.rotation[1];
+			node.rot[2] = -(float)n.rotation[2];
+			node.rot[3] = (float)n.rotation[3];
+		}
+
+		// scale
+		if (!n.scale.empty()) {
+			node.hasScale = true;
+			node.scale[0] = (float)n.scale[0];
+			node.scale[1] = (float)n.scale[1];
+			node.scale[2] = (float)n.scale[2];
+		}
+
+		scalixModel.nodes.push_back(node);
+
+
+		const auto& mesh = model.meshes[n.mesh];
 
 		for (const auto& prim : mesh.primitives) {
 			// TRIANGLESのみ対応
@@ -17,6 +50,9 @@ void GltfLoaderImpl::parse() {
 				throw std::runtime_error("only TRIANGLES supported");
 
 			auto& attrs = prim.attributes;
+
+			// 毎回vertexデータをクリア
+			v.clear();
 
 			// ===== POSITION =====
 			if (!attrs.count("POSITION"))
@@ -30,6 +66,12 @@ void GltfLoaderImpl::parse() {
 			if (posStride == 0) posStride = sizeof(float) * 3;
 
 			posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
+
+			// ===== Normal/UV クリア =====
+			norPtr = nullptr;
+			norStride = 0;
+			uvPtr = nullptr;
+			uvStride = 0;
 
 			// ===== NORMAL（任意）=====
 			if (attrs.count("NORMAL")) {
@@ -143,7 +185,9 @@ void GltfLoaderImpl::parse() {
 			if (v.empty())
 				throw std::runtime_error("vertex empty");
 
-			scalixModel.mesh.create(v, idx);
+			Mesh mesh;
+			mesh.create(v, idx);
+			scalixModel.meshes.push_back(mesh);
 		}
 	}
 }
@@ -183,10 +227,14 @@ void GltfLoaderImpl::load() {
 				rgba[i*4+2] = img.image[i*comp+2];
 				rgba[i*4+3] = 255;
 			}
-			scalixModel.texture.create(img.width, img.height, 4, rgba.data(), rgba.size());
+			Texture tex;
+			tex.create(img.width, img.height, 4, rgba.data(), rgba.size());
+			scalixModel.textures.push_back(tex);
 		}
 		else {
-			scalixModel.texture.create(img.width, img.height, 4, img.image.data(), img.image.size());
+			Texture tex;
+			tex.create(img.width, img.height, 4, img.image.data(), img.image.size());
+			scalixModel.textures.push_back(tex);
 		}
 	}
 }
