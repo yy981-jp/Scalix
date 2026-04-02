@@ -3,6 +3,7 @@
 #include <tinygltf/tiny_gltf.h>
 
 #include "loader.h"
+#include <set>
 
 
 void GltfLoaderImpl::parse() {
@@ -181,12 +182,17 @@ void GltfLoaderImpl::parse() {
 				v.push_back(vert);
 			}
 
-
 			if (v.empty())
 				throw std::runtime_error("vertex empty");
 
 			Mesh mesh;
 			mesh.create(v, idx);
+			
+			// primitiveのマテリアルをmeshに設定
+			if (prim.material >= 0) {
+				mesh.materialIndex = prim.material;
+			}
+			
 			scalixModel.meshes.push_back(mesh);
 		}
 	}
@@ -213,28 +219,71 @@ void GltfLoaderImpl::load() {
 
 	parse();
 
-	// ===== texture（超シンプル）=====
-	if (!model.images.empty()) {
-		const auto& img = model.images[0];
-
-		int comp = img.component;
-		if (comp != 4) {
-			// RGB → RGBA変換
-			std::vector<uint8_t> rgba(img.width * img.height * 4);
-			for (int i = 0; i < img.width * img.height; i++) {
-				rgba[i*4+0] = img.image[i*comp+0];
-				rgba[i*4+1] = img.image[i*comp+1];
-				rgba[i*4+2] = img.image[i*comp+2];
-				rgba[i*4+3] = 255;
-			}
-			Texture tex;
-			tex.create(img.width, img.height, 4, rgba.data(), rgba.size());
-			scalixModel.textures.push_back(tex);
+	// ===== テクスチャ読み込み =====
+	// マテリアル → イメージのマップを作成
+	scalixModel.materialToImage.resize(model.materials.size(), -1);
+	
+	for (size_t matIdx = 0; matIdx < model.materials.size(); matIdx++) {
+		const auto& mat = model.materials[matIdx];
+		int texIdx = mat.pbrMetallicRoughness.baseColorTexture.index;
+		
+		if (texIdx < 0) {
+			continue;
 		}
-		else {
+		
+		// テクスチャ → イメージの参照を取得
+		if (texIdx < 0 || texIdx >= static_cast<int>(model.textures.size())) {
+			printf("Warning: Material[%zu] invalid texture index %d\n", matIdx, texIdx);
+			continue;
+		}
+		
+		int imgIdx = model.textures[texIdx].source;
+		if (imgIdx < 0 || imgIdx >= static_cast<int>(model.images.size())) {
+			printf("Warning: Material[%zu] texture invalid image index %d\n", matIdx, imgIdx);
+			continue;
+		}
+		
+		scalixModel.materialToImage[matIdx] = imgIdx;
+		printf("Material[%zu] -> Texture[%d] -> Image[%d]\n", matIdx, texIdx, imgIdx);
+	}
+	
+	// ===== イメージから一意のテクスチャを読み込み =====
+	std::set<int> uniqueImages;
+	for (int imgIdx : scalixModel.materialToImage) {
+		if (imgIdx >= 0) {
+			uniqueImages.insert(imgIdx);
+		}
+	}
+	
+	// テクスチャスロット = イメージインデックス
+	for (int imgIdx : uniqueImages) {
+		if (imgIdx < 0 || imgIdx >= static_cast<int>(model.images.size())) {
+			continue;
+		}
+
+		const auto& img = model.images[imgIdx];
+		printf("Loading image[%d]: %dx%d, components=%d\n", imgIdx, img.width, img.height, img.component);
+
+		try {
 			Texture tex;
-			tex.create(img.width, img.height, 4, img.image.data(), img.image.size());
-			scalixModel.textures.push_back(tex);
+			
+			if (img.component == 3) {
+				tex.createFromRGB(img.width, img.height, img.image.data(), img.image.size());
+			} else if (img.component == 4) {
+				tex.createFromRGBA(img.width, img.height, img.image.data(), img.image.size());
+			} else {
+				printf("Warning: Unsupported image component count: %d\n", img.component);
+				continue;
+			}
+
+			// テクスチャスロットをイメージインデックスに合わせます
+			if (imgIdx >= static_cast<int>(scalixModel.textures.size())) {
+				scalixModel.textures.resize(imgIdx + 1);
+			}
+			scalixModel.textures[imgIdx] = tex;
+			printf("Texture[%d] created successfully\n", imgIdx);
+		} catch (const std::exception& e) {
+			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
 		}
 	}
 }

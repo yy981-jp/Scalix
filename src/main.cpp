@@ -88,8 +88,8 @@ int main() {
 	// =====================
 	// glTFロード
 	// =====================
-	// auto res = GltfLoader::load("glTF/Shinano.gltf");
-	auto res = loadGltf("glTF-boots/boots.gltf");
+	auto res = loadGltf("glTF/Shinano.gltf");
+	// auto res = loadGltf("glTF-boots/boots.gltf");
 	// auto res = GltfLoader::load("glTF-cube/cube.gltf");
 
 	printf("=== Model Data ===\n");
@@ -104,6 +104,10 @@ int main() {
 			res.nodes[i].scale[0], res.nodes[i].scale[1], res.nodes[i].scale[2]);
 		printf("          rot=(%f,%f,%f,%f)\n",
 			res.nodes[i].rot[0], res.nodes[i].rot[1], res.nodes[i].rot[2], res.nodes[i].rot[3]);
+	}
+	
+	for (size_t i = 0; i < res.meshes.size(); i++) {
+		printf("Mesh[%zu]: materialIdx=%d\n", i, res.meshes[i].materialIndex);
 	}
 	printf("==================\n\n");
 
@@ -194,6 +198,14 @@ int main() {
 
 			bgfx::setVertexBuffer(0, m.vbh);
 			bgfx::setIndexBuffer(m.ibh);
+
+			// テクスチャバインド（マテリアル → イメージ → テクスチャ）
+			if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(res.materialToImage.size())) {
+				int imgIdx = res.materialToImage[m.materialIndex];
+				if (imgIdx >= 0 && imgIdx < static_cast<int>(res.textures.size()) && res.textures[imgIdx].isValid()) {
+					res.textures[imgIdx].bind();
+				}
+			}
 
 			bgfx::setState(BGFX_STATE_DEFAULT);
 

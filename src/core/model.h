@@ -18,4 +18,5 @@ struct Model {
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
 	std::vector<Node> nodes;
+	std::vector<int> materialToImage;  // マテリアルインデックス → イメージインデックスのマップ
 };

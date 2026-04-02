@@ -20,6 +20,7 @@ struct Mesh {
 	bgfx::VertexBufferHandle vbh{};
 	bgfx::IndexBufferHandle ibh{};
 	uint16_t indexCount{};
+	int materialIndex = -1;  // glTFマテリアルインデックス
 
 	void create(const std::vector<Vertex>& v, const std::vector<uint16_t>& i) {
 		bgfx::VertexLayout layout;
