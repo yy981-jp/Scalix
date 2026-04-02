@@ -10,3 +10,6 @@
 [submodule "external/bgfx.cmake"]
 	path = external/bgfx.cmake
 	url = https://github.com/bkaradzic/bgfx.cmake
+[submodule "external/tinygltf"]
+	path = external/tinygltf
+	url = git@github.com:syoyo/tinygltf.git
