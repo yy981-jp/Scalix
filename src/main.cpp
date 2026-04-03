@@ -8,5 +8,4 @@ int main() {
 	while (game.isRunning()) {
 		game.tick();
 	}
-
 }

@@ -38,3 +38,9 @@ inline Model loadGltf(const std::string& path) {
 	loader.load();
 	return loader.get();
 }
+
+inline Avater loadEntity(const std::string& glTFPath) {
+	Avater ent;
+	ent.model = loadGltf(glTFPath);
+	return ent;
+}

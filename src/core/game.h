@@ -9,6 +9,7 @@
 
 #include "../gfx/shader.h"
 #include "../gltf/loader.h"
+#include "key.h"
 
 
 class Game {
@@ -19,9 +20,16 @@ class Game {
 
 	void gameInit();
 
-	Model res;
+	std::vector<Avater> avaters;
 	bgfx::ProgramHandle program;
 
+    uint64_t keyStat = 0; // KCode
+
+	void onKeyDown(const SDL_KeyboardEvent& e);
+    void onKeyUp(const SDL_KeyboardEvent& e);
+
+	void update();
+	void draw();
 public:
 	Game();
 	~Game();

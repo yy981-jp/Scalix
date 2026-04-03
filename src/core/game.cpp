@@ -53,16 +53,131 @@ Game::~Game() {
 }
 
 void Game::tick() {
-	SDL_Event e;
-	while (SDL_PollEvent(&e)) {
-		if (e.type == SDL_QUIT) running = false;
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		switch(event.type) {
+			case SDL_QUIT: running = false; break;
+            case SDL_KEYDOWN: onKeyDown(event.key); break;
+            case SDL_KEYUP: onKeyUp(event.key); break;
+		}
 	}
 
 	time += 0.01f;
 
-	// ===== カメラ =====
-	bgfx::setViewRect(0, 0, 0, 800, 600);
+	update();
 
+	draw();
+
+	bgfx::frame();
+}
+
+
+void Game::update() {
+	// ===== Entityごと =====
+	for (auto& res: avaters) {
+		res.finalMtxs.clear();
+
+		// --- Entityの変換行列 ---
+		float entityMtx[16];
+		float tE[16], rE[16], sE[16];
+
+		bx::mtxIdentity(tE);
+		bx::mtxIdentity(rE);
+		bx::mtxIdentity(sE);
+
+		// translation
+		tE[12] = res.pos[0];
+		tE[13] = res.pos[1];
+		tE[14] = res.pos[2];
+
+		// rotation
+		{
+			bx::Quaternion q = {
+				res.rot[0],
+				res.rot[1],
+				res.rot[2],
+				res.rot[3]
+			};
+			bx::mtxFromQuaternion(rE, q);
+		}
+
+		// scale
+		sE[0]  = res.scale[0];
+		sE[5]  = res.scale[1];
+		sE[10] = res.scale[2];
+
+		float tmpE[16];
+		bx::mtxIdentity(tmpE);
+		bx::mtxIdentity(entityMtx);
+		bx::mtxMul(tmpE, rE, sE);        // R * S
+		bx::mtxMul(entityMtx, tE, tmpE); // T * (R * S)
+
+		// ===== ノードごと更新 =====
+		for (const auto& node : res.model.nodes) {
+
+			if (node.meshStartIndex < 0 || node.meshCount <= 0) continue;
+
+			// --- nodeの変換 ---
+			float nodeMtx[16];
+			float t[16], r[16], s[16];
+
+			// Initialize matrices
+			bx::mtxIdentity(t);
+			bx::mtxIdentity(r);
+			bx::mtxIdentity(s);
+
+			// translation
+			t[12] = node.pos[0];
+			t[13] = node.pos[1];
+			t[14] = node.pos[2];
+
+			// rotation
+			if (node.hasRotation) {
+				bx::Quaternion q = {
+					node.rot[0],
+					node.rot[1],
+					node.rot[2],
+					node.rot[3]
+				};
+				bx::mtxFromQuaternion(r, q);
+			}
+
+			// scale
+			s[0]  = node.scale[0];
+			s[5]  = node.scale[1];
+			s[10] = node.scale[2];
+
+			float tmp[16];
+			bx::mtxIdentity(tmp);
+			bx::mtxIdentity(nodeMtx);
+			bx::mtxMul(tmp, r, s);
+			bx::mtxMul(nodeMtx, t, tmp);
+
+			// --- 方向 ---
+			float anim[16];
+			bx::mtxIdentity(anim);
+			bx::mtxRotateY(anim, 3.9f);
+			bx::mtxMul(tmp, nodeMtx, anim);
+
+			// --- 移動 ---
+			float move[16];
+			bx::mtxIdentity(move);
+			// if (has(keyStat,KCode::W))
+
+			bx::mtxTranslate(move, 0.0f, 0.0f, -0.5f);
+			bx::mtxMul(tmp, tmp, move);
+
+			// ★ Entityを最後に掛ける（これが一番重要）
+			std::array<float,16> final;
+			std::fill(final.begin(), final.end(), 0.0f);  // または bx::mtxIdentity の後に mtxMul を使う
+			bx::mtxMul(final.data(), entityMtx, tmp);
+			res.finalMtxs.push_back(final);
+		}
+	}
+}
+
+void Game::draw() {
+	// ===== カメラ =====
 	float view[16];
 	float proj[16];
 
@@ -75,91 +190,141 @@ void Game::tick() {
 
 	bgfx::setViewTransform(0, view, proj);
 
+
 	// ===== ノードごと描画 =====
-	for (const auto& node : res.nodes) {
+	for (auto& res: avaters) {
+		int mtxIdx = 0;
+		for (int nodeIdx = 0; nodeIdx < res.model.nodes.size(); nodeIdx++) {
+			const auto& node = res.model.nodes[nodeIdx];
 
-		if (node.meshStartIndex < 0 || node.meshCount <= 0) {
-			continue;
-		}
+			if (node.meshStartIndex < 0 || node.meshCount <= 0) continue;
 
-		// --- nodeの変換行列 ---
-		float nodeMtx[16];
-		float t[16], r[16], s[16];
+			// === 複数primitiveを描画 ===
+			for (int i = 0; i < node.meshCount; i++) {
+				const Mesh& m = res.model.meshes[node.meshStartIndex + i];
 
-		bx::mtxIdentity(t);
-		bx::mtxIdentity(r);
-		bx::mtxIdentity(s);
+				bgfx::setTransform(res.finalMtxs[mtxIdx].data());
 
-		// translation
-		t[12] = node.pos[0];
-		t[13] = node.pos[1];
-		t[14] = node.pos[2];
+				bgfx::setVertexBuffer(0, m.vbh);
+				bgfx::setIndexBuffer(m.ibh);
 
-		// rotation
-		if (node.hasRotation) {
-			bx::Quaternion q = {
-				node.rot[0],
-				node.rot[1],
-				node.rot[2],
-				node.rot[3]
-			};
-			bx::mtxFromQuaternion(r, q);
-		}
-
-		// scale
-		s[0]  = node.scale[0];
-		s[5]  = node.scale[1];
-		s[10] = node.scale[2];
-
-		// 合成
-		float tmp[16];
-		bx::mtxMul(tmp, r, s);     // R * S
-		bx::mtxMul(nodeMtx, t, tmp); // T * (R * S)
-
-		// --- 自転（時間回転） ---
-		float anim[16];
-		bx::mtxRotateY(anim, time);
-
-		float final[16];
-		bx::mtxMul(final, nodeMtx, anim);
-
-		// === 複数primitiveを描画 ===
-		for (int i = 0; i < node.meshCount; i++) {
-			const Mesh& m = res.meshes[node.meshStartIndex + i];
-
-			bgfx::setTransform(final);
-
-			bgfx::setVertexBuffer(0, m.vbh);
-			bgfx::setIndexBuffer(m.ibh);
-
-			// テクスチャバインド（マテリアル → イメージ → テクスチャ）
-			if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(res.materialToImage.size())) {
-				int imgIdx = res.materialToImage[m.materialIndex];
-				if (imgIdx >= 0 && imgIdx < static_cast<int>(res.textures.size()) && res.textures[imgIdx].isValid()) {
-					res.textures[imgIdx].bind();
+				// テクスチャバインド（マテリアル → イメージ → テクスチャ）
+				if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(res.model.materialToImage.size())) {
+					int imgIdx = res.model.materialToImage[m.materialIndex];
+					if (imgIdx >= 0 && imgIdx < static_cast<int>(res.model.textures.size()) && res.model.textures[imgIdx].isValid()) {
+						res.model.textures[imgIdx].bind();
+					}
 				}
+
+				bgfx::setState(
+					BGFX_STATE_WRITE_RGB		|
+					BGFX_STATE_WRITE_A  		|
+					BGFX_STATE_WRITE_Z			|
+					BGFX_STATE_DEPTH_TEST_LESS	|
+					BGFX_STATE_CULL_CCW
+				);
+
+				bgfx::submit(0, program);
 			}
-
-			bgfx::setState(
-				BGFX_STATE_WRITE_RGB	|
-				BGFX_STATE_WRITE_A  	|
-				BGFX_STATE_WRITE_Z		|
-				BGFX_STATE_DEPTH_TEST_LESS
-			);
-
-			bgfx::submit(0, program);
+			mtxIdx++;
 		}
 	}
-
-	bgfx::frame();
 }
 
 void Game::gameInit() {
+	// ===== view =====
 	bgfx::setViewClear(0,
 		BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
 		0x303030ff, 1.0f, 0);
+	bgfx::setViewRect(0, 0, 0, 800, 600);
+
 	// ===== load glTF ====
-	res = loadGltf("glTF/Shinano.gltf");
+	avaters.push_back( loadEntity("glTF/Shinano.gltf") );
 	// ===== load Shader =====
 	program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
+}
+
+void Game::onKeyDown(const SDL_KeyboardEvent& e) {
+	if (e.repeat) return;
+	switch (e.keysym.sym) {
+		case SDLK_a:			keyStat |= static_cast<uint64_t>(KCode::A);
+		case SDLK_b:			keyStat |= static_cast<uint64_t>(KCode::B);
+		case SDLK_c:			keyStat |= static_cast<uint64_t>(KCode::C);
+		case SDLK_d:			keyStat |= static_cast<uint64_t>(KCode::D);
+		case SDLK_e:			keyStat |= static_cast<uint64_t>(KCode::E);
+		case SDLK_f:			keyStat |= static_cast<uint64_t>(KCode::F);
+		case SDLK_g:			keyStat |= static_cast<uint64_t>(KCode::G);
+		case SDLK_h:			keyStat |= static_cast<uint64_t>(KCode::H);
+		case SDLK_i:			keyStat |= static_cast<uint64_t>(KCode::I);
+		case SDLK_j:			keyStat |= static_cast<uint64_t>(KCode::J);
+		case SDLK_k:			keyStat |= static_cast<uint64_t>(KCode::K);
+		case SDLK_l:			keyStat |= static_cast<uint64_t>(KCode::L);
+		case SDLK_m:			keyStat |= static_cast<uint64_t>(KCode::M);
+		case SDLK_n:			keyStat |= static_cast<uint64_t>(KCode::N);
+		case SDLK_o:			keyStat |= static_cast<uint64_t>(KCode::O);
+		case SDLK_p:			keyStat |= static_cast<uint64_t>(KCode::P);
+		case SDLK_q:			keyStat |= static_cast<uint64_t>(KCode::Q);
+		case SDLK_r:			keyStat |= static_cast<uint64_t>(KCode::R);
+		case SDLK_s:			keyStat |= static_cast<uint64_t>(KCode::S);
+		case SDLK_t:			keyStat |= static_cast<uint64_t>(KCode::T);
+		case SDLK_u:			keyStat |= static_cast<uint64_t>(KCode::U);
+		case SDLK_v:			keyStat |= static_cast<uint64_t>(KCode::V);
+		case SDLK_w:			keyStat |= static_cast<uint64_t>(KCode::W);
+		case SDLK_x:			keyStat |= static_cast<uint64_t>(KCode::X);
+		case SDLK_y:			keyStat |= static_cast<uint64_t>(KCode::Y);
+		case SDLK_z:			keyStat |= static_cast<uint64_t>(KCode::Z);
+		case SDLK_SPACE:		keyStat |= static_cast<uint64_t>(KCode::Space);
+		case SDLK_LSHIFT:
+		case SDLK_RSHIFT:		keyStat |= static_cast<uint64_t>(KCode::Shift);
+		case SDLK_LCTRL:
+		case SDLK_RCTRL:		keyStat |= static_cast<uint64_t>(KCode::Ctrl);
+		case SDLK_ESCAPE:		keyStat |= static_cast<uint64_t>(KCode::Esc);
+		case SDLK_TAB:			keyStat |= static_cast<uint64_t>(KCode::Tab);
+		case SDLK_ALTERASE:		keyStat |= static_cast<uint64_t>(KCode::Alt);
+		case SDLK_RETURN:		keyStat |= static_cast<uint64_t>(KCode::Enter);
+		case SDLK_DELETE:		keyStat |= static_cast<uint64_t>(KCode::Delete);
+		case SDLK_BACKSPACE:	keyStat |= static_cast<uint64_t>(KCode::BkSpace);
+	}
+}
+
+void Game::onKeyUp(const SDL_KeyboardEvent& e) {
+	switch (e.keysym.sym) {
+		case SDLK_a:			keyStat &= ~static_cast<uint64_t>(KCode::A);
+		case SDLK_b:			keyStat &= ~static_cast<uint64_t>(KCode::B);
+		case SDLK_c:			keyStat &= ~static_cast<uint64_t>(KCode::C);
+		case SDLK_d:			keyStat &= ~static_cast<uint64_t>(KCode::D);
+		case SDLK_e:			keyStat &= ~static_cast<uint64_t>(KCode::E);
+		case SDLK_f:			keyStat &= ~static_cast<uint64_t>(KCode::F);
+		case SDLK_g:			keyStat &= ~static_cast<uint64_t>(KCode::G);
+		case SDLK_h:			keyStat &= ~static_cast<uint64_t>(KCode::H);
+		case SDLK_i:			keyStat &= ~static_cast<uint64_t>(KCode::I);
+		case SDLK_j:			keyStat &= ~static_cast<uint64_t>(KCode::J);
+		case SDLK_k:			keyStat &= ~static_cast<uint64_t>(KCode::K);
+		case SDLK_l:			keyStat &= ~static_cast<uint64_t>(KCode::L);
+		case SDLK_m:			keyStat &= ~static_cast<uint64_t>(KCode::M);
+		case SDLK_n:			keyStat &= ~static_cast<uint64_t>(KCode::N);
+		case SDLK_o:			keyStat &= ~static_cast<uint64_t>(KCode::O);
+		case SDLK_p:			keyStat &= ~static_cast<uint64_t>(KCode::P);
+		case SDLK_q:			keyStat &= ~static_cast<uint64_t>(KCode::Q);
+		case SDLK_r:			keyStat &= ~static_cast<uint64_t>(KCode::R);
+		case SDLK_s:			keyStat &= ~static_cast<uint64_t>(KCode::S);
+		case SDLK_t:			keyStat &= ~static_cast<uint64_t>(KCode::T);
+		case SDLK_u:			keyStat &= ~static_cast<uint64_t>(KCode::U);
+		case SDLK_v:			keyStat &= ~static_cast<uint64_t>(KCode::V);
+		case SDLK_w:			keyStat &= ~static_cast<uint64_t>(KCode::W);
+		case SDLK_x:			keyStat &= ~static_cast<uint64_t>(KCode::X);
+		case SDLK_y:			keyStat &= ~static_cast<uint64_t>(KCode::Y);
+		case SDLK_z:			keyStat &= ~static_cast<uint64_t>(KCode::Z);
+		case SDLK_SPACE:		keyStat &= ~static_cast<uint64_t>(KCode::Space);
+		case SDLK_LSHIFT:
+		case SDLK_RSHIFT:		keyStat &= ~static_cast<uint64_t>(KCode::Shift);
+		case SDLK_LCTRL:
+		case SDLK_RCTRL:		keyStat &= ~static_cast<uint64_t>(KCode::Ctrl);
+		case SDLK_ESCAPE:		keyStat &= ~static_cast<uint64_t>(KCode::Esc);
+		case SDLK_TAB:			keyStat &= ~static_cast<uint64_t>(KCode::Tab);
+		case SDLK_ALTERASE:		keyStat &= ~static_cast<uint64_t>(KCode::Alt);
+		case SDLK_RETURN:		keyStat &= ~static_cast<uint64_t>(KCode::Enter);
+		case SDLK_DELETE:		keyStat &= ~static_cast<uint64_t>(KCode::Delete);
+		case SDLK_BACKSPACE:	keyStat &= ~static_cast<uint64_t>(KCode::BkSpace);
+	}
 }

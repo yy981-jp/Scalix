@@ -9,7 +9,7 @@ struct Node {
 	float pos[3] = {0.0f, 0.0f, 0.0f};
 	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
 	float scale[3] = {1.0f, 1.0f, 1.0f};
-	
+
 	bool hasTranslation = false;
 	bool hasRotation = false;
 	bool hasScale = false;
@@ -20,4 +20,13 @@ struct Model {
 	std::vector<Texture> textures;
 	std::vector<Node> nodes;
 	std::vector<int> materialToImage; // map
+};
+
+struct Avater {
+	Model model;
+	std::vector<std::array<float, 16>> finalMtxs;
+
+	float pos[3]   = {0.0f, 0.0f, 0.0f};
+	float rot[4]   = {0.0f, 0.0f, 0.0f, 1.0f}; // quaternion
+	float scale[3] = {1.0f, 1.0f, 1.0f};
 };
