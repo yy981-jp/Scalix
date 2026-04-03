@@ -162,9 +162,10 @@ void Game::update() {
 			// --- 移動 ---
 			float move[16];
 			bx::mtxIdentity(move);
-			// if (has(keyStat,KCode::W))
+			float z = 0.f;
+			if (has(keyStat,KCode::W)) z = -0.5;
 
-			bx::mtxTranslate(move, 0.0f, 0.0f, -0.5f);
+			bx::mtxTranslate(move, 0.0f, 0.0f, z);
 			bx::mtxMul(tmp, tmp, move);
 
 			// ★ Entityを最後に掛ける（これが一番重要）
@@ -246,85 +247,13 @@ void Game::gameInit() {
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {
 	if (e.repeat) return;
-	switch (e.keysym.sym) {
-		case SDLK_a:			keyStat |= static_cast<uint64_t>(KCode::A);
-		case SDLK_b:			keyStat |= static_cast<uint64_t>(KCode::B);
-		case SDLK_c:			keyStat |= static_cast<uint64_t>(KCode::C);
-		case SDLK_d:			keyStat |= static_cast<uint64_t>(KCode::D);
-		case SDLK_e:			keyStat |= static_cast<uint64_t>(KCode::E);
-		case SDLK_f:			keyStat |= static_cast<uint64_t>(KCode::F);
-		case SDLK_g:			keyStat |= static_cast<uint64_t>(KCode::G);
-		case SDLK_h:			keyStat |= static_cast<uint64_t>(KCode::H);
-		case SDLK_i:			keyStat |= static_cast<uint64_t>(KCode::I);
-		case SDLK_j:			keyStat |= static_cast<uint64_t>(KCode::J);
-		case SDLK_k:			keyStat |= static_cast<uint64_t>(KCode::K);
-		case SDLK_l:			keyStat |= static_cast<uint64_t>(KCode::L);
-		case SDLK_m:			keyStat |= static_cast<uint64_t>(KCode::M);
-		case SDLK_n:			keyStat |= static_cast<uint64_t>(KCode::N);
-		case SDLK_o:			keyStat |= static_cast<uint64_t>(KCode::O);
-		case SDLK_p:			keyStat |= static_cast<uint64_t>(KCode::P);
-		case SDLK_q:			keyStat |= static_cast<uint64_t>(KCode::Q);
-		case SDLK_r:			keyStat |= static_cast<uint64_t>(KCode::R);
-		case SDLK_s:			keyStat |= static_cast<uint64_t>(KCode::S);
-		case SDLK_t:			keyStat |= static_cast<uint64_t>(KCode::T);
-		case SDLK_u:			keyStat |= static_cast<uint64_t>(KCode::U);
-		case SDLK_v:			keyStat |= static_cast<uint64_t>(KCode::V);
-		case SDLK_w:			keyStat |= static_cast<uint64_t>(KCode::W);
-		case SDLK_x:			keyStat |= static_cast<uint64_t>(KCode::X);
-		case SDLK_y:			keyStat |= static_cast<uint64_t>(KCode::Y);
-		case SDLK_z:			keyStat |= static_cast<uint64_t>(KCode::Z);
-		case SDLK_SPACE:		keyStat |= static_cast<uint64_t>(KCode::Space);
-		case SDLK_LSHIFT:
-		case SDLK_RSHIFT:		keyStat |= static_cast<uint64_t>(KCode::Shift);
-		case SDLK_LCTRL:
-		case SDLK_RCTRL:		keyStat |= static_cast<uint64_t>(KCode::Ctrl);
-		case SDLK_ESCAPE:		keyStat |= static_cast<uint64_t>(KCode::Esc);
-		case SDLK_TAB:			keyStat |= static_cast<uint64_t>(KCode::Tab);
-		case SDLK_ALTERASE:		keyStat |= static_cast<uint64_t>(KCode::Alt);
-		case SDLK_RETURN:		keyStat |= static_cast<uint64_t>(KCode::Enter);
-		case SDLK_DELETE:		keyStat |= static_cast<uint64_t>(KCode::Delete);
-		case SDLK_BACKSPACE:	keyStat |= static_cast<uint64_t>(KCode::BkSpace);
-	}
+	auto it = keyMap.find(e.keysym.sym);
+	if (it != keyMap.end())
+		keyStat |= static_cast<uint64_t>(it->second);
 }
 
 void Game::onKeyUp(const SDL_KeyboardEvent& e) {
-	switch (e.keysym.sym) {
-		case SDLK_a:			keyStat &= ~static_cast<uint64_t>(KCode::A);
-		case SDLK_b:			keyStat &= ~static_cast<uint64_t>(KCode::B);
-		case SDLK_c:			keyStat &= ~static_cast<uint64_t>(KCode::C);
-		case SDLK_d:			keyStat &= ~static_cast<uint64_t>(KCode::D);
-		case SDLK_e:			keyStat &= ~static_cast<uint64_t>(KCode::E);
-		case SDLK_f:			keyStat &= ~static_cast<uint64_t>(KCode::F);
-		case SDLK_g:			keyStat &= ~static_cast<uint64_t>(KCode::G);
-		case SDLK_h:			keyStat &= ~static_cast<uint64_t>(KCode::H);
-		case SDLK_i:			keyStat &= ~static_cast<uint64_t>(KCode::I);
-		case SDLK_j:			keyStat &= ~static_cast<uint64_t>(KCode::J);
-		case SDLK_k:			keyStat &= ~static_cast<uint64_t>(KCode::K);
-		case SDLK_l:			keyStat &= ~static_cast<uint64_t>(KCode::L);
-		case SDLK_m:			keyStat &= ~static_cast<uint64_t>(KCode::M);
-		case SDLK_n:			keyStat &= ~static_cast<uint64_t>(KCode::N);
-		case SDLK_o:			keyStat &= ~static_cast<uint64_t>(KCode::O);
-		case SDLK_p:			keyStat &= ~static_cast<uint64_t>(KCode::P);
-		case SDLK_q:			keyStat &= ~static_cast<uint64_t>(KCode::Q);
-		case SDLK_r:			keyStat &= ~static_cast<uint64_t>(KCode::R);
-		case SDLK_s:			keyStat &= ~static_cast<uint64_t>(KCode::S);
-		case SDLK_t:			keyStat &= ~static_cast<uint64_t>(KCode::T);
-		case SDLK_u:			keyStat &= ~static_cast<uint64_t>(KCode::U);
-		case SDLK_v:			keyStat &= ~static_cast<uint64_t>(KCode::V);
-		case SDLK_w:			keyStat &= ~static_cast<uint64_t>(KCode::W);
-		case SDLK_x:			keyStat &= ~static_cast<uint64_t>(KCode::X);
-		case SDLK_y:			keyStat &= ~static_cast<uint64_t>(KCode::Y);
-		case SDLK_z:			keyStat &= ~static_cast<uint64_t>(KCode::Z);
-		case SDLK_SPACE:		keyStat &= ~static_cast<uint64_t>(KCode::Space);
-		case SDLK_LSHIFT:
-		case SDLK_RSHIFT:		keyStat &= ~static_cast<uint64_t>(KCode::Shift);
-		case SDLK_LCTRL:
-		case SDLK_RCTRL:		keyStat &= ~static_cast<uint64_t>(KCode::Ctrl);
-		case SDLK_ESCAPE:		keyStat &= ~static_cast<uint64_t>(KCode::Esc);
-		case SDLK_TAB:			keyStat &= ~static_cast<uint64_t>(KCode::Tab);
-		case SDLK_ALTERASE:		keyStat &= ~static_cast<uint64_t>(KCode::Alt);
-		case SDLK_RETURN:		keyStat &= ~static_cast<uint64_t>(KCode::Enter);
-		case SDLK_DELETE:		keyStat &= ~static_cast<uint64_t>(KCode::Delete);
-		case SDLK_BACKSPACE:	keyStat &= ~static_cast<uint64_t>(KCode::BkSpace);
-	}
+	auto it = keyMap.find(e.keysym.sym);
+	if (it != keyMap.end())
+		keyStat &= ~static_cast<uint64_t>(it->second);
 }

@@ -1,5 +1,8 @@
 #pragma once
 #include <cstdint>
+#include <unordered_map>
+#include <SDL.h>
+
 
 enum class KCode: uint64_t {
     n0      = 1ULL <<  0,
@@ -52,3 +55,5 @@ enum class KCode: uint64_t {
 constexpr bool has(uint64_t keys, KCode k) {
     return keys & static_cast<uint64_t>(k);
 }
+
+extern const std::unordered_map<SDL_Keycode, KCode> keyMap;
