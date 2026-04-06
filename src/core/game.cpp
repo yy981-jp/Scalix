@@ -62,9 +62,6 @@ void Game::tick() {
 		}
 	}
 
-
-	if (has(keyStat,KCode::Esc)) running = false;
-
 	update();
 
 	draw();
@@ -74,9 +71,11 @@ void Game::tick() {
 
 
 void Game::update() {
+	if (has(keyStat,KCode::Esc)) running = false;
 	// ===== Entityごと =====
 	avaterSystem.update(keyStat);
 }
+
 
 void Game::draw() {
 	// ===== カメラ =====
@@ -103,7 +102,7 @@ void Game::gameInit() {
 	bgfx::setViewRect(0, 0, 0, WIDTH, HEIGHT);
 
 	// ===== load glTF ====
-	avaterSystem.loadData({"glTF/Shinano.gltf"});
+	avaterSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
 	// ===== load Shader =====
 	program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 }

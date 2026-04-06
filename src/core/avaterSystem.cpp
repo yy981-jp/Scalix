@@ -10,7 +10,7 @@
 
 void AvaterSystem::loadData(const std::vector<std::string> path) {
 	for (const auto& file: path)
-		avaters.push_back( loadEntity("glTF/Shinano.gltf") );
+		avaters.push_back( loadEntity(file) );
 }
 
 
@@ -25,18 +25,18 @@ void AvaterSystem::update(const uint64_t& keyStat) {
         // 移動 → yawから直接XZ成分を計算してpos更新
         if (has(keyStat, KCode::W)) {
             avater.pos[0] -= cachesv.getSin(avater.yaw) * avater.speed;
-            avater.pos[1] -= cachesv.getCos(avater.yaw) * avater.speed;
+            avater.pos[2] += cachesv.getCos(avater.yaw) * avater.speed;
         }
         if (has(keyStat, KCode::S)) {
             avater.pos[0] += cachesv.getSin(avater.yaw) * avater.speed;
-            avater.pos[1] += cachesv.getCos(avater.yaw) * avater.speed;
+            avater.pos[2] -= cachesv.getCos(avater.yaw) * avater.speed;
         }
 
         // --- Entity行列（T * R * S のみ）---
         float t[16], r[16], s[16], tmp[16], entityMtx[16];
 
         bx::mtxTranslate(t, avater.pos[0], avater.pos[1], avater.pos[2]);
-        bx::mtxRotateZ(r, avater.yaw);
+        bx::mtxRotateY(r, avater.yaw);
 
         bx::mtxIdentity(s);
         s[0] = avater.scale[0];  s[5] = avater.scale[1];  s[10] = avater.scale[2];
