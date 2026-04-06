@@ -27,6 +27,8 @@ struct Avater {
 	std::vector<std::array<float, 16>> finalMtxs;
 
 	float pos[3]   = {0.0f, 0.0f, 0.0f};
-	float rot[4]   = {0.0f, 0.0f, 0.0f, 1.0f}; // quaternion
+	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
+
+	float speed = 0.2;
 };

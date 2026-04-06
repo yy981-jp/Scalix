@@ -11,19 +11,26 @@
 #include "../gltf/loader.h"
 #include "key.h"
 
+#include "avaterSystem.h"
+
 
 class Game {
 	SDL_Window* window;
 
 	bool running = true;
-	float time = 0.0f;
+    uint64_t keyStat = 0; // KCode
+
+	bgfx::ProgramHandle program;
+	AvaterSystem avaterSystem;
+
+	constexpr static int
+		WIDTH = 1200,
+		HEIGHT = 900;
+	constexpr static float
+		SceneAspect = (float)WIDTH / (float)HEIGHT;
+
 
 	void gameInit();
-
-	std::vector<Avater> avaters;
-	bgfx::ProgramHandle program;
-
-    uint64_t keyStat = 0; // KCode
 
 	void onKeyDown(const SDL_KeyboardEvent& e);
     void onKeyUp(const SDL_KeyboardEvent& e);
