@@ -1,7 +1,7 @@
 #pragma once
 #include "../gfx/mesh.h"
 #include "../gfx/texture.h"
-#include "../core/model.h"
+#include "../model/model.h"
 #include <tinygltf/tiny_gltf.h>
 
 
@@ -26,6 +26,7 @@ class GltfLoaderImpl {
 	Model scalixModel;
 
 	void parse();
+	void parseMesh(const tinygltf::Node& n);
 
 public:
 	GltfLoaderImpl(const std::string& path);

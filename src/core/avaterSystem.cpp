@@ -9,8 +9,11 @@
 
 
 void AvaterSystem::loadData(const std::vector<std::string> path) {
-	for (const auto& file: path)
+	for (const auto& file: path) {
 		avaters.push_back( loadEntity(file) );
+        auto& avater = avaters.back();
+        avater.humanoid.init(avater.model.nodes, avater.model.skins);
+    }
 }
 
 
@@ -45,7 +48,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
         bx::mtxMul(entityMtx, tmp, t);
 
         // --- ノードごと（nodeMtxはメッシュオフセットのみ）---
-        for (const auto& node : avater.model.nodes) {
+        for (const auto& node: avater.model.nodes) {
             if (node.meshStartIndex < 0 || node.meshCount <= 0) continue;
 
             float nodeMtx[16];
@@ -55,6 +58,11 @@ void AvaterSystem::update(const uint64_t& keyStat) {
             std::array<float, 16> finalMtx;
             bx::mtxMul(finalMtx.data(), entityMtx, nodeMtx);
             avater.finalMtxs.push_back(finalMtx);
+        }
+
+        // --- bone 更新 ---
+        for (const auto& skin: avater.model.skins) {
+            // TODO
         }
     }
 }

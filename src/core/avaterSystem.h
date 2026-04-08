@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "model.h"
+#include "../model/model.h"
 
 
 class AvaterSystem {
