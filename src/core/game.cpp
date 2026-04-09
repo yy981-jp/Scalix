@@ -32,7 +32,7 @@ Game::Game() {
 	bgfx::setPlatformData(pd);
 
 	bgfx::Init init{};
-	init.type = bgfx::RendererType::Direct3D12;
+	init.type = bgfx::RendererType::Direct3D11;
 
 	init.platformData.nwh = pd.nwh;
 

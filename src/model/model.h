@@ -33,7 +33,8 @@ struct Humanoid {
 
 	// node index
 	int head = -1,
-		armL = -1, armR = -1;
+		arm_left_up = -1, arm_left_low = -1,
+		arm_right_up = -1, arm_right_low = -1;
 	
 	std::vector<int> spines;
 };
