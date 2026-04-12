@@ -173,12 +173,13 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
 					float pos[4] = {v.x, v.y, v.z, 1.0f};
 					float result[4] = {0,0,0,0};
 
-                    if (vi == 0) {
-                        printf("w: %f %f %f %f\n",
-                            v.weights[0], v.weights[1],
-                            v.weights[2], v.weights[3]);
-                    }
-					for (int k = 0; k < 4; k++) {
+                    // if (vi == 0) {
+                    //     printf("w: %f %f %f %f\n",
+                    //         v.weights[0], v.weights[1],
+                    //         v.weights[2], v.weights[3]);
+                    // }
+
+                    for (int k = 0; k < 4; k++) {
 						float w = v.weights[k];
 						if (w <= 0.0f) continue;
 

@@ -10,9 +10,11 @@
 
 
 void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
-	const auto& mesh = model.meshes[n.mesh];
+	const auto& tnmesh = model.meshes[n.mesh];
 
-	for (const auto& prim : mesh.primitives) {
+	for (const auto& prim : tnmesh.primitives) {
+		Mesh mesh;
+
 		// TRIANGLESのみ対応
 		if (prim.mode != TINYGLTF_MODE_TRIANGLES)
 			throw std::runtime_error("only TRIANGLES supported");
@@ -152,9 +154,6 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 		if (verts.empty())
 			throw std::runtime_error("vertex empty");
 
-		Mesh mesh;
-		mesh.create(verts, idx);
-		
 		// primitiveのマテリアルをmeshに設定
 		if (prim.material >= 0) {
 			mesh.materialIndex = prim.material;
@@ -191,13 +190,13 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 						vert.joints[k] = j[k];
 				}
 
-				if (i == 0) {
-					printf("joint: %d %d %d %d\n",
-						vert.joints[0],
-						vert.joints[1],
-						vert.joints[2],
-						vert.joints[3]);
-				}
+				// if (i == 0) {
+				// 	printf("joint: %d %d %d %d\n",
+				// 		vert.joints[0],
+				// 		vert.joints[1],
+				// 		vert.joints[2],
+				// 		vert.joints[3]);
+				// }
 			}
 		}
 
@@ -209,6 +208,13 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 		const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
 
 		size_t stride = acc.ByteStride(view);
+
+		// printf("componentType: %d normalized: %d stride: %zu\n",
+		// 	acc.componentType,
+		// 	acc.normalized,
+		// 	stride
+		// );
+
 		if (stride == 0) {
 			switch (acc.componentType) {
 				case TINYGLTF_COMPONENT_TYPE_FLOAT: stride = sizeof(float)*4; break;
@@ -220,21 +226,27 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 		for (size_t i = 0; i < acc.count; i++) {
 			auto& vert = verts[i];
 			const uint8_t* ptr = data + stride * i;
+			// printf("raw: %d %d %d %d\n", ptr[0], ptr[1], ptr[2], ptr[3]);
 
-			if (acc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-				const float* w = reinterpret_cast<const float*>(ptr);
-				for (int k = 0; k < 4; k++) vert.weights[k] = w[k];
-
-			} else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
-				const uint8_t* w = ptr;
-				for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 255.0f;
-
-			} else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-				const uint16_t* w = reinterpret_cast<const uint16_t*>(ptr);
-				for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 65535.0f;
+			switch (acc.componentType) {
+				case TINYGLTF_COMPONENT_TYPE_FLOAT: {
+					const float* w = reinterpret_cast<const float*>(ptr);
+					for (int k = 0; k < 4; k++) vert.weights[k] = w[k];
+				} break;
+				case TINYGLTF_COMPONENT_TYPE_BYTE: {
+					const uint8_t* w = ptr;
+					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 255.0f;
+				} break;
+				case TINYGLTF_COMPONENT_TYPE_SHORT: {
+					const uint16_t* w = reinterpret_cast<const uint16_t*>(ptr);
+					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 65535.0f;
+				} break;
 			}
 		}
 
+
+		// 格納
+		mesh.create(verts, idx);
 		scalixModel.meshes.push_back(mesh);
 
 	}
@@ -304,7 +316,7 @@ void GltfLoaderImpl::parse() {
 	for (const auto& model_skin : model.skins) {
 		Skin skin;
 		// joint (=bone)
-		printf("model_skin.joints.size: %d\n", model_skin.joints.size());
+		// printf("model_skin.joints.size: %d\n", model_skin.joints.size());
 		for (int joint: model_skin.joints) {
 			skin.joints.push_back(joint);
 			scalixModel.nodes[joint].name = model.nodes[joint].name;
