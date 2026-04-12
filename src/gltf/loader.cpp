@@ -160,10 +160,6 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 			mesh.materialIndex = prim.material;
 		}
 
-		scalixModel.meshes.push_back(mesh);
-	
-
-
 
 		// ===== JOINTS =====
 		if (attrs.count("JOINTS_0")) {
@@ -173,32 +169,73 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 
 			const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
 
-			for (size_t i = 0; i < acc.count; i++) {
-				auto& vert = verts[i];
-
-				const uint16_t* j = reinterpret_cast<const uint16_t*>(data + i * 8);
-				for (int k = 0; k < 4; k++) vert.joints[k] = j[k];
+			size_t stride = acc.ByteStride(view);
+			if (stride == 0) {
+				if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
+					stride = 4;
+				else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+					stride = 8;
 			}
-		}
-
-		// ===== WEIGHTS =====
-		if (attrs.count("WEIGHTS_0")) {
-			const auto& acc = model.accessors[attrs.at("WEIGHTS_0")];
-			const auto& view = model.bufferViews[acc.bufferView];
-			const auto& buf = model.buffers[view.buffer];
-
-			const float* data = reinterpret_cast<const float*>(
-				buf.data.data() + view.byteOffset + acc.byteOffset
-			);
 
 			for (size_t i = 0; i < acc.count; i++) {
 				auto& vert = verts[i];
-				for (int k = 0; k < 4; k++) {
-					vert.weights[k] = data[i * 4 + k];
+				const uint8_t* ptr = data + stride * i;
+
+				if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+					for (int k = 0; k < 4; k++)
+						vert.joints[k] = ptr[k];
+
+				} else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+					const uint16_t* j = reinterpret_cast<const uint16_t*>(ptr);
+					for (int k = 0; k < 4; k++)
+						vert.joints[k] = j[k];
+				}
+
+				if (i == 0) {
+					printf("joint: %d %d %d %d\n",
+						vert.joints[0],
+						vert.joints[1],
+						vert.joints[2],
+						vert.joints[3]);
 				}
 			}
 		}
 
+		// ===== WEIGHTS =====
+		const auto& acc = model.accessors[attrs.at("WEIGHTS_0")];
+		const auto& view = model.bufferViews[acc.bufferView];
+		const auto& buf = model.buffers[view.buffer];
+
+		const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
+
+		size_t stride = acc.ByteStride(view);
+		if (stride == 0) {
+			switch (acc.componentType) {
+				case TINYGLTF_COMPONENT_TYPE_FLOAT: stride = sizeof(float)*4; break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: stride = 4; break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: stride = 8; break;
+			}
+		}
+
+		for (size_t i = 0; i < acc.count; i++) {
+			auto& vert = verts[i];
+			const uint8_t* ptr = data + stride * i;
+
+			if (acc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
+				const float* w = reinterpret_cast<const float*>(ptr);
+				for (int k = 0; k < 4; k++) vert.weights[k] = w[k];
+
+			} else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+				const uint8_t* w = ptr;
+				for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 255.0f;
+
+			} else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+				const uint16_t* w = reinterpret_cast<const uint16_t*>(ptr);
+				for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 65535.0f;
+			}
+		}
+
+		scalixModel.meshes.push_back(mesh);
 
 	}
 }

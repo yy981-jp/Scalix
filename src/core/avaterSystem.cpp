@@ -136,25 +136,92 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 }
 
 void AvaterSystem::draw(bgfx::ProgramHandle program) {
-    for (auto& avater : avaters) {
-        for (int nodeIdx = 0; nodeIdx < (int)avater.model.nodes.size(); nodeIdx++) {
-            const auto& node = avater.model.nodes[nodeIdx];
+	for (auto& avater : avaters) {
 
-            // if (node.meshCount <= 0) continue; // メッシュがないなら行列も使わないのでスキップ
+		// ===== とりあえず skin 0 を使う =====
+		if (avater.model.skins.empty()) continue;
+		auto& skin = avater.model.skins[0];
 
-            for (int i = 0; i < node.meshCount; i++) {
-                const Mesh& m = avater.model.meshes[node.meshStartIndex + i];
+		// ===== joint行列作成 =====
+		std::vector<std::array<float,16>> jointMtx;
+		jointMtx.resize(skin.joints.size());
 
-                // ★ nodeIdx を直接使うことで、updateで計算した箇所と一致させる
-                bgfx::setTransform(avater.globalMtxs[nodeIdx].data());
+		for (int i = 0; i < (int)skin.joints.size(); i++) {
+			int nodeIdx = skin.joints[i];
 
-                bgfx::setVertexBuffer(0, m.vbh);
-                bgfx::setIndexBuffer(m.ibh);
-                
-				// テクスチャバインド（マテリアル → イメージ → テクスチャ）
-				if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(avater.model.materialToImage.size())) {
+			bx::mtxMul(
+				jointMtx[i].data(),
+				avater.globalMtxs[nodeIdx].data(),
+				skin.invBind[i].data()
+			);
+		}
+
+		for (int nodeIdx = 0; nodeIdx < (int)avater.model.nodes.size(); nodeIdx++) {
+			const auto& node = avater.model.nodes[nodeIdx];
+
+			for (int i = 0; i < node.meshCount; i++) {
+				const Mesh& m = avater.model.meshes[node.meshStartIndex + i];
+
+				// ★ CPUスキニング用
+				std::vector<Vertex> deformed;
+				deformed.resize(m.vertices.size());
+
+				for (int vi = 0; vi < (int)m.vertices.size(); vi++) {
+					const auto& v = m.vertices[vi];
+					auto& out = deformed[vi];
+
+					float pos[4] = {v.x, v.y, v.z, 1.0f};
+					float result[4] = {0,0,0,0};
+
+                    if (vi == 0) {
+                        printf("w: %f %f %f %f\n",
+                            v.weights[0], v.weights[1],
+                            v.weights[2], v.weights[3]);
+                    }
+					for (int k = 0; k < 4; k++) {
+						float w = v.weights[k];
+						if (w <= 0.0f) continue;
+
+						int jointIdx = v.joints[k];
+						if (jointIdx < 0 || jointIdx >= (int)jointMtx.size()) continue;
+
+						float tmp[4];
+						bx::vec4MulMtx(tmp, pos, jointMtx[jointIdx].data());
+
+						result[0] += tmp[0] * w;
+						result[1] += tmp[1] * w;
+						result[2] += tmp[2] * w;
+						result[3] += tmp[3] * w;
+					}
+
+					out = v;
+					out.x = result[0];
+					out.y = result[1];
+					out.z = result[2];
+				}
+
+
+                bgfx::VertexLayout layout;
+                Vertex::init(layout);
+
+				// ===== 毎フレームVB生成（最小構成） =====
+				auto vbh = bgfx::createVertexBuffer(
+					bgfx::copy(deformed.data(), sizeof(Vertex) * deformed.size()),
+					layout
+				);
+
+				// ★ transformはidentityにする（スキニング済みなので）
+				float identity[16];
+				bx::mtxIdentity(identity);
+				bgfx::setTransform(identity);
+
+				bgfx::setVertexBuffer(0, vbh);
+				bgfx::setIndexBuffer(m.ibh);
+
+				// テクスチャ
+				if (m.materialIndex >= 0 && m.materialIndex < (int)avater.model.materialToImage.size()) {
 					int imgIdx = avater.model.materialToImage[m.materialIndex];
-					if (imgIdx >= 0 && imgIdx < static_cast<int>(avater.model.textures.size()) && avater.model.textures[imgIdx].isValid()) {
+					if (imgIdx >= 0 && imgIdx < (int)avater.model.textures.size() && avater.model.textures[imgIdx].isValid()) {
 						avater.model.textures[imgIdx].bind();
 					}
 				}
@@ -167,8 +234,10 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
 					BGFX_STATE_CULL_CCW
 				);
 
-                bgfx::submit(0, program);
-            }
-        }
-    }
+				bgfx::submit(0, program);
+
+				bgfx::destroy(vbh);
+			}
+		}
+	}
 }

@@ -27,9 +27,13 @@ struct Mesh {
 	uint16_t indexCount{};
 	int materialIndex = -1;  // glTFマテリアルインデックス
 
+	std::vector<Vertex> vertices;
+
 	void create(const std::vector<Vertex>& v, const std::vector<uint16_t>& i) {
 		bgfx::VertexLayout layout;
 		Vertex::init(layout);
+
+		vertices = v;
 
 		vbh = bgfx::createVertexBuffer(
 			bgfx::copy(v.data(), v.size()*sizeof(Vertex)),
