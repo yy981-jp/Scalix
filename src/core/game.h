@@ -21,6 +21,7 @@ class Game {
     uint64_t keyStat = 0; // KCode
 
 	bgfx::ProgramHandle program;
+	bgfx::UniformHandle u_bones;
 	AvaterSystem avaterSystem;
 
 	constexpr static int
