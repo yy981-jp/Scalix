@@ -14,7 +14,7 @@ class GltfLoaderImpl {
 	tinygltf::BufferView posView;
 	tinygltf::Buffer posBuf;
 
-	std::vector<Vertex> v;
+	std::vector<Vertex> verts;
 
 	const uint8_t* posPtr;
 	size_t posStride;

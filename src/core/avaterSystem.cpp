@@ -101,7 +101,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
         // );
 
         float addRot[4];
-        quatRotateAxis(addRot, 1, 0, 0, 0.05f);
+        quatRotateAxis(addRot, 1, 0, 0, 1);
 
         quatMul(node.rot, node.rot, addRot);
         quatNormalize(node.rot);

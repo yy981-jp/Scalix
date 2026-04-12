@@ -20,7 +20,7 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 		auto& attrs = prim.attributes;
 
 		// 毎回vertexデータをクリア
-		v.clear();
+		verts.clear();
 
 		// ===== POSITION =====
 		if (!attrs.count("POSITION"))
@@ -119,7 +119,7 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 		}
 
 		// ===== 頂点生成 =====
-		v.reserve(posAcc.count);
+		verts.reserve(posAcc.count);
 
 		for (size_t i = 0; i < posAcc.count; i++) {
 			const float* p = reinterpret_cast<const float*>(posPtr + posStride * i);
@@ -146,14 +146,14 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 				vert.v = u[1];
 			}
 
-			v.push_back(vert);
+			verts.push_back(vert);
 		}
 
-		if (v.empty())
+		if (verts.empty())
 			throw std::runtime_error("vertex empty");
 
 		Mesh mesh;
-		mesh.create(v, idx);
+		mesh.create(verts, idx);
 		
 		// primitiveのマテリアルをmeshに設定
 		if (prim.material >= 0) {
@@ -161,6 +161,45 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 		}
 
 		scalixModel.meshes.push_back(mesh);
+	
+
+
+
+		// ===== JOINTS =====
+		if (attrs.count("JOINTS_0")) {
+			const auto& acc = model.accessors[attrs.at("JOINTS_0")];
+			const auto& view = model.bufferViews[acc.bufferView];
+			const auto& buf = model.buffers[view.buffer];
+
+			const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
+
+			for (size_t i = 0; i < acc.count; i++) {
+				auto& vert = verts[i];
+
+				const uint16_t* j = reinterpret_cast<const uint16_t*>(data + i * 8);
+				for (int k = 0; k < 4; k++) vert.joints[k] = j[k];
+			}
+		}
+
+		// ===== WEIGHTS =====
+		if (attrs.count("WEIGHTS_0")) {
+			const auto& acc = model.accessors[attrs.at("WEIGHTS_0")];
+			const auto& view = model.bufferViews[acc.bufferView];
+			const auto& buf = model.buffers[view.buffer];
+
+			const float* data = reinterpret_cast<const float*>(
+				buf.data.data() + view.byteOffset + acc.byteOffset
+			);
+
+			for (size_t i = 0; i < acc.count; i++) {
+				auto& vert = verts[i];
+				for (int k = 0; k < 4; k++) {
+					vert.weights[k] = data[i * 4 + k];
+				}
+			}
+		}
+
+
 	}
 }
 
@@ -168,7 +207,7 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 void GltfLoaderImpl::parse() {
 	int nodesSize = model.nodes.size();
 	scalixModel.nodes.resize(nodesSize);
-	for (int i = 1; i < nodesSize; i++) {
+	for (int i = 0; i < nodesSize; i++) {
 		// ===== NODE =====
 		const auto& tn = model.nodes[i];
 		Node& node = scalixModel.nodes[i];
