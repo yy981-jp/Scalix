@@ -174,19 +174,19 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 		}
 	}
 	
-	printf("DEBUG: heads:%d arms_ur:%d arms_lr:%d arms_ul:%d arms_ll:%d spines:%d",
-		heads.size(), arms_right_up.size(), arms_right_low.size(), arms_left_up.size(), arms_left_low.size(), spines_.size());
+	// printf("DEBUG: heads:%d arms_ur:%d arms_lr:%d arms_ul:%d arms_ll:%d spines:%d",
+	// 	heads.size(), arms_right_up.size(), arms_right_low.size(), arms_left_up.size(), arms_left_low.size(), spines_.size());
 
 
 	// 最適解を選択
 	for (const auto& spine: spines_)
 		this->spines.push_back(spine.nodeId);
-	head = select(heads);
-	arm_left_up = select(arms_left_up);
-	arm_left_low = select(arms_left_low);
-	arm_right_up = select(arms_right_up);
-	arm_right_low = select(arms_right_low);
+	bones[static_cast<size_t>(HumanoidBoneType::head)] = select(heads);
+	bones[static_cast<size_t>(HumanoidBoneType::arm_left_up)] = select(arms_left_up);
+	bones[static_cast<size_t>(HumanoidBoneType::arm_left_low)] = select(arms_left_low);
+	bones[static_cast<size_t>(HumanoidBoneType::arm_right_up)] = select(arms_right_up);
+	bones[static_cast<size_t>(HumanoidBoneType::arm_right_low)] = select(arms_right_low);
 	
 
-	exit(1000);
+	// exit(1000);
 }

@@ -4,8 +4,10 @@
 #include "key.h"
 #include "mtxutil.h"
 #include "cache.h"
+#include "quatutil.h"
 
 #include <bx/math.h>
+#include <iostream>
 
 
 void AvaterSystem::loadData(const std::vector<std::string> path) {
@@ -16,10 +18,45 @@ void AvaterSystem::loadData(const std::vector<std::string> path) {
     }
 }
 
+void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
+                std::vector<std::array<float,16>>& localMtxs, float* entityMtx) {
+    if (calculated[idx]) return;
+    if (idx < 0 || idx >= avater.model.nodes.size()) {
+        printf("invalid idx: %d\n", idx);
+        return;
+    }
+
+    const auto& node = avater.model.nodes[idx];
+
+
+    // 親が先
+    if (node.parent >= 0) {
+        calcGlobal(node.parent, calculated, avater, localMtxs, entityMtx);
+
+        bx::mtxMul(
+            avater.globalMtxs[idx].data(),
+            localMtxs[idx].data(),      // ← child local が先
+            avater.globalMtxs[node.parent].data()  // ← parent が後
+        );
+    
+    } else {
+        // ルートはentityから
+
+        bx::mtxMul(
+            avater.globalMtxs[idx].data(),
+            entityMtx,
+            localMtxs[idx].data()
+        );
+    }
+
+    calculated[idx] = true;
+}
+
 
 void AvaterSystem::update(const uint64_t& keyStat) {
     for (auto& avater : avaters) {
-        avater.finalMtxs.clear();
+        avater.globalMtxs.clear();
+        avater.globalMtxs.resize(avater.model.nodes.size());
 
         // 向き操作
         if (has(keyStat, KCode::A)) avater.yaw += 0.05f;
@@ -36,60 +73,89 @@ void AvaterSystem::update(const uint64_t& keyStat) {
         }
 
         // --- Entity行列（T * R * S のみ）---
-        float t[16], r[16], s[16], tmp[16], entityMtx[16];
+        float t[16], r[16], s[16], rx[16], tmp[16], tmp2[16], entityMtx[16];
 
         bx::mtxTranslate(t, avater.pos[0], avater.pos[1], avater.pos[2]);
         bx::mtxRotateY(r, avater.yaw);
+        bx::mtxRotateX(rx, -bx::kPiHalf); // ← 座標系補正
 
         bx::mtxIdentity(s);
         s[0] = avater.scale[0];  s[5] = avater.scale[1];  s[10] = avater.scale[2];
 
-        bx::mtxMul(tmp, s, r);
-        bx::mtxMul(entityMtx, tmp, t);
+        bx::mtxMul(tmp, s, rx);
+        bx::mtxMul(tmp2, tmp, r);
+        bx::mtxMul(entityMtx, tmp2, t);
 
-        // --- ノードごと（nodeMtxはメッシュオフセットのみ）---
-        for (const auto& node: avater.model.nodes) {
-            if (node.meshStartIndex < 0 || node.meshCount <= 0) continue;
 
-            float nodeMtx[16];
-            buildTRS(nodeMtx, node.pos, node.rot, node.scale, node.hasRotation);
 
-            // entity * node のみ。移動・向きはentityMtxに全部入ってる
-            std::array<float, 16> finalMtx;
-            bx::mtxMul(finalMtx.data(), entityMtx, nodeMtx);
-            avater.finalMtxs.push_back(finalMtx);
+
+        int nodeIdx = avater.humanoid.bones[
+            static_cast<size_t>(HumanoidBoneType::arm_left_low)
+        ];
+
+        auto& node = avater.model.nodes[nodeIdx];
+
+        // printf("bone idx: %d name: %s\n",
+        //     nodeIdx,
+        //     avater.model.nodes[nodeIdx].name.c_str()
+        // );
+
+        float addRot[4];
+        quatRotateAxis(addRot, 1, 0, 0, 0.05f);
+
+        quatMul(node.rot, node.rot, addRot);
+        quatNormalize(node.rot);
+
+
+
+
+        // local mtx
+        std::vector<std::array<float, 16>> localMtxs;
+        localMtxs.resize(avater.model.nodes.size());
+
+        for (int i = 0; i < avater.model.nodes.size(); i++) {
+            const auto& node = avater.model.nodes[i];
+
+            buildTRS(
+                localMtxs[i].data(),
+                node.pos,
+                node.rot,
+                node.scale,
+                node.hasRotation
+            );
         }
 
-        // --- bone 更新 ---
-        for (const auto& skin: avater.model.skins) {
-            // TODO
+        std::vector<bool> calculated;
+        calculated.resize(avater.model.nodes.size(), false);
+
+        for (int i = 0; i < avater.model.nodes.size(); i++) {
+            calcGlobal(i,calculated,avater,localMtxs,entityMtx);
         }
+
     }
 }
 
 void AvaterSystem::draw(bgfx::ProgramHandle program) {
-	// ===== ノードごと描画 =====
-	for (auto& res: avaters) {
-		int mtxIdx = 0;
-		for (int nodeIdx = 0; nodeIdx < res.model.nodes.size(); nodeIdx++) {
-			const auto& node = res.model.nodes[nodeIdx];
+    for (auto& avater : avaters) {
+        for (int nodeIdx = 0; nodeIdx < (int)avater.model.nodes.size(); nodeIdx++) {
+            const auto& node = avater.model.nodes[nodeIdx];
 
-			if (node.meshStartIndex < 0 || node.meshCount <= 0) continue;
+            // if (node.meshCount <= 0) continue; // メッシュがないなら行列も使わないのでスキップ
 
-			// === 複数primitiveを描画 ===
-			for (int i = 0; i < node.meshCount; i++) {
-				const Mesh& m = res.model.meshes[node.meshStartIndex + i];
+            for (int i = 0; i < node.meshCount; i++) {
+                const Mesh& m = avater.model.meshes[node.meshStartIndex + i];
 
-				bgfx::setTransform(res.finalMtxs[mtxIdx].data());
+                // ★ nodeIdx を直接使うことで、updateで計算した箇所と一致させる
+                bgfx::setTransform(avater.globalMtxs[nodeIdx].data());
 
-				bgfx::setVertexBuffer(0, m.vbh);
-				bgfx::setIndexBuffer(m.ibh);
-
+                bgfx::setVertexBuffer(0, m.vbh);
+                bgfx::setIndexBuffer(m.ibh);
+                
 				// テクスチャバインド（マテリアル → イメージ → テクスチャ）
-				if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(res.model.materialToImage.size())) {
-					int imgIdx = res.model.materialToImage[m.materialIndex];
-					if (imgIdx >= 0 && imgIdx < static_cast<int>(res.model.textures.size()) && res.model.textures[imgIdx].isValid()) {
-						res.model.textures[imgIdx].bind();
+				if (m.materialIndex >= 0 && m.materialIndex < static_cast<int>(avater.model.materialToImage.size())) {
+					int imgIdx = avater.model.materialToImage[m.materialIndex];
+					if (imgIdx >= 0 && imgIdx < static_cast<int>(avater.model.textures.size()) && avater.model.textures[imgIdx].isValid()) {
+						avater.model.textures[imgIdx].bind();
 					}
 				}
 
@@ -101,9 +167,8 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
 					BGFX_STATE_CULL_CCW
 				);
 
-				bgfx::submit(0, program);
-			}
-			mtxIdx++;
-		}
-	}
+                bgfx::submit(0, program);
+            }
+        }
+    }
 }

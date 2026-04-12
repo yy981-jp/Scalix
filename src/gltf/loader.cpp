@@ -166,43 +166,62 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 
 
 void GltfLoaderImpl::parse() {
-	for (const auto& n : model.nodes) {
+	int nodesSize = model.nodes.size();
+	scalixModel.nodes.resize(nodesSize);
+	for (int i = 1; i < nodesSize; i++) {
 		// ===== NODE =====
-		Node node;
+		const auto& tn = model.nodes[i];
+		Node& node = scalixModel.nodes[i];
 		node.meshStartIndex = scalixModel.meshes.size();  // 現在のメッシュ数を開始インデックスとして記録
 
 		// translation
-		if (!n.translation.empty()) {
+		if (!tn.translation.empty()) {
 			node.hasTranslation = true;
-			node.pos[0] = (float)n.translation[0];
-			node.pos[1] = (float)n.translation[1];
-			node.pos[2] = (float)n.translation[2];
+			node.pos[0] = (float)tn.translation[0];
+			node.pos[1] = (float)tn.translation[1];
+			node.pos[2] = (float)tn.translation[2];
 		}
 
 		// rotation
-		if (!n.rotation.empty()) {
+		if (!tn.rotation.empty()) {
 			node.hasRotation = true;
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
-			node.rot[0] = -(float)n.rotation[0];
-			node.rot[1] = -(float)n.rotation[1];
-			node.rot[2] = -(float)n.rotation[2];
-			node.rot[3] = (float)n.rotation[3];
+			node.rot[0] = -(float)tn.rotation[0];
+			node.rot[1] = -(float)tn.rotation[1];
+			node.rot[2] = -(float)tn.rotation[2];
+			node.rot[3] = (float)tn.rotation[3];
 		}
 
 		// scale
-		if (!n.scale.empty()) {
+		if (!tn.scale.empty()) {
 			node.hasScale = true;
-			node.scale[0] = (float)n.scale[0];
-			node.scale[1] = (float)n.scale[1];
-			node.scale[2] = (float)n.scale[2];
+			node.scale[0] = (float)tn.scale[0];
+			node.scale[1] = (float)tn.scale[1];
+			node.scale[2] = (float)tn.scale[2];
 		}
 
 		// meshが存在するnodeに対してのみ実行
-		if (n.mesh >= 0) parseMesh(n);
+		if (tn.mesh >= 0) parseMesh(tn);
 
 		// ノードのメッシュ数を設定
 		node.meshCount = scalixModel.meshes.size() - node.meshStartIndex;
-		scalixModel.nodes.push_back(node);
+
+		// node parent children 登録
+		node.parent = -1; // 初期値
+		for (const auto& child: tn.children) {
+			if (child < 0 || child >= nodesSize) {
+				printf("invalid child index: %d\n", child);
+				continue;
+			}
+
+			if (scalixModel.nodes[child].parent != -1) {
+				printf("multiple parent: %d\n", child);
+			}
+
+			scalixModel.nodes[child].parent = i;
+		}
+		node.children = tn.children;
+
 	}
 
 	// load skin (bone)
