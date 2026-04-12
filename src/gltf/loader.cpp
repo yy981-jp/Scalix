@@ -233,11 +233,11 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 					const float* w = reinterpret_cast<const float*>(ptr);
 					for (int k = 0; k < 4; k++) vert.weights[k] = w[k];
 				} break;
-				case TINYGLTF_COMPONENT_TYPE_BYTE: {
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: {
 					const uint8_t* w = ptr;
 					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 255.0f;
 				} break;
-				case TINYGLTF_COMPONENT_TYPE_SHORT: {
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
 					const uint16_t* w = reinterpret_cast<const uint16_t*>(ptr);
 					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 65535.0f;
 				} break;

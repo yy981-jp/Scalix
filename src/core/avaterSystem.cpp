@@ -77,7 +77,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 
         bx::mtxTranslate(t, avater.pos[0], avater.pos[1], avater.pos[2]);
         bx::mtxRotateY(r, avater.yaw);
-        bx::mtxRotateX(rx, -bx::kPiHalf); // ← 座標系補正
+        bx::mtxRotateX(rx, 0); // ← 座標系補正 (必要であれば-bx::kPiHalf ?)
 
         bx::mtxIdentity(s);
         s[0] = avater.scale[0];  s[5] = avater.scale[1];  s[10] = avater.scale[2];
@@ -151,8 +151,8 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
 
 			bx::mtxMul(
 				jointMtx[i].data(),
-				avater.globalMtxs[nodeIdx].data(),
-				skin.invBind[i].data()
+				skin.invBind[i].data(),
+				avater.globalMtxs[nodeIdx].data()
 			);
 		}
 
@@ -172,6 +172,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
 
 					float pos[4] = {v.x, v.y, v.z, 1.0f};
 					float result[4] = {0,0,0,0};
+					float weightSum = 0.0f;
 
                     // if (vi == 0) {
                     //     printf("w: %f %f %f %f\n",
@@ -193,12 +194,20 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
 						result[1] += tmp[1] * w;
 						result[2] += tmp[2] * w;
 						result[3] += tmp[3] * w;
+						weightSum += w;
 					}
 
 					out = v;
-					out.x = result[0];
-					out.y = result[1];
-					out.z = result[2];
+					// Normalize by weight sum if needed
+					if (weightSum > 0.0f) {
+						out.x = result[0] / weightSum;
+						out.y = result[1] / weightSum;
+						out.z = result[2] / weightSum;
+					} else {
+						out.x = v.x;
+						out.y = v.y;
+						out.z = v.z;
+					}
 				}
 
 
