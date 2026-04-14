@@ -28,6 +28,7 @@ struct Mesh {
 	int materialIndex = -1;  // glTFマテリアルインデックス
 
 	std::vector<int> boneRemap;
+	std::vector<int> boneRemapInverse;
 
 	void create(const std::vector<Vertex>& v, const std::vector<uint16_t>& i) {
 		bgfx::VertexLayout layout;

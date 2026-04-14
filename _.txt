@@ -49,3 +49,17 @@ tinygltf(glTF)やOpenXR(VR)など
 avaterに対する操作をavaterデータ側ではなくsystem側で腕を動かせたりするような機能を充実させる
 worldのデータについては課題が残るが、機能についての実装も検討する必要がある ただ、現段階では現実的ではない
 worldはsystem内部では分割しつつも、連続した世界を作りたい そっちの方が現実味あるじゃん?
+
+
+
+
+########## MEMO ##########
+entityMtx
+   ↓
+localMtx（アニメ適用後）
+   ↓（親子合成）
+globalMtx
+   ↓（invBind掛ける）
+jointMtx
+   ↓（remap圧縮）
+boneMtx（= palette）

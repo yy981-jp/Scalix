@@ -26,7 +26,7 @@ class GltfLoaderImpl {
 	Model scalixModel;
 
 	void parse();
-	void parseMesh(const tinygltf::Node& n);
+	void parseMesh(int nodeId);
 
 public:
 	GltfLoaderImpl(const std::string& path);

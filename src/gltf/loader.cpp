@@ -4,13 +4,14 @@
 #include <bx/math.h>
 
 #include "loader.h"
-#include <unordered_set>
-
+#include <set>
+#include <cassert>
 #include <iostream>
 
 
-void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
-	const auto& tnmesh = model.meshes[n.mesh];
+void GltfLoaderImpl::parseMesh(int nodeId) {
+	const auto& tn = model.nodes[nodeId];
+	const auto& tnmesh = model.meshes[tn.mesh];
 
 	for (const auto& prim : tnmesh.primitives) {
 		Mesh mesh;
@@ -247,48 +248,34 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 
 		// ===== pallet圧縮 =====
 
-		std::unordered_set<int> usedSet;
+		int totalBoneCount = model.skins[tn.skin].joints.size();
 
-		// ① 使用ボーン収集
+		std::vector<int> remap(totalBoneCount, -1);
+		std::vector<int> remapInverse;
+		
+		int newIndex = 0;
+
 		for (auto& vert : verts) {
 			for (int i = 0; i < 4; i++) {
 				if (vert.weights[i] > 0.0001f) {
-					usedSet.insert(vert.joints[i]);
+					int orig = vert.joints[i];
+
+					if (remap[orig] == -1) {
+						remap[orig] = newIndex;
+						remapInverse.push_back(orig);
+						newIndex++;
+					}
 				}
 			}
 		}
 
-		// ② vectorにしてソート（重要！！）
-		std::vector<int> used(usedSet.begin(), usedSet.end());
-		std::sort(used.begin(), used.end());
+		mesh.boneRemap = std::move(remap);
+		mesh.boneRemapInverse = std::move(remapInverse);
 
-		// ③ remap作成
-		std::unordered_map<int, int> remap;
-		mesh.boneRemap.clear();
-		mesh.boneRemap.reserve(used.size());
 
-        const auto& skin = scalixModel.skins[node.skinIndex];
 
-		for (int i = 0; i < (int)used.size(); i++) {
-			int jointIdx = used[i];                 // ← joint index
-			int nodeIdx  = skin.joints[jointIdx];
 
-			remap[jointIdx] = i;
-			mesh.boneRemap.push_back(nodeIdx);      // ← node indexを入れる
-		}
-
-		// ④ 頂点書き換え
-		for (auto& vert : verts) {
-			for (int i = 0; i < 4; i++) {
-				if (vert.weights[i] > 0.0001f) {
-					vert.joints[i] = remap[vert.joints[i]];
-				} else {
-					vert.joints[i] = 0;
-				}
-			}
-		}
-
-		// 格納
+		// Mesh全体格納
 		mesh.create(verts, idx);
 		scalixModel.meshes.push_back(mesh);
 
@@ -333,7 +320,7 @@ void GltfLoaderImpl::parse() {
 		}
 
 		// meshが存在するnodeに対してのみ実行
-		if (tn.mesh >= 0) parseMesh(tn);
+		if (tn.mesh >= 0) parseMesh(i);
 
 		// ノードのメッシュ数を設定
 		node.meshCount = scalixModel.meshes.size() - node.meshStartIndex;
@@ -443,7 +430,7 @@ void GltfLoaderImpl::load() {
 	}
 	
 	// ===== イメージから一意のテクスチャを読み込み =====
-	std::unordered_set<int> uniqueImages;
+	std::set<int> uniqueImages;
 	for (int idx : scalixModel.materialToImage) {
 		if (idx >= 0) {
 			uniqueImages.insert(idx);

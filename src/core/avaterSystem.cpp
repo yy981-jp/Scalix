@@ -95,11 +95,6 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 
         auto& node = avater.model.nodes[nodeIdx];
 
-        // printf("bone idx: %d name: %s\n",
-        //     nodeIdx,
-        //     avater.model.nodes[nodeIdx].name.c_str()
-        // );
-
         float addRot[4];
         quatRotateAxis(addRot, 1, 0, 0, 1);
 
@@ -164,19 +159,19 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                 if (node.skinIndex < 0) continue; // ← skin無いやつ除外
 
                 for (int i = 0; i < node.meshCount; i++) {
-                    const Mesh& m = avater.model.meshes[node.meshStartIndex + i];
+                    const Mesh& mesh = avater.model.meshes[node.meshStartIndex + i];
 
                     // ===== パレット =====
                     std::vector<std::array<float,16>> palette;
-                    palette.resize(m.boneRemap.size());
+                    palette.resize(mesh.boneRemapInverse.size());
 
-                    for (int j = 0; j < (int)m.boneRemap.size(); j++) {
-                        int oldIdx = m.boneRemap[j];
-                        palette[j] = jointMtx[oldIdx];
+                    for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {
+                        int orig = mesh.boneRemapInverse[i];
+                        palette[i] = jointMtx[orig];
                     }
 
-                    if (m.boneRemap.size() > 120) {
-                        printf("ERROR: boneRemap too big: %zu\n", m.boneRemap.size());
+                    if (mesh.boneRemapInverse.size() > 120) {
+                        printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
                         continue;
                     }
                     bgfx::setUniform(u_bones, palette.data(), palette.size());
@@ -187,14 +182,14 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                     bgfx::setTransform(identity);
 
                     // ===== 頂点 =====
-                    bgfx::setVertexBuffer(0, m.vbh);
-                    bgfx::setIndexBuffer(m.ibh);
+                    bgfx::setVertexBuffer(0, mesh.vbh);
+                    bgfx::setIndexBuffer(mesh.ibh);
 
                     // ===== テクスチャ =====
-                    if (m.materialIndex >= 0 &&
-                        m.materialIndex < (int)avater.model.materialToImage.size()) {
+                    if (mesh.materialIndex >= 0 &&
+                        mesh.materialIndex < (int)avater.model.materialToImage.size()) {
 
-                        int imgIdx = avater.model.materialToImage[m.materialIndex];
+                        int imgIdx = avater.model.materialToImage[mesh.materialIndex];
 
                         if (imgIdx >= 0 &&
                             imgIdx < (int)avater.model.textures.size() &&
