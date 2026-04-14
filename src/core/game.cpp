@@ -93,7 +93,7 @@ void Game::draw() {
 
 	bgfx::setViewTransform(0, view, proj);
 
-	avaterSystem.draw(program, u_bones);
+	avaterSystem.draw(program, boneTexture);
 }
 
 void Game::gameInit() {
@@ -108,11 +108,8 @@ void Game::gameInit() {
 	// ===== load Shader =====
 	program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 
-	// const bgfx::Caps* caps = bgfx::getCaps();
-	// int maxMat4 = caps->limits.maxUniforms / 4;
-	// std::cout << "max: " << maxMat4 << "\n";
-
-	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+	// ===== Initialize bone matrix texture =====
+	boneTexture.create(120);  // Max 120 bones
 
 }
 

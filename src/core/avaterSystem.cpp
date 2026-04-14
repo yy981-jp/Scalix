@@ -95,8 +95,14 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 
         auto& node = avater.model.nodes[nodeIdx];
 
+        // printf("bone idx: %d name: %s\n",
+        //     nodeIdx,
+        //     avater.model.nodes[nodeIdx].name.c_str()
+        // );
+
+
         float addRot[4];
-        quatRotateAxis(addRot, 1, 0, 0, 1);
+        quatRotateAxis(addRot, 1, 0, 0, 0.5f);
 
         quatMul(node.rot, node.rot, addRot);
         quatNormalize(node.rot);
@@ -130,7 +136,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
     }
 }
 
-void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
+void AvaterSystem::draw(bgfx::ProgramHandle program, BoneMatrixTexture& boneTexture) {
     for (auto& avater : avaters) {
 
         if (avater.model.skins.empty()) continue;
@@ -144,6 +150,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
             for (int i = 0; i < (int)skin.joints.size(); i++) {
                 int nodeIdx = skin.joints[i];
 
+                // これで正しい 順序を逆にすると表示が壊れた
                 bx::mtxMul(
                     jointMtx[i].data(),
                     skin.invBind[i].data(),
@@ -174,7 +181,9 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                         printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
                         continue;
                     }
-                    bgfx::setUniform(u_bones, palette.data(), palette.size());
+                    
+                    // ===== Update bone matrix data =====
+                    boneTexture.update(palette);
 
                     // ===== transform =====
                     float identity[16];

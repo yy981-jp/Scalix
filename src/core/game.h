@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include "../gfx/shader.h"
+#include "../gfx/texture.h"
 #include "../gltf/loader.h"
 #include "key.h"
 
@@ -21,7 +22,7 @@ class Game {
     uint64_t keyStat = 0; // KCode
 
 	bgfx::ProgramHandle program;
-	bgfx::UniformHandle u_bones;
+	BoneMatrixTexture boneTexture;
 	AvaterSystem avaterSystem;
 
 	constexpr static int
@@ -44,4 +45,5 @@ public:
 
 	void tick();
 	inline bool isRunning() { return running; }
+	BoneMatrixTexture& getBoneTexture() { return boneTexture; }
 };

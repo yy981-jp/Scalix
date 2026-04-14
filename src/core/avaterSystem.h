@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "../model/model.h"
+#include "../gfx/texture.h"
 
 
 class AvaterSystem {
@@ -11,5 +12,5 @@ class AvaterSystem {
 public:
 	void loadData(const std::vector<std::string> path);
 	void update(const uint64_t& keyStat);
-	void draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones);
+	void draw(bgfx::ProgramHandle program, BoneMatrixTexture& boneTexture);
 };

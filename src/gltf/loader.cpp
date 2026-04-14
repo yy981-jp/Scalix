@@ -12,6 +12,7 @@
 void GltfLoaderImpl::parseMesh(int nodeId) {
 	const auto& tn = model.nodes[nodeId];
 	const auto& tnmesh = model.meshes[tn.mesh];
+	const auto& tnskin = model.skins[tn.skin];
 
 	for (const auto& prim : tnmesh.primitives) {
 		Mesh mesh;
@@ -248,17 +249,34 @@ void GltfLoaderImpl::parseMesh(int nodeId) {
 
 		// ===== pallet圧縮 =====
 
-		int totalBoneCount = model.skins[tn.skin].joints.size();
+
+
+		// === 先に node → joint 変換 ===
+		for (auto& vert : verts) {
+			for (int i = 0; i < 4; i++) {
+				int nodeIndex = vert.joints[i];
+
+				for (int j = 0; j < tnskin.joints.size(); j++) {
+					if (tnskin.joints[j] == nodeIndex) {
+						vert.joints[i] = j;
+						break;
+					}
+				}
+			}
+		}
+
+
+		int totalBoneCount = tnskin.joints.size();
 
 		std::vector<int> remap(totalBoneCount, -1);
 		std::vector<int> remapInverse;
-		
+
 		int newIndex = 0;
 
 		for (auto& vert : verts) {
 			for (int i = 0; i < 4; i++) {
 				if (vert.weights[i] > 0.0001f) {
-					int orig = vert.joints[i];
+					int orig = vert.joints[i]; // ← 今度はOK（joint index）
 
 					if (remap[orig] == -1) {
 						remap[orig] = newIndex;
@@ -269,9 +287,36 @@ void GltfLoaderImpl::parseMesh(int nodeId) {
 			}
 		}
 
+
+		// ===== JOINTを圧縮インデックスに変換 =====
+		for (auto& vert : verts) {
+			for (int i = 0; i < 4; i++) {
+				int orig = vert.joints[i];
+
+				if (orig >= 0 && remap[orig] != -1) {
+					vert.joints[i] = remap[orig];
+				}
+			}
+		}
+
+		// 正規化
+		for (auto& vert : verts) {
+			float sum = vert.weights[0] + vert.weights[1] +
+						vert.weights[2] + vert.weights[3];
+
+			if (sum > 0.00001f) {
+				for (int i = 0; i < 4; i++) {
+					vert.weights[i] /= sum;
+				}
+			}
+			if (sum < 0.00001f) {
+				vert.weights[0] = 1.0f;
+				vert.joints[0] = 0;
+			}
+		}
+
 		mesh.boneRemap = std::move(remap);
 		mesh.boneRemapInverse = std::move(remapInverse);
-
 
 
 
