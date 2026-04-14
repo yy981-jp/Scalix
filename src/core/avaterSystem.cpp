@@ -33,14 +33,16 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
     if (node.parent >= 0) {
         calcGlobal(node.parent, calculated, avater, localMtxs, entityMtx);
 
+        // 順序検証済み
         bx::mtxMul(
             avater.globalMtxs[idx].data(),
-            localMtxs[idx].data(),      // ← child local が先
-            avater.globalMtxs[node.parent].data()  // ← parent が後
+            localMtxs[idx].data(),
+            avater.globalMtxs[node.parent].data()
         );
     
     } else {
         // ルートはentityから
+        // calcGlobal(node.parent, calculated, avater, localMtxs, entityMtx);
 
         bx::mtxMul(
             avater.globalMtxs[idx].data(),
@@ -90,15 +92,23 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 
 
         int nodeIdx = avater.humanoid.bones[
-            static_cast<size_t>(HumanoidBoneType::arm_left_low)
+            static_cast<size_t>(HumanoidBoneType::arm_left_up)
         ];
+
+        // int nodeIdx = avater.humanoid.spines[0];
 
         auto& node = avater.model.nodes[nodeIdx];
 
-        float addRot[4];
-        quatRotateAxis(addRot, 1, 0, 0, 1);
+        // printf("bone idx: %d name: %s\n",
+        //     nodeIdx,
+        //     avater.model.nodes[nodeIdx].name.c_str()
+        // );
 
-        quatMul(node.rot, node.rot, addRot);
+
+        float addRot[4];
+        quatRotateAxis(addRot, 1, 0, 0, 0.5f);
+
+        quatMul(node.rot, addRot, node.rot);
         quatNormalize(node.rot);
 
 
@@ -133,6 +143,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
     for (auto& avater : avaters) {
 
+        // 骨構造を持たないavaterは処理しない
         if (avater.model.skins.empty()) continue;
 
         for (auto& skin : avater.model.skins) {
@@ -144,6 +155,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
             for (int i = 0; i < (int)skin.joints.size(); i++) {
                 int nodeIdx = skin.joints[i];
 
+                // これで正しい 順序を逆にすると表示が壊れた
                 bx::mtxMul(
                     jointMtx[i].data(),
                     skin.invBind[i].data(),
@@ -161,6 +173,10 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                 for (int i = 0; i < node.meshCount; i++) {
                     const Mesh& mesh = avater.model.meshes[node.meshStartIndex + i];
 
+                    printf("%d -> %d\n", i, mesh.boneRemapInverse[i]);
+                    printf("node = %d\n", skin.joints[mesh.boneRemapInverse[i]]);
+
+
                     // ===== パレット =====
                     std::vector<std::array<float,16>> palette;
                     palette.resize(mesh.boneRemapInverse.size());
@@ -174,6 +190,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                         printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
                         continue;
                     }
+                    
                     bgfx::setUniform(u_bones, palette.data(), palette.size());
 
                     // ===== transform =====

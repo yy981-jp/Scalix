@@ -251,7 +251,7 @@ void GltfLoaderImpl::parseMesh(int nodeId) {
 		int totalBoneCount = model.skins[tn.skin].joints.size();
 
 		std::vector<int> remap(totalBoneCount, -1);
-		std::vector<int> remapInverse;
+		std::vector<int> remapInverse; // <- boneIndex
 		
 		int newIndex = 0;
 
