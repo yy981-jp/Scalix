@@ -54,14 +54,14 @@ enum class BoneType: uint8_t {
 	arm,
 	leg,
 	hand,
-	foot
+	foot,
 };
 
 enum class Side: uint8_t {
 	unknown,
 	center,
 	left,
-	right
+	right,
 };
 
 enum class Level: uint8_t {
@@ -113,9 +113,13 @@ static const std::unordered_map<std::string, Level> levelMap = {
 /// @param vec 
 /// @return nodeId
 inline int select(const std::vector<NodeInfo> vec) {
+	if (vec.empty()) return -404;
 	return std::ranges::max_element(vec, {}, &NodeInfo::score) ->nodeId;
 }
 
+static inline void selectHelper(std::span<int> to, std::span<const std::vector<NodeInfo>> from, HBT target) {
+	to[static_cast<size_t>(target)] = select( from[static_cast<size_t>(target)] );
+}
 
 void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skins) {
 	std::vector<NodeInfo> cands;
@@ -143,11 +147,8 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 		}
 	}
 
-	std::vector<NodeInfo> heads;
-	std::vector<NodeInfo> arms_left_up;
-	std::vector<NodeInfo> arms_left_low;
-	std::vector<NodeInfo> arms_right_up;
-	std::vector<NodeInfo> arms_right_low;
+	std::array<std::vector<NodeInfo>,static_cast<size_t>(HBT::Count)> bones_init;
+
 	std::vector<NodeInfo> spines_;
 
 	// 配列に分配
@@ -155,17 +156,28 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	for (const auto& node: cands) {
 		switch (node.type) {
 			case BoneType::head: {
-				heads.push_back(node);
+				bones_init[static_cast<size_t>(HBT::head)].push_back(node);
 			} break;
 
 			case BoneType::arm: {
 				if (node.side == Side::left) {
-					if (node.level == Level::upper) arms_left_up.push_back(node);
-					if (node.level == Level::lower) arms_left_low.push_back(node);
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::arm_left_up)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::arm_left_low)].push_back(node);
 				}
 				if (node.side == Side::right) {
-					if (node.level == Level::upper) arms_right_up.push_back(node);
-					if (node.level == Level::lower) arms_right_low.push_back(node);
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::arm_right_up)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::arm_right_low)].push_back(node);
+				}
+			} break;
+
+			case BoneType::leg: {
+				if (node.side == Side::left) {
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::leg_left_up)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::leg_left_low)].push_back(node);
+				}
+				if (node.side == Side::right) {
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::leg_right_up)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::leg_right_low)].push_back(node);
 				}
 			} break;
 
@@ -176,13 +188,21 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	}
 	
 	// 最適解を選択
-	for (const auto& spine: spines_)
-		this->spines.push_back(spine.nodeId);
-	bones[static_cast<size_t>(HumanoidBoneType::head)] = select(heads);
-	bones[static_cast<size_t>(HumanoidBoneType::arm_left_up)] = select(arms_left_up);
-	bones[static_cast<size_t>(HumanoidBoneType::arm_left_low)] = select(arms_left_low);
-	bones[static_cast<size_t>(HumanoidBoneType::arm_right_up)] = select(arms_right_up);
-	bones[static_cast<size_t>(HumanoidBoneType::arm_right_low)] = select(arms_right_low);
+	for (const auto& spine: spines_) this->spines.push_back(spine.nodeId); // spineはすべて使用
+
+	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
+		selectHelper(bones, bones_init, static_cast<HBT>(i));
+	}
+
+	// selectHelper(bones, bones_init, HBT::head);
+	// selectHelper(bones, bones_init, HBT::arm_left_up);
+	// selectHelper(bones, bones_init, HBT::arm_left_low);
+	// selectHelper(bones, bones_init, HBT::arm_right_up);
+	// selectHelper(bones, bones_init, HBT::arm_right_low);
+	// selectHelper(bones, bones_init, HBT::leg_left_up);
+	// selectHelper(bones, bones_init, HBT::leg_left_low);
+	// selectHelper(bones, bones_init, HBT::leg_right_up);
+	// selectHelper(bones, bones_init, HBT::leg_right_low);
 	
 
 	// exit(1000);

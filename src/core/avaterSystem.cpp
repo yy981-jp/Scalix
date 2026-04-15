@@ -74,7 +74,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
             avater.pos[2] -= cachesv.getCos(avater.yaw) * avater.speed;
         }
 
-        // --- Entity行列（T * R * S のみ）---
+        // --- Entity行列 ---
         float t[16], r[16], s[16], flip[16], tmp[16], tmp2[16], entityMtx[16];
 
         bx::mtxTranslate(t, avater.pos[0], avater.pos[1], avater.pos[2]);
@@ -92,7 +92,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 
 
         int nodeIdx = avater.humanoid.bones[
-            static_cast<size_t>(HumanoidBoneType::arm_left_low)
+            static_cast<size_t>(HBT::arm_left_low)
         ];
 
         // int nodeIdx = avater.humanoid.spines[0];

@@ -34,7 +34,7 @@ enum class Status {
 	stay, walk,
 };
 
-enum class HumanoidBoneType {
+enum class HBT {
 	head,
 	arm_left_up, arm_left_low,
 	arm_right_up, arm_right_low,
@@ -47,12 +47,8 @@ enum class HumanoidBoneType {
 struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
-	Humanoid() {
-		bones.resize(static_cast<size_t>(HumanoidBoneType::Count));
-	}
-
 	// node index
-	std::vector<int> bones;
+	int bones[static_cast<size_t>(HBT::Count)];
 	std::vector<int> spines;
 };
 
