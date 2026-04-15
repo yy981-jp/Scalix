@@ -99,10 +99,10 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 
         auto& node = avater.model.nodes[nodeIdx];
 
-        // printf("bone idx: %d name: %s\n",
-        //     nodeIdx,
-        //     avater.model.nodes[nodeIdx].name.c_str()
-        // );
+        printf("bone idx: %d name: %s\n",
+            nodeIdx,
+            avater.model.nodes[nodeIdx].name.c_str()
+        );
 
 
         float addRot[4];
@@ -146,89 +146,115 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
         // 骨構造を持たないavaterは処理しない
         if (avater.model.skins.empty()) continue;
 
-        for (auto& skin : avater.model.skins) {
 
-            // ===== 全ボーン行列 =====
-            std::vector<std::array<float,16>> jointMtx;
+        std::vector<std::vector<std::array<float,16>>> allJointMtx;
+        allJointMtx.resize(avater.model.skins.size());
+
+        for (int skinIdx = 0; skinIdx < avater.model.skins.size(); skinIdx++) {
+            const Skin& skin = avater.model.skins[skinIdx];
+
+            auto& jointMtx = allJointMtx[skinIdx];
             jointMtx.resize(skin.joints.size());
 
             for (int i = 0; i < (int)skin.joints.size(); i++) {
                 int nodeIdx = skin.joints[i];
 
-                // これで正しい 順序を逆にすると表示が壊れた
+                // 順序検証済み
                 bx::mtxMul(
                     jointMtx[i].data(),
                     skin.invBind[i].data(),
                     avater.globalMtxs[nodeIdx].data()
                 );
             }
+            for (int i = 0; i < 10; i++) {
+                int nodeIdx = skin.joints[i];
 
-            // ===== meshごと =====
-            for (int nodeIdx = 0; nodeIdx < (int)avater.model.nodes.size(); nodeIdx++) {
-                const auto& node = avater.model.nodes[nodeIdx];
+                printf("joint %d -> node %d\n", i, nodeIdx);
 
-                if (node.meshCount == 0) continue;
-                if (node.skinIndex < 0) continue; // ← skin無いやつ除外
-
-                for (int i = 0; i < node.meshCount; i++) {
-                    const Mesh& mesh = avater.model.meshes[node.meshStartIndex + i];
-
-                    printf("%d -> %d\n", i, mesh.boneRemapInverse[i]);
-                    printf("node = %d\n", skin.joints[mesh.boneRemapInverse[i]]);
-
-
-                    // ===== パレット =====
-                    std::vector<std::array<float,16>> palette;
-                    palette.resize(mesh.boneRemapInverse.size());
-
-                    for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {
-                        int orig = mesh.boneRemapInverse[i];
-                        palette[i] = jointMtx[orig];
-                    }
-
-                    if (mesh.boneRemapInverse.size() > 120) {
-                        printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
-                        continue;
-                    }
-                    
-                    bgfx::setUniform(u_bones, palette.data(), palette.size());
-
-                    // ===== transform =====
-                    float identity[16];
-                    bx::mtxIdentity(identity);
-                    bgfx::setTransform(identity);
-
-                    // ===== 頂点 =====
-                    bgfx::setVertexBuffer(0, mesh.vbh);
-                    bgfx::setIndexBuffer(mesh.ibh);
-
-                    // ===== テクスチャ =====
-                    if (mesh.materialIndex >= 0 &&
-                        mesh.materialIndex < (int)avater.model.materialToImage.size()) {
-
-                        int imgIdx = avater.model.materialToImage[mesh.materialIndex];
-
-                        if (imgIdx >= 0 &&
-                            imgIdx < (int)avater.model.textures.size() &&
-                            avater.model.textures[imgIdx].isValid()) {
-
-                            avater.model.textures[imgIdx].bind();
-                        }
-                    }
-
-                    // ===== state =====
-                    bgfx::setState(
-                        BGFX_STATE_WRITE_RGB |
-                        BGFX_STATE_WRITE_A   |
-                        BGFX_STATE_WRITE_Z   |
-                        BGFX_STATE_DEPTH_TEST_LESS |
-                        BGFX_STATE_CULL_CCW
-                    );
-
-                    // ===== draw =====
-                    bgfx::submit(0, program);
-                }
+                printf("global pos: %f %f %f\n",
+                    avater.globalMtxs[nodeIdx][12],
+                    avater.globalMtxs[nodeIdx][13],
+                    avater.globalMtxs[nodeIdx][14]
+                );
             }
         }
+
+
+        // === nodeのloop 描画loop本体とも言える ===
+        for (int nodeId = 0; nodeId < avater.model.nodes.size(); nodeId++) {
+            const Node& node = avater.model.nodes[nodeId];
+
+            // 処理する必要のないものを除外
+            if (node.meshCount == 0) continue;
+            if (node.skinIndex < 0) continue;
+
+            for (int i = 0; i < node.meshCount; i++) {
+                const Mesh& mesh = avater.model.meshes[node.meshStartIndex + i];
+
+                // ===== パレット =====
+                std::vector<std::array<float,16>> palette;
+                palette.resize(mesh.boneRemapInverse.size());
+
+                for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {
+                    int orig = mesh.boneRemapInverse[i];
+                    palette[i] = allJointMtx[node.skinIndex][orig];
+                }
+
+                // for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {
+                //     int jointIdx = mesh.boneRemapInverse[i];
+
+                //     int nodeIdx =  avater.model.skins[node.skinIndex].joints[jointIdx];
+
+                //     printf("palette[%d] -> joint %d -> node %d\n", i, jointIdx, nodeIdx);
+                // }
+
+                if (mesh.boneRemapInverse.size() > 120) {
+                    printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
+                    continue;
+                }
+                
+                bgfx::setUniform(u_bones, palette.data(), palette.size());
+
+                // ===== transform =====
+                float identity[16];
+                bx::mtxIdentity(identity);
+                bgfx::setTransform(identity);
+
+                // ===== 頂点 =====
+                bgfx::setVertexBuffer(0, mesh.vbh);
+                bgfx::setIndexBuffer(mesh.ibh);
+
+                // ===== テクスチャ =====
+                if (mesh.materialIndex >= 0 &&
+                    mesh.materialIndex < (int)avater.model.materialToImage.size()) {
+
+                    int imgIdx = avater.model.materialToImage[mesh.materialIndex];
+
+                    if (imgIdx >= 0 &&
+                        imgIdx < (int)avater.model.textures.size() &&
+                        avater.model.textures[imgIdx].isValid()) {
+
+                        avater.model.textures[imgIdx].bind();
+                    }
+                }
+
+                // ===== state =====
+                bgfx::setState(
+                    BGFX_STATE_WRITE_RGB |
+                    BGFX_STATE_WRITE_A   |
+                    BGFX_STATE_WRITE_Z   |
+                    BGFX_STATE_DEPTH_TEST_LESS |
+                    BGFX_STATE_CULL_CCW
+                );
+
+                // ===== draw =====
+                bgfx::submit(0, program);
+            }
+
+            
+        }
     }
+
+
+
 }

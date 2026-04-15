@@ -27,6 +27,8 @@ struct Mesh {
 	uint16_t indexCount{};
 	int materialIndex = -1;  // glTFマテリアルインデックス
 
+	std::vector<Vertex> verts;
+
 	std::vector<int> boneRemap;
 	std::vector<int> boneRemapInverse;
 

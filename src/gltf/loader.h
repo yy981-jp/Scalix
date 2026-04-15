@@ -14,8 +14,6 @@ class GltfLoaderImpl {
 	tinygltf::BufferView posView;
 	tinygltf::Buffer posBuf;
 
-	std::vector<Vertex> verts;
-
 	const uint8_t* posPtr;
 	size_t posStride;
 	const float* norPtr = nullptr;
@@ -27,6 +25,7 @@ class GltfLoaderImpl {
 
 	void parse();
 	void parseMesh(int nodeId);
+	void buildPalletCompress();
 
 public:
 	GltfLoaderImpl(const std::string& path);

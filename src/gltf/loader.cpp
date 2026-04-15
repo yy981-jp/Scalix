@@ -22,8 +22,7 @@ void GltfLoaderImpl::parseMesh(int nodeId) {
 
 		auto& attrs = prim.attributes;
 
-		// 毎回vertexデータをクリア
-		verts.clear();
+		std::vector<Vertex> verts;
 
 		// ===== POSITION =====
 		if (!attrs.count("POSITION"))
@@ -245,35 +244,7 @@ void GltfLoaderImpl::parseMesh(int nodeId) {
 			}
 		}
 
-
-		// ===== pallet圧縮 =====
-
-		int totalBoneCount = model.skins[tn.skin].joints.size();
-
-		std::vector<int> remap(totalBoneCount, -1);
-		std::vector<int> remapInverse; // <- boneIndex
-		
-		int newIndex = 0;
-
-		for (auto& vert : verts) {
-			for (int i = 0; i < 4; i++) {
-				if (vert.weights[i] > 0.0001f) {
-					int orig = vert.joints[i];
-
-					if (remap[orig] == -1) {
-						remap[orig] = newIndex;
-						remapInverse.push_back(orig);
-						newIndex++;
-					}
-				}
-			}
-		}
-
-		mesh.boneRemap = std::move(remap);
-		mesh.boneRemapInverse = std::move(remapInverse);
-
-
-
+		mesh.verts = verts;
 
 		// Mesh全体格納
 		mesh.create(verts, idx);
@@ -365,8 +336,12 @@ void GltfLoaderImpl::parse() {
 			);
 
 			skin.invBind.resize(accessor.count);
-			
-			memcpy(skin.invBind.data(), data, sizeof(float) * 16 * accessor.count);
+
+			for (size_t i = 0; i < accessor.count; i++) {
+				const float* src = data + i * 16;
+
+				memcpy(skin.invBind[i].data(), src, sizeof(float) * 16);
+			}
 
 		} else {
 			// glTFにデータが無い場合はidentityで初期化
@@ -377,7 +352,70 @@ void GltfLoaderImpl::parse() {
 			}
 		}
 		scalixModel.skins.push_back(skin);
+
+		// for (int i = 0; i < skin.joints.size(); i++) {
+		// 	printf("joint[%d] = node %d\n", i, skin.joints[i]);
+		// }
+		// for (int i = 0; i < skin.invBind.size(); i++) {
+		// 	printf("invBind[%d] loaded\n", i);
+		// }
 	}
+}
+
+void GltfLoaderImpl::buildPalletCompress() {
+	// ===== pallet圧縮 =====
+
+	for (const auto& node : scalixModel.nodes) {
+
+		if (node.skinIndex < 0) continue;
+
+		const auto& skin = scalixModel.skins[node.skinIndex];
+		int totalBoneCount = skin.joints.size();
+
+		std::vector<int> remap(totalBoneCount, -1);
+		std::vector<int> remapInverse;
+
+		int newIndex = 0;
+
+		// このnodeに紐づくmeshだけ処理する必要あり
+		for (int mi = 0; mi < node.meshCount; mi++) {
+			auto& mesh = scalixModel.meshes[node.meshStartIndex + mi];
+
+					
+		for (auto& vert : mesh.verts) {
+
+			for (int i = 0; i < 4; i++) {
+				if (vert.weights[i] <= 0.0001f) continue;
+
+				int nodeIndex = vert.joints[i]; // ← ここが本質
+
+				// nodeIndex → jointIndex変換
+				int jointIndex = -1;
+				for (int j = 0; j < skin.joints.size(); j++) {
+					if (skin.joints[j] == nodeIndex) {
+						jointIndex = j;
+						break;
+					}
+				}
+
+				if (jointIndex == -1) continue;
+
+				int orig = jointIndex;
+
+				if (remap[orig] == -1) {
+					remap[orig] = newIndex;
+					remapInverse.push_back(orig);
+					newIndex++;
+				}
+			}
+		}
+
+
+			mesh.boneRemap = remap;
+			mesh.boneRemapInverse = remapInverse;
+		}
+	}
+
 }
 
 
@@ -467,4 +505,6 @@ void GltfLoaderImpl::load() {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
 		}
 	}
+
+	buildPalletCompress();
 }
