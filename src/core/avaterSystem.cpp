@@ -75,16 +75,16 @@ void AvaterSystem::update(const uint64_t& keyStat) {
         }
 
         // --- Entity行列（T * R * S のみ）---
-        float t[16], r[16], s[16], rx[16], tmp[16], tmp2[16], entityMtx[16];
+        float t[16], r[16], s[16], flip[16], tmp[16], tmp2[16], entityMtx[16];
 
         bx::mtxTranslate(t, avater.pos[0], avater.pos[1], avater.pos[2]);
         bx::mtxRotateY(r, avater.yaw);
-        bx::mtxRotateX(rx, 0); // ← 座標系補正 (必要であれば-bx::kPiHalf ?)
+        bx::mtxScale(flip, -1, 1, 1);
 
         bx::mtxIdentity(s);
         s[0] = avater.scale[0];  s[5] = avater.scale[1];  s[10] = avater.scale[2];
 
-        bx::mtxMul(tmp, s, rx);
+        bx::mtxMul(tmp, s, flip);
         bx::mtxMul(tmp2, tmp, r);
         bx::mtxMul(entityMtx, tmp2, t);
 
@@ -92,7 +92,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 
 
         int nodeIdx = avater.humanoid.bones[
-            static_cast<size_t>(HumanoidBoneType::arm_left_up)
+            static_cast<size_t>(HumanoidBoneType::arm_left_low)
         ];
 
         // int nodeIdx = avater.humanoid.spines[0];
@@ -247,7 +247,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                     BGFX_STATE_WRITE_A          |
                     BGFX_STATE_WRITE_Z            |
                     BGFX_STATE_DEPTH_TEST_LESS    |
-                    BGFX_STATE_CULL_CCW
+                    BGFX_STATE_CULL_CW
                 );
 
                 bgfx::submit(0, program);

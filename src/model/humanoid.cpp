@@ -151,6 +151,7 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	std::vector<NodeInfo> spines_;
 
 	// 配列に分配
+	// なぜかavaterが反転しているのでそれを考慮
 	for (const auto& node: cands) {
 		switch (node.type) {
 			case BoneType::head: {
@@ -174,10 +175,6 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 		}
 	}
 	
-	// printf("DEBUG: heads:%d arms_ur:%d arms_lr:%d arms_ul:%d arms_ll:%d spines:%d",
-	// 	heads.size(), arms_right_up.size(), arms_right_low.size(), arms_left_up.size(), arms_left_low.size(), spines_.size());
-
-
 	// 最適解を選択
 	for (const auto& spine: spines_)
 		this->spines.push_back(spine.nodeId);
