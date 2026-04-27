@@ -130,7 +130,6 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 			NodeInfo cand;
 			cand.nodeId = nodeId;
 			for (auto& w : words) {
-				// std::cout << w << " ";
 				if (auto it = wordMap.find(w); it != wordMap.end())
 					cand.type = it->second;
 				if (auto it = sideMap.find(w); it != sideMap.end())
@@ -143,7 +142,6 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 					cand.score -= 100;
 			}
 			cands.push_back(cand);
-			// printf("\n");
 		}
 	}
 
@@ -152,7 +150,6 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	std::vector<NodeInfo> spines_;
 
 	// 配列に分配
-	// なぜかavaterが反転しているのでそれを考慮
 	for (const auto& node: cands) {
 		switch (node.type) {
 			case BoneType::head: {
@@ -194,16 +191,4 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
 	}
 
-	// selectHelper(bones, bones_init, HBT::head);
-	// selectHelper(bones, bones_init, HBT::arm_left_up);
-	// selectHelper(bones, bones_init, HBT::arm_left_low);
-	// selectHelper(bones, bones_init, HBT::arm_right_up);
-	// selectHelper(bones, bones_init, HBT::arm_right_low);
-	// selectHelper(bones, bones_init, HBT::leg_left_up);
-	// selectHelper(bones, bones_init, HBT::leg_left_low);
-	// selectHelper(bones, bones_init, HBT::leg_right_up);
-	// selectHelper(bones, bones_init, HBT::leg_right_low);
-	
-
-	// exit(1000);
 }

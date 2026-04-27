@@ -57,22 +57,12 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
 
 void AvaterSystem::update(const uint64_t& keyStat) {
     for (auto& avater : avaters) {
+
+        // avater update
+        avater.update(keyStat);
+
         avater.globalMtxs.clear();
         avater.globalMtxs.resize(avater.model.nodes.size());
-
-        // 向き操作
-        if (has(keyStat, KCode::A)) avater.yaw += 0.05f;
-        if (has(keyStat, KCode::D)) avater.yaw -= 0.05f;
-
-        // 移動 → yawから直接XZ成分を計算してpos更新
-        if (has(keyStat, KCode::W)) {
-            avater.pos[0] -= cachesv.getSin(avater.yaw) * avater.speed;
-            avater.pos[2] += cachesv.getCos(avater.yaw) * avater.speed;
-        }
-        if (has(keyStat, KCode::S)) {
-            avater.pos[0] += cachesv.getSin(avater.yaw) * avater.speed;
-            avater.pos[2] -= cachesv.getCos(avater.yaw) * avater.speed;
-        }
 
         // --- Entity行列 ---
         float t[16], r[16], s[16], flip[16], tmp[16], tmp2[16], entityMtx[16];
@@ -141,7 +131,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
 }
 
 
-void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
+void AvaterSystem::draw(bgfx::ProgramHandle program) {
     for (auto& avater : avaters) {
 
         // ===== とりあえず skin 0 を使う =====

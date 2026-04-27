@@ -10,6 +10,7 @@
 #include "../gfx/shader.h"
 #include "../gltf/loader.h"
 #include "key.h"
+#include "camera.h"
 
 #include "avaterSystem.h"
 
@@ -21,14 +22,14 @@ class Game {
     uint64_t keyStat = 0; // KCode
 
 	bgfx::ProgramHandle program;
-	bgfx::UniformHandle u_bones;
+	// bgfx::UniformHandle u_bones;
 	AvaterSystem avaterSystem;
+
+	Camera cam{WIDTH,HEIGHT};
 
 	constexpr static int
 		WIDTH = 1200,
 		HEIGHT = 900;
-	constexpr static float
-		SceneAspect = (float)WIDTH / (float)HEIGHT;
 
 
 	void gameInit();

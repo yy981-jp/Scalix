@@ -80,20 +80,8 @@ void Game::update() {
 
 
 void Game::draw() {
-	// ===== カメラ =====
-	float view[16];
-	float proj[16];
-
-	bx::mtxLookAt(view,
-		bx::Vec3{0.0f, 0.7f, -15},
-		bx::Vec3{0.0f, 0.7f, 0.f}
-	);
-
-	bx::mtxProj(proj, 60.0f, SceneAspect, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
-
-	bgfx::setViewTransform(0, view, proj);
-
-	avaterSystem.draw(program, u_bones);
+	cam.update({0.0f, 0.7f, -15},{0,0,1});
+	avaterSystem.draw(program);
 }
 
 void Game::gameInit() {
@@ -112,7 +100,7 @@ void Game::gameInit() {
 	// int maxMat4 = caps->limits.maxUniforms / 4;
 	// std::cout << "max: " << maxMat4 << "\n";
 
-	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+	// u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
 
 }
 

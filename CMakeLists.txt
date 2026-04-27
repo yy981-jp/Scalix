@@ -15,14 +15,6 @@ add_subdirectory(external/bgfx.cmake)
 file(GLOB_RECURSE SOURCES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# auto build command
-add_custom_command(
-	TARGET sl POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	${CMAKE_SOURCE_DIR}/runtime
-	$<TARGET_FILE_DIR:sl>/runtime
-)
-
 # package
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)

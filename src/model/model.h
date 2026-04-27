@@ -73,4 +73,6 @@ struct Avater {
 
 	Status status = Status::stay;
 	float speed = 0.2;
+
+	void update(const uint64_t& keyStat);
 };
