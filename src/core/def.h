@@ -1,7 +1,4 @@
 #pragma once
 
-
-#include <bx/math.h>
-
-
-using vec3f = bx::Vec3;
+#include "vec2.h"
+#include "vec3.h"

@@ -7,4 +7,5 @@
 struct GameContext {
 	uint64_t& keyStat;
 	Camera& cam;
+	CameraType& cam_type;
 };

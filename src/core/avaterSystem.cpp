@@ -57,14 +57,14 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
 }
 
 
-void AvaterSystem::update(GameContext& gctx) {
+void AvaterSystem::update(GameContext& ctx) {
     for (auto& avater : avaters) {
 
         // printf("D: avater.id: %d, playable: %d\n", avater.id, playableAvater);
         if (avater.id != playableAvater) continue; // player以外の制御はしない
 
         // avater update
-        avater.update(gctx);
+        avater.update(ctx);
 
         avater.globalMtxs.clear();
         avater.globalMtxs.resize(avater.model.nodes.size());
@@ -132,7 +132,7 @@ void AvaterSystem::update(GameContext& gctx) {
             calcGlobal(i,calculated,avater,localMtxs,entityMtx);
         }
 
-        avater.draw(gctx.cam);
+        if (ctx.cam_type == CameraType::_1) avater.draw(ctx.cam); // 一人称
 
     }
 }

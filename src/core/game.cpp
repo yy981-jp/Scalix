@@ -75,12 +75,12 @@ void Game::tick() {
 void Game::update() {
 	if (has(keyStat,KCode::Esc)) running = false;
 	// ===== Entityごと =====
+	if (gctx.cam_type == CameraType::DEBUG) cam.update({0.0f, 0.7f, -15},{0,0,1});
 	avaterSystem.update(gctx);
 }
 
 
 void Game::draw() {
-	// cam.update({0.0f, 0.7f, -15},{0,0,1});
 	avaterSystem.draw(program);
 }
 

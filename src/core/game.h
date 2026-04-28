@@ -19,7 +19,8 @@
 class Game {
 	GameContext gctx = {
 		.keyStat = keyStat,
-		.cam = cam
+		.cam = cam,
+		.cam_type = camId
 	};
 
 	SDL_Window* window;
@@ -32,6 +33,7 @@ class Game {
 	AvaterSystem avaterSystem;
 
 	Camera cam{WIDTH,HEIGHT};
+	CameraType camId = CameraType::_1;
 
 	constexpr static int
 		WIDTH = 1200,

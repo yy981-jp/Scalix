@@ -4,6 +4,12 @@
 #include "def.h"
 
 
+enum class CameraType {
+    _1, _2, _3,
+    DEBUG, // 固定位置
+};
+
+
 class Camera {
     const int WIDTH, HEIGHT;
 	const float SceneAspect;

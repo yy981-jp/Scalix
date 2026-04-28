@@ -4,7 +4,7 @@
 #include "def.h"
 
 // TRS行列を組み立てるヘルパー
-void buildTRS(float* out, const vec3f pos, const float* rot,
+void buildTRS(float* out, const vec3f& pos, const float* rot,
               const float* scale, bool hasRot = true) {
     float t[16], r[16], s[16], tmp[16];
 
