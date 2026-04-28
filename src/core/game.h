@@ -17,6 +17,11 @@
 #include "avaterSystem.h"
 
 
+enum class ShaderId {
+	tex, grid,
+	Count
+};
+
 class Game {
 	GameContext gctx = {
 		.keyStat = keyStat,
@@ -29,7 +34,7 @@ class Game {
 	bool running = true;
     uint64_t keyStat = 0; // KCode
 
-	bgfx::ProgramHandle program;
+	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
 	// bgfx::UniformHandle u_bones;
 	AvaterSystem avaterSystem;
 

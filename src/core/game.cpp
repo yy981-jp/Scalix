@@ -81,15 +81,15 @@ void Game::update() {
 
 
 void Game::draw() {
-	avaterSystem.draw(program);
-	grid.draw(program);
+	avaterSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)]);
+	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
 void Game::gameInit() {
 	// set camera
 	camId = CameraType::_1;
 
-	grid.init(50,10);
+	grid.init(50,10, 0xffd6d661);
 
 	// ===== view =====
 	bgfx::setViewClear(0,
@@ -99,8 +99,10 @@ void Game::gameInit() {
 
 	// ===== load glTF ====
 	avaterSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+
 	// ===== load Shader =====
-	program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
+	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
+	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
 
 	// const bgfx::Caps* caps = bgfx::getCaps();
 	// int maxMat4 = caps->limits.maxUniforms / 4;

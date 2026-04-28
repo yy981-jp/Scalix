@@ -14,7 +14,7 @@ class Grid {
     bgfx::VertexBufferHandle vbh;
 
 public:
-    void init(int num, float spacing) {
+    void init(int num, float spacing, uint32_t abgr = 0xffdd963a) {
         // layout 初期化
         layout.begin()
             .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
@@ -27,12 +27,12 @@ public:
             float p = i * spacing;
 
             // X方向の線
-            grid.push_back({-num * spacing, 0.0f, p, 0xffffffff});
-            grid.push_back({ num * spacing, 0.0f, p, 0xffffffff});
+            grid.push_back({-num * spacing, 0.0f, p, abgr});
+            grid.push_back({ num * spacing, 0.0f, p, abgr});
 
             // Z方向の線
-            grid.push_back({p, 0.0f, -num * spacing, 0xffffffff});
-            grid.push_back({p, 0.0f,  num * spacing, 0xffffffff});
+            grid.push_back({p, 0.0f, -num * spacing, abgr});
+            grid.push_back({p, 0.0f,  num * spacing, abgr});
         }
 
         const bgfx::Memory* mem = bgfx::copy(
