@@ -267,9 +267,9 @@ void GltfLoaderImpl::parse() {
 		// translation
 		if (!tn.translation.empty()) {
 			node.hasTranslation = true;
-			node.pos[0] = (float)tn.translation[0];
-			node.pos[1] = (float)tn.translation[1];
-			node.pos[2] = (float)tn.translation[2];
+			node.pos.x = (float)tn.translation[0];
+			node.pos.y = (float)tn.translation[1];
+			node.pos.z = (float)tn.translation[2];
 		}
 
 		// rotation

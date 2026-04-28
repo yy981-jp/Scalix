@@ -1,8 +1,11 @@
 #pragma once
 
 #include <string>
+#include <array>
 #include "../gfx/mesh.h"
 #include "../gfx/texture.h"
+#include "../core/def.h"
+#include "../core/gctx.h"
 
 
 struct Node {
@@ -16,7 +19,7 @@ struct Node {
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
 
-	float pos[3] = {0.0f, 0.0f, 0.0f};
+	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
@@ -60,6 +63,8 @@ struct Model {
 	std::vector<int> materialToImage; // map
 };
 
+using AvaterID = int;
+
 struct Avater {
 	Model model;
 	Humanoid humanoid;
@@ -67,12 +72,17 @@ struct Avater {
 	// nodes mtx
 	std::vector<std::array<float, 16>> globalMtxs;
 
-	float pos[3]   = {0.0f, 0.0f, 0.0f};
+	vec3f pos   = {0.0f, 0.0f, 0.0f};
 	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
 	Status status = Status::stay;
 	float speed = 0.2;
 
-	void update(const uint64_t& keyStat);
+	AvaterID id;
+
+    float c_u = 0; // tmp
+
+	void update(GameContext& keyStat);
+	void draw(Camera& cam);
 };

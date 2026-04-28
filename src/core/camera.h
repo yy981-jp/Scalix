@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <bgfx/bgfx.h>
+#include "def.h"
 
 
 class Camera {
@@ -14,7 +14,7 @@ public:
         SceneAspect((float)width / (float)height) {}
 
 
-    void update(const bx::Vec3& pos, const bx::Vec3& dir) {
+    void update(const vec3f& pos, const vec3f& dir) {
         float view[16];
         float proj[16];
         bx::mtxLookAt(view,

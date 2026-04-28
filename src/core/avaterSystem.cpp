@@ -11,9 +11,11 @@
 
 
 void AvaterSystem::loadData(const std::vector<std::string> path) {
-	for (const auto& file: path) {
+    AvaterID id = 0;
+    for (const auto& file: path) {
 		avaters.push_back( loadEntity(file) );
         auto& avater = avaters.back();
+        avater.id = id++;
         avater.humanoid.init(avater.model.nodes, avater.model.skins);
     }
 }
@@ -55,11 +57,14 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
 }
 
 
-void AvaterSystem::update(const uint64_t& keyStat) {
+void AvaterSystem::update(GameContext& gctx) {
     for (auto& avater : avaters) {
 
+        // printf("D: avater.id: %d, playable: %d\n", avater.id, playableAvater);
+        if (avater.id != playableAvater) continue; // player以外の制御はしない
+
         // avater update
-        avater.update(keyStat);
+        avater.update(gctx);
 
         avater.globalMtxs.clear();
         avater.globalMtxs.resize(avater.model.nodes.size());
@@ -67,7 +72,7 @@ void AvaterSystem::update(const uint64_t& keyStat) {
         // --- Entity行列 ---
         float t[16], r[16], s[16], flip[16], tmp[16], tmp2[16], entityMtx[16];
 
-        bx::mtxTranslate(t, avater.pos[0], avater.pos[1], avater.pos[2]);
+        bx::mtxTranslate(t, avater.pos.x, avater.pos.y, avater.pos.z);
         bx::mtxRotateY(r, avater.yaw);
         bx::mtxScale(flip, -1, 1, 1);
 
@@ -126,6 +131,8 @@ void AvaterSystem::update(const uint64_t& keyStat) {
         for (int i = 0; i < avater.model.nodes.size(); i++) {
             calcGlobal(i,calculated,avater,localMtxs,entityMtx);
         }
+
+        avater.draw(gctx.cam);
 
     }
 }

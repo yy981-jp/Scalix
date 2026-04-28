@@ -11,11 +11,17 @@
 #include "../gltf/loader.h"
 #include "key.h"
 #include "camera.h"
+#include "gctx.h"
 
 #include "avaterSystem.h"
 
 
 class Game {
+	GameContext gctx = {
+		.keyStat = keyStat,
+		.cam = cam
+	};
+
 	SDL_Window* window;
 
 	bool running = true;

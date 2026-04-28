@@ -1,9 +1,10 @@
 #pragma once
 
 #include <bx/math.h>
+#include "def.h"
 
 // TRS行列を組み立てるヘルパー
-void buildTRS(float* out, const float* pos, const float* rot,
+void buildTRS(float* out, const vec3f pos, const float* rot,
               const float* scale, bool hasRot = true) {
     float t[16], r[16], s[16], tmp[16];
 
@@ -11,7 +12,7 @@ void buildTRS(float* out, const float* pos, const float* rot,
     bx::mtxIdentity(r);
     bx::mtxIdentity(s);
 
-    t[12] = pos[0];  t[13] = pos[1];  t[14] = pos[2];
+    t[12] = pos.x;  t[13] = pos.y;  t[14] = pos.z;
 
     if (hasRot) {
         bx::Quaternion q = { rot[0], rot[1], rot[2], rot[3] };
