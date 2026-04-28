@@ -70,3 +70,7 @@ boneMtx（= palette）
 
 
 まずはavaterを制御する部分を充実させたい とは思うが方針というほどの固い決定でもない
+
+そのうちGameからEngineを分離させるべきかもな
+
+grid用とavater用(tex想定)の2つ目のshaderを作らないといけない まあでも今はgridが黒で一応動いてるから後回し?

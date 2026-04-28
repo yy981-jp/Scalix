@@ -82,9 +82,15 @@ void Game::update() {
 
 void Game::draw() {
 	avaterSystem.draw(program);
+	grid.draw(program);
 }
 
 void Game::gameInit() {
+	// set camera
+	camId = CameraType::_1;
+
+	grid.init(50,10);
+
 	// ===== view =====
 	bgfx::setViewClear(0,
 		BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,

@@ -12,6 +12,7 @@
 #include "key.h"
 #include "camera.h"
 #include "gctx.h"
+#include "grid.h"
 
 #include "avaterSystem.h"
 
@@ -33,7 +34,9 @@ class Game {
 	AvaterSystem avaterSystem;
 
 	Camera cam{WIDTH,HEIGHT};
-	CameraType camId = CameraType::_1;
+	CameraType camId;
+
+	Grid grid;
 
 	constexpr static int
 		WIDTH = 1200,
@@ -47,6 +50,7 @@ class Game {
 
 	void update();
 	void draw();
+
 public:
 	Game();
 	~Game();
