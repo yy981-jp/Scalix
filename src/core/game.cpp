@@ -2,6 +2,8 @@
 
 #include "../gfx/shader.h"
 
+#include <iostream>
+
 Game::Game() {
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -73,28 +75,22 @@ void Game::tick() {
 void Game::update() {
 	if (has(keyStat,KCode::Esc)) running = false;
 	// ===== Entityごと =====
-	avaterSystem.update(keyStat);
+	if (gctx.cam_type == CameraType::DEBUG) cam.update({0.0f, 0.7f, -15},{0,0,1});
+	avaterSystem.update(gctx);
 }
 
 
 void Game::draw() {
-	// ===== カメラ =====
-	float view[16];
-	float proj[16];
-
-	bx::mtxLookAt(view,
-		bx::Vec3{0.0f, 0.7f, -15},
-		bx::Vec3{0.0f, 0.7f, 0.f}
-	);
-
-	bx::mtxProj(proj, 60.0f, SceneAspect, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
-
-	bgfx::setViewTransform(0, view, proj);
-
-	avaterSystem.draw(program);
+	avaterSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)]);
+	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
 void Game::gameInit() {
+	// set camera
+	camId = CameraType::_1;
+
+	grid.init(50,10, 0xffd6d661);
+
 	// ===== view =====
 	bgfx::setViewClear(0,
 		BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
@@ -103,8 +99,17 @@ void Game::gameInit() {
 
 	// ===== load glTF ====
 	avaterSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+
 	// ===== load Shader =====
-	program = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
+	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
+	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
+
+	// const bgfx::Caps* caps = bgfx::getCaps();
+	// int maxMat4 = caps->limits.maxUniforms / 4;
+	// std::cout << "max: " << maxMat4 << "\n";
+
+	// u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {

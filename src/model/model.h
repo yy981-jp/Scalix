@@ -1,8 +1,11 @@
 #pragma once
 
 #include <string>
+#include <array>
 #include "../gfx/mesh.h"
 #include "../gfx/texture.h"
+#include "../core/def.h"
+#include "../core/gctx.h"
 
 
 struct Node {
@@ -11,10 +14,12 @@ struct Node {
 	int parent = -1;
 	std::vector<int> children;
 
+	int skinIndex = -1;
+
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
 
-	float pos[3] = {0.0f, 0.0f, 0.0f};
+	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
@@ -28,14 +33,25 @@ struct Skin {
 	std::vector<std::array<float,16>> invBind;
 };
 
+enum class Status {
+	stay, walk,
+};
+
+enum class HBT {
+	head,
+	arm_left_up, arm_left_low,
+	arm_right_up, arm_right_low,
+	leg_left_up, leg_left_low,
+	leg_right_up, leg_right_low,
+
+	Count
+};
+
 struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
 	// node index
-	int head = -1,
-		arm_left_up = -1, arm_left_low = -1,
-		arm_right_up = -1, arm_right_low = -1;
-	
+	int bones[static_cast<size_t>(HBT::Count)];
 	std::vector<int> spines;
 };
 
@@ -47,15 +63,26 @@ struct Model {
 	std::vector<int> materialToImage; // map
 };
 
+using AvaterID = int;
+
 struct Avater {
 	Model model;
 	Humanoid humanoid;
 
-	std::vector<std::array<float, 16>> finalMtxs;
+	// nodes mtx
+	std::vector<std::array<float, 16>> globalMtxs;
 
-	float pos[3]   = {0.0f, 0.0f, 0.0f};
+	vec3f pos   = {0.0f, 0.0f, 0.0f};
 	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
+	Status status = Status::stay;
 	float speed = 0.2;
+
+	AvaterID id;
+
+    float c_u = 0; // tmp
+
+	void update(GameContext& keyStat);
+	void draw(Camera& cam);
 };

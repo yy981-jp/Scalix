@@ -3,13 +3,15 @@
 #include <vector>
 
 #include "../model/model.h"
+#include "gctx.h"
 
 
 class AvaterSystem {
 	std::vector<Avater> avaters;
+	AvaterID playableAvater = 0;
 
 public:
 	void loadData(const std::vector<std::string> path);
-	void update(const uint64_t& keyStat);
+	void update(GameContext& gctx);
 	void draw(bgfx::ProgramHandle program);
 };

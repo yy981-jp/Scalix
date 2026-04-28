@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <SDL.h>
+#include "def.h"
 
 
 enum class KCode: uint64_t {
@@ -50,6 +51,9 @@ enum class KCode: uint64_t {
     Enter   = 1ULL << 42,
     Delete  = 1ULL << 43,
     BkSpace = 1ULL << 44,
+    M_Left  = 1ULL << 45,
+    M_Right = 1ULL << 46,
+    M_Mid   = 1ULL << 47,
 };
 
 constexpr bool has(uint64_t keys, KCode k) {
@@ -57,3 +61,9 @@ constexpr bool has(uint64_t keys, KCode k) {
 }
 
 extern const std::unordered_map<SDL_Keycode, KCode> keyMap;
+
+
+struct MouseState {
+    vec2f cursorRelPos = {0,0};
+    vec2f cursorAbsPos = {0,0};
+};

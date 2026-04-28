@@ -10,24 +10,42 @@
 #include "../gfx/shader.h"
 #include "../gltf/loader.h"
 #include "key.h"
+#include "camera.h"
+#include "gctx.h"
+#include "grid.h"
 
 #include "avaterSystem.h"
 
 
+enum class ShaderId {
+	tex, grid,
+	Count
+};
+
 class Game {
+	GameContext gctx = {
+		.keyStat = keyStat,
+		.cam = cam,
+		.cam_type = camId
+	};
+
 	SDL_Window* window;
 
 	bool running = true;
     uint64_t keyStat = 0; // KCode
 
-	bgfx::ProgramHandle program;
+	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
+	// bgfx::UniformHandle u_bones;
 	AvaterSystem avaterSystem;
+
+	Camera cam{WIDTH,HEIGHT};
+	CameraType camId;
+
+	Grid grid;
 
 	constexpr static int
 		WIDTH = 1200,
 		HEIGHT = 900;
-	constexpr static float
-		SceneAspect = (float)WIDTH / (float)HEIGHT;
 
 
 	void gameInit();
@@ -37,6 +55,7 @@ class Game {
 
 	void update();
 	void draw();
+
 public:
 	Game();
 	~Game();

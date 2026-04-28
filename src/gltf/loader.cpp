@@ -5,22 +5,24 @@
 
 #include "loader.h"
 #include <set>
-
+#include <cassert>
 #include <iostream>
 
 
-void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
-	const auto& mesh = model.meshes[n.mesh];
+void GltfLoaderImpl::parseMesh(int nodeId) {
+	const auto& tn = model.nodes[nodeId];
+	const auto& tnmesh = model.meshes[tn.mesh];
 
-	for (const auto& prim : mesh.primitives) {
+	for (const auto& prim : tnmesh.primitives) {
+		Mesh mesh;
+
 		// TRIANGLESのみ対応
 		if (prim.mode != TINYGLTF_MODE_TRIANGLES)
 			throw std::runtime_error("only TRIANGLES supported");
 
 		auto& attrs = prim.attributes;
 
-		// 毎回vertexデータをクリア
-		v.clear();
+		std::vector<Vertex> verts;
 
 		// ===== POSITION =====
 		if (!attrs.count("POSITION"))
@@ -119,7 +121,7 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 		}
 
 		// ===== 頂点生成 =====
-		v.reserve(posAcc.count);
+		verts.reserve(posAcc.count);
 
 		for (size_t i = 0; i < posAcc.count; i++) {
 			const float* p = reinterpret_cast<const float*>(posPtr + posStride * i);
@@ -146,70 +148,177 @@ void GltfLoaderImpl::parseMesh(const tinygltf::Node& n) {
 				vert.v = u[1];
 			}
 
-			v.push_back(vert);
+			verts.push_back(vert);
 		}
 
-		if (v.empty())
+		if (verts.empty())
 			throw std::runtime_error("vertex empty");
 
-		Mesh mesh;
-		mesh.create(v, idx);
-		
 		// primitiveのマテリアルをmeshに設定
 		if (prim.material >= 0) {
 			mesh.materialIndex = prim.material;
 		}
 
+
+		// ===== JOINTS =====
+		if (attrs.count("JOINTS_0")) {
+			const auto& acc = model.accessors[attrs.at("JOINTS_0")];
+			const auto& view = model.bufferViews[acc.bufferView];
+			const auto& buf = model.buffers[view.buffer];
+
+			const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
+
+			size_t stride = acc.ByteStride(view);
+			if (stride == 0) {
+				if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
+					stride = 4;
+				else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+					stride = 8;
+			}
+
+			for (size_t i = 0; i < acc.count; i++) {
+				auto& vert = verts[i];
+				const uint8_t* ptr = data + stride * i;
+
+				if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+					for (int k = 0; k < 4; k++)
+						vert.joints[k] = ptr[k];
+
+				} else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+					const uint16_t* j = reinterpret_cast<const uint16_t*>(ptr);
+					for (int k = 0; k < 4; k++)
+						vert.joints[k] = j[k];
+				}
+
+				// if (i == 0) {
+				// 	printf("joint: %d %d %d %d\n",
+				// 		vert.joints[0],
+				// 		vert.joints[1],
+				// 		vert.joints[2],
+				// 		vert.joints[3]);
+				// }
+			}
+		}
+
+		// ===== WEIGHTS =====
+		const auto& acc = model.accessors[attrs.at("WEIGHTS_0")];
+		const auto& view = model.bufferViews[acc.bufferView];
+		const auto& buf = model.buffers[view.buffer];
+
+		const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
+
+		size_t stride = acc.ByteStride(view);
+
+		// printf("componentType: %d normalized: %d stride: %zu\n",
+		// 	acc.componentType,
+		// 	acc.normalized,
+		// 	stride
+		// );
+
+		if (stride == 0) {
+			switch (acc.componentType) {
+				case TINYGLTF_COMPONENT_TYPE_FLOAT: stride = sizeof(float)*4; break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: stride = 4; break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: stride = 8; break;
+			}
+		}
+
+		for (size_t i = 0; i < acc.count; i++) {
+			auto& vert = verts[i];
+			const uint8_t* ptr = data + stride * i;
+			// printf("raw: %d %d %d %d\n", ptr[0], ptr[1], ptr[2], ptr[3]);
+
+			switch (acc.componentType) {
+				case TINYGLTF_COMPONENT_TYPE_FLOAT: {
+					const float* w = reinterpret_cast<const float*>(ptr);
+					for (int k = 0; k < 4; k++) vert.weights[k] = w[k];
+				} break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: {
+					const uint8_t* w = ptr;
+					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 255.0f;
+				} break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
+					const uint16_t* w = reinterpret_cast<const uint16_t*>(ptr);
+					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 65535.0f;
+				} break;
+			}
+		}
+
+		mesh.verts = verts;
+
+		// Mesh全体格納
+		mesh.create(verts, idx);
 		scalixModel.meshes.push_back(mesh);
+
 	}
 }
 
 
 void GltfLoaderImpl::parse() {
-	for (const auto& n : model.nodes) {
+	int nodesSize = model.nodes.size();
+	scalixModel.nodes.resize(nodesSize);
+	for (int i = 0; i < nodesSize; i++) {
 		// ===== NODE =====
-		Node node;
+		const auto& tn = model.nodes[i];
+		Node& node = scalixModel.nodes[i];
+		node.skinIndex = tn.skin;
 		node.meshStartIndex = scalixModel.meshes.size();  // 現在のメッシュ数を開始インデックスとして記録
 
 		// translation
-		if (!n.translation.empty()) {
+		if (!tn.translation.empty()) {
 			node.hasTranslation = true;
-			node.pos[0] = (float)n.translation[0];
-			node.pos[1] = (float)n.translation[1];
-			node.pos[2] = (float)n.translation[2];
+			node.pos.x = (float)tn.translation[0];
+			node.pos.y = (float)tn.translation[1];
+			node.pos.z = (float)tn.translation[2];
 		}
 
 		// rotation
-		if (!n.rotation.empty()) {
+		if (!tn.rotation.empty()) {
 			node.hasRotation = true;
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
-			node.rot[0] = -(float)n.rotation[0];
-			node.rot[1] = -(float)n.rotation[1];
-			node.rot[2] = -(float)n.rotation[2];
-			node.rot[3] = (float)n.rotation[3];
+			node.rot[0] = -(float)tn.rotation[0];
+			node.rot[1] = -(float)tn.rotation[1];
+			node.rot[2] = -(float)tn.rotation[2];
+			node.rot[3] = (float)tn.rotation[3];
 		}
 
 		// scale
-		if (!n.scale.empty()) {
+		if (!tn.scale.empty()) {
 			node.hasScale = true;
-			node.scale[0] = (float)n.scale[0];
-			node.scale[1] = (float)n.scale[1];
-			node.scale[2] = (float)n.scale[2];
+			node.scale[0] = (float)tn.scale[0];
+			node.scale[1] = (float)tn.scale[1];
+			node.scale[2] = (float)tn.scale[2];
 		}
 
 		// meshが存在するnodeに対してのみ実行
-		if (n.mesh >= 0) parseMesh(n);
+		if (tn.mesh >= 0) parseMesh(i);
 
 		// ノードのメッシュ数を設定
 		node.meshCount = scalixModel.meshes.size() - node.meshStartIndex;
-		scalixModel.nodes.push_back(node);
+
+		// node parent children 登録
+		node.parent = -1; // 初期値
+		for (const auto& child: tn.children) {
+			if (child < 0 || child >= nodesSize) {
+				printf("invalid child index: %d\n", child);
+				continue;
+			}
+
+			if (scalixModel.nodes[child].parent != -1) {
+				printf("multiple parent: %d\n", child);
+			}
+
+			scalixModel.nodes[child].parent = i;
+		}
+		node.children = tn.children;
+
 	}
 
 	// load skin (bone)
 	for (const auto& model_skin : model.skins) {
 		Skin skin;
 		// joint (=bone)
-		printf("model_skin.joints.size: %d\n", model_skin.joints.size());
+		// printf("model_skin.joints.size: %d\n", model_skin.joints.size());
 		for (int joint: model_skin.joints) {
 			skin.joints.push_back(joint);
 			scalixModel.nodes[joint].name = model.nodes[joint].name;
@@ -227,8 +336,12 @@ void GltfLoaderImpl::parse() {
 			);
 
 			skin.invBind.resize(accessor.count);
-			
-			memcpy(skin.invBind.data(), data, sizeof(float) * 16 * accessor.count);
+
+			for (size_t i = 0; i < accessor.count; i++) {
+				const float* src = data + i * 16;
+
+				memcpy(skin.invBind[i].data(), src, sizeof(float) * 16);
+			}
 
 		} else {
 			// glTFにデータが無い場合はidentityで初期化
@@ -239,7 +352,70 @@ void GltfLoaderImpl::parse() {
 			}
 		}
 		scalixModel.skins.push_back(skin);
+
+		// for (int i = 0; i < skin.joints.size(); i++) {
+		// 	printf("joint[%d] = node %d\n", i, skin.joints[i]);
+		// }
+		// for (int i = 0; i < skin.invBind.size(); i++) {
+		// 	printf("invBind[%d] loaded\n", i);
+		// }
 	}
+}
+
+void GltfLoaderImpl::buildPalletCompress() {
+	// ===== pallet圧縮 =====
+
+	for (const auto& node : scalixModel.nodes) {
+
+		if (node.skinIndex < 0) continue;
+
+		const auto& skin = scalixModel.skins[node.skinIndex];
+		int totalBoneCount = skin.joints.size();
+
+		std::vector<int> remap(totalBoneCount, -1);
+		std::vector<int> remapInverse;
+
+		int newIndex = 0;
+
+		// このnodeに紐づくmeshだけ処理する必要あり
+		for (int mi = 0; mi < node.meshCount; mi++) {
+			auto& mesh = scalixModel.meshes[node.meshStartIndex + mi];
+
+					
+		for (auto& vert : mesh.verts) {
+
+			for (int i = 0; i < 4; i++) {
+				if (vert.weights[i] <= 0.0001f) continue;
+
+				int nodeIndex = vert.joints[i]; // ← ここが本質
+
+				// nodeIndex → jointIndex変換
+				int jointIndex = -1;
+				for (int j = 0; j < skin.joints.size(); j++) {
+					if (skin.joints[j] == nodeIndex) {
+						jointIndex = j;
+						break;
+					}
+				}
+
+				if (jointIndex == -1) continue;
+
+				int orig = jointIndex;
+
+				if (remap[orig] == -1) {
+					remap[orig] = newIndex;
+					remapInverse.push_back(orig);
+					newIndex++;
+				}
+			}
+		}
+
+
+			mesh.boneRemap = remap;
+			mesh.boneRemapInverse = remapInverse;
+		}
+	}
+
 }
 
 
@@ -329,4 +505,6 @@ void GltfLoaderImpl::load() {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
 		}
 	}
+
+	buildPalletCompress();
 }

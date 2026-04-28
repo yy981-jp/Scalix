@@ -7,11 +7,16 @@ struct Vertex {
 	float nx,ny,nz;
 	float u,v;
 
+	uint16_t joints[4];
+	float weights[4];
+
 	static void init(bgfx::VertexLayout& layout) {
 		layout.begin()
 			.add(bgfx::Attrib::Position,3,bgfx::AttribType::Float)
 			.add(bgfx::Attrib::Normal,3,bgfx::AttribType::Float)
 			.add(bgfx::Attrib::TexCoord0,2,bgfx::AttribType::Float)
+			.add(bgfx::Attrib::Indices,4,bgfx::AttribType::Uint16)
+			.add(bgfx::Attrib::Weight,4,bgfx::AttribType::Float)
 			.end();
 	}
 };
@@ -21,6 +26,11 @@ struct Mesh {
 	bgfx::IndexBufferHandle ibh{};
 	uint16_t indexCount{};
 	int materialIndex = -1;  // glTFマテリアルインデックス
+
+	std::vector<Vertex> verts;
+
+	std::vector<int> boneRemap;
+	std::vector<int> boneRemapInverse;
 
 	void create(const std::vector<Vertex>& v, const std::vector<uint16_t>& i) {
 		bgfx::VertexLayout layout;
