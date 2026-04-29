@@ -37,18 +37,21 @@ void Avater::draw(Camera& cam) {
 
 	// 行列からforward取り出し
 	vec3f forward = {
-		-m[8],
-		-m[9],
-		-m[10]
+		m[8],
+		m[9],
+		m[10]
 	};
 
-	// 正規化
-	forward = bx::normalize(forward);
+    //tmp
+    forward.y += c_u;
 
-	// 少し前＆ちょい上
+    forward = bx::normalize(forward);
+
+
+    // 少し前＆ちょい上
 	vec3f camPos = headPos
-		- forward * 0.1f
+		+ forward * 0.1f
 		+ vec3f{0, 0.05f, 0};
 
-	cam.update(camPos, {0, c_u, 1});
+	cam.update(camPos, forward);
 }

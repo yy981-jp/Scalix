@@ -25,7 +25,7 @@ public:
         float proj[16];
         bx::mtxLookAt(view,
             pos,
-            {pos.x + dir.x, pos.y + dir.y, pos.z + dir.z}
+            pos + dir
         );
 
         bx::mtxProj(proj, 60.0f, SceneAspect, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
