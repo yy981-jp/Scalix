@@ -2,7 +2,9 @@
 
 #include <numbers>
 
-class CacheSV {
+
+/// @brief LUT(sin,cos) Server
+class LUTSV {
 	static constexpr int TABLE_SIZE = 4096;
 	static constexpr int TABLE_MASK = TABLE_SIZE - 1;
 	static constexpr float TWO_PI = std::numbers::pi * 2;
@@ -18,7 +20,7 @@ public:
 	float getSin(float rad) const;
 	float getCos(float rad) const;
 
-	CacheSV();
+	LUTSV();
 };
 
-extern CacheSV cachesv;
+extern LUTSV lutsv;

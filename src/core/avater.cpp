@@ -2,6 +2,7 @@
 #include "cache.h"
 #include "key.h"
 #include "gctx.h"
+#include "quatutil.h"
 
 
 void Avater::update(GameContext& ctx) {
@@ -11,17 +12,43 @@ void Avater::update(GameContext& ctx) {
 
     // 移動 → yawから直接XZ成分を計算してpos更新
     if (has(ctx.keyStat, KCode::W)) {
-        pos.x -= cachesv.getSin(yaw) * speed;
-        pos.z += cachesv.getCos(yaw) * speed;
+        pos.x -= lutsv.getSin(yaw) * speed;
+        pos.z += lutsv.getCos(yaw) * speed;
     }
     if (has(ctx.keyStat, KCode::S)) {
-        pos.x += cachesv.getSin(yaw) * speed;
-        pos.z -= cachesv.getCos(yaw) * speed;
+        pos.x += lutsv.getSin(yaw) * speed;
+        pos.z -= lutsv.getCos(yaw) * speed;
     }
 
     if (has(ctx.keyStat, KCode::K)) c_u -= 0.1;
     if (has(ctx.keyStat, KCode::I)) c_u += 0.1;
+
     
+	int headIdx = humanoid.bones[(size_t)HBT::head];
+    auto& headNode = model.nodes[headIdx];
+    headNode.hasRotation = true;
+
+    float sensitivity = 0.01;
+
+    head.yaw   -= ctx.mStat.relPos.x * sensitivity;
+    head.pitch -= ctx.mStat.relPos.y * sensitivity;
+
+	// printf("D:   abs.x: %d,  abs.y: %d,  rel.x: %d,  rel.y: %d\n",
+    //     ctx.mStat.absPos.x, ctx.mStat.absPos.y, ctx.mStat.relPos.x, ctx.mStat.relPos.y);
+
+
+    lookDir.x = lutsv.getCos(head.yaw) * lutsv.getCos(head.pitch);
+    lookDir.y = lutsv.getSin(head.pitch);
+    lookDir.z = lutsv.getSin(head.yaw) * lutsv.getCos(head.pitch);
+
+    lookDir = bx::normalize(lookDir);
+
+    float rot[4];
+    quatFromTo(rot, {0,0,1}, lookDir);
+
+    for (int i = 0; i < 4; i++)
+        headNode.rot[i] = rot[i];
+
 }
 
 void Avater::draw(Camera& cam) {
@@ -35,23 +62,12 @@ void Avater::draw(Camera& cam) {
 		m[14]
 	};
 
-	// 行列からforward取り出し
-	vec3f forward = {
-		m[8],
-		m[9],
-		m[10]
-	};
-
-    //tmp
-    forward.y += c_u;
-
-    forward = bx::normalize(forward);
-
-
     // 少し前＆ちょい上
 	vec3f camPos = headPos
-		+ forward * 0.1f
+		+ lookDir * 0.1f
 		+ vec3f{0, 0.05f, 0};
 
-	cam.update(camPos, forward);
+	cam.update(camPos, camPos + lookDir);
+    // printf("D: lookDir: x:%g, y:%g, z:%g\n",
+    //     lookDir.x, lookDir.y, lookDir.z );
 }

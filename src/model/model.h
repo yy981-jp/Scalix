@@ -6,6 +6,7 @@
 #include "../gfx/texture.h"
 #include "../core/def.h"
 #include "../core/gctx.h"
+#include "../core/euler.h"
 
 
 struct Node {
@@ -75,6 +76,9 @@ struct Avater {
 	vec3f pos   = {0.0f, 0.0f, 0.0f};
 	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
+
+	Euler head;
+	vec3f lookDir;
 
 	Status status = Status::stay;
 	float speed = 0.2;

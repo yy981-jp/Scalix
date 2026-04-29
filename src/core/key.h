@@ -75,7 +75,7 @@ extern const std::unordered_map<Uint8, MCode> mMap;
 
 struct MouseState {
     bool relMode;
-    vec2i cursorRelPos = {0,0};
-    vec2i cursorAbsPos = {0,0};
+    vec2i relPos = {0,0};
+    vec2i absPos = {0,0};
     MCodes codes;
 };

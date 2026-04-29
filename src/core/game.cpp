@@ -84,8 +84,10 @@ void Game::update() {
 	if (has(keyStat,KCode::Esc)) running = false;
 
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam.update({0.0f, 0.7f, -15},{0,0,1});
+	if (gctx.cam_type == CameraType::DEBUG) cam.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
 	avaterSystem.update(gctx);
+
+	mStat.relPos = {0, 0};
 }
 
 
@@ -98,7 +100,7 @@ void Game::gameInit() {
 	mStat.relMode = mouseRelMode;
 
 	// set camera
-	camId = CameraType::_1;
+	camId = CameraType::DEBUG;
 
 	grid.init(50,10, 0xffd6d661);
 
@@ -157,9 +159,8 @@ void Game::onWindowEve(const SDL_WindowEvent& e) {
 }
 
 void Game::onMouseMt(const SDL_MouseMotionEvent& e) {
-	mStat.cursorAbsPos.x = e.x;
-	mStat.cursorAbsPos.y = e.y;
-	mStat.cursorRelPos.x = e.xrel;
-	mStat.cursorRelPos.y = e.yrel;
-	// printf("D:   abs.x: %d,  abs.y: %d,  rel.x: %d,  rel.y: %d\n", e.x, e.y, e.xrel, e.yrel);
+	mStat.absPos.x = e.x;
+	mStat.absPos.y = e.y;
+	mStat.relPos.x = e.xrel;
+	mStat.relPos.y = e.yrel;
 }
