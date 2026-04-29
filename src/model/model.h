@@ -1,8 +1,12 @@
 #pragma once
 
 #include <string>
+#include <array>
 #include "../gfx/mesh.h"
 #include "../gfx/texture.h"
+#include "../core/def.h"
+#include "../core/gctx.h"
+#include "../core/euler.h"
 
 
 struct Node {
@@ -16,8 +20,9 @@ struct Node {
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
 
-	float pos[3] = {0.0f, 0.0f, 0.0f};
-	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
+	vec3f pos = {0.0f, 0.0f, 0.0f};
+	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion (current: conjugate)
+	float rotOriginal[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // original from glTF (for debug comparison)
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
 	bool hasTranslation = false;
@@ -34,7 +39,7 @@ enum class Status {
 	stay, walk,
 };
 
-enum class HumanoidBoneType {
+enum class HBT {
 	head,
 	arm_left_up, arm_left_low,
 	arm_right_up, arm_right_low,
@@ -47,12 +52,8 @@ enum class HumanoidBoneType {
 struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
-	Humanoid() {
-		bones.resize(static_cast<size_t>(HumanoidBoneType::Count));
-	}
-
 	// node index
-	std::vector<int> bones;
+	int bones[static_cast<size_t>(HBT::Count)];
 	std::vector<int> spines;
 };
 
@@ -64,6 +65,8 @@ struct Model {
 	std::vector<int> materialToImage; // map
 };
 
+using AvaterID = int;
+
 struct Avater {
 	Model model;
 	Humanoid humanoid;
@@ -71,10 +74,20 @@ struct Avater {
 	// nodes mtx
 	std::vector<std::array<float, 16>> globalMtxs;
 
-	float pos[3]   = {0.0f, 0.0f, 0.0f};
+	vec3f pos   = {0.0f, 0.0f, 0.0f};
 	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
+	Euler head;
+	vec3f lookDir;
+
 	Status status = Status::stay;
 	float speed = 0.2;
+
+	AvaterID id;
+
+    float c_u = 0; // tmp
+
+	void update(GameContext& keyStat);
+	void draw(Camera& cam);
 };

@@ -349,11 +349,31 @@ void GltfLoaderImpl::parse() {
 		// rotation
 		if (!tn.rotation.empty()) {
 			node.hasRotation = true;
+			// 元のglTFクォータニオン (x, y, z, w) を保存
+			node.rotOriginal[0] = (float)tn.rotation[0];
+			node.rotOriginal[1] = (float)tn.rotation[1];
+			node.rotOriginal[2] = (float)tn.rotation[2];
+			node.rotOriginal[3] = (float)tn.rotation[3];
+			
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
-			node.rot[0] = -(float)tn.rotation[0];
-			node.rot[1] = -(float)tn.rotation[1];
-			node.rot[2] = -(float)tn.rotation[2];
+			// node.rot[0] = -(float)tn.rotation[0];
+			// node.rot[1] = -(float)tn.rotation[1];
+			// node.rot[2] = -(float)tn.rotation[2];
+			// node.rot[3] = (float)tn.rotation[3];
+			node.rot[0] = (float)tn.rotation[0];
+			node.rot[1] = (float)tn.rotation[1];
+			node.rot[2] = (float)tn.rotation[2];
 			node.rot[3] = (float)tn.rotation[3];
+			
+			// ===== DEBUG DUMP =====
+			FILE* fp = fopen("debug_quat.txt", "a");
+			if (fp) {
+				fprintf(fp, "Node[%d] %s: glTF quat(x,y,z,w)=(%.6f, %.6f, %.6f, %.6f) -> conjugate=(%.6f, %.6f, %.6f, %.6f)\n",
+					i, node.name.c_str(),
+					(float)tn.rotation[0], (float)tn.rotation[1], (float)tn.rotation[2], (float)tn.rotation[3],
+					node.rot[0], node.rot[1], node.rot[2], node.rot[3]);
+				fclose(fp);
+			}
 		}
 
 		// scale
