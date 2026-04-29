@@ -5,7 +5,8 @@
 #include "def.h"
 
 
-enum class KCode: uint64_t {
+using KCodes = uint64_t;
+enum class KCode: KCodes {
     n0      = 1ULL <<  0,
     n1      = 1ULL <<  1,
     n2      = 1ULL <<  2,
@@ -51,19 +52,30 @@ enum class KCode: uint64_t {
     Enter   = 1ULL << 42,
     Delete  = 1ULL << 43,
     BkSpace = 1ULL << 44,
-    M_Left  = 1ULL << 45,
-    M_Right = 1ULL << 46,
-    M_Mid   = 1ULL << 47,
 };
 
-constexpr bool has(uint64_t keys, KCode k) {
-    return keys & static_cast<uint64_t>(k);
+using MCodes = uint8_t;
+enum class MCode: MCodes {
+    Left    = 1ULL << 0,
+    Right   = 1ULL << 1,
+    Mid     = 1ULL << 2,
+};
+
+constexpr bool has(KCodes keys, KCode k) {
+    return keys & static_cast<KCodes>(k);
+}
+
+constexpr bool has(MCodes keys, MCode k) {
+    return keys & static_cast<MCodes>(k);
 }
 
 extern const std::unordered_map<SDL_Keycode, KCode> keyMap;
+extern const std::unordered_map<Uint8, MCode> mMap;
 
 
 struct MouseState {
-    vec2f cursorRelPos = {0,0};
-    vec2f cursorAbsPos = {0,0};
+    bool relMode;
+    vec2i cursorRelPos = {0,0};
+    vec2i cursorAbsPos = {0,0};
+    MCodes codes;
 };

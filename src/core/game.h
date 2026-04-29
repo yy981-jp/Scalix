@@ -25,6 +25,7 @@ enum class ShaderId {
 class Game {
 	GameContext gctx = {
 		.keyStat = keyStat,
+		.mStat = mStat,
 		.cam = cam,
 		.cam_type = camId
 	};
@@ -32,7 +33,9 @@ class Game {
 	SDL_Window* window;
 
 	bool running = true;
-    uint64_t keyStat = 0; // KCode
+    KCodes keyStat = 0; // KCode
+	bool mouseRelMode = true;
+	MouseState mStat;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
 	// bgfx::UniformHandle u_bones;
@@ -52,6 +55,10 @@ class Game {
 
 	void onKeyDown(const SDL_KeyboardEvent& e);
     void onKeyUp(const SDL_KeyboardEvent& e);
+	void onMouseBtDown(const SDL_MouseButtonEvent& e);
+	void onMouseBtUp(const SDL_MouseButtonEvent& e);
+	void onWindowEve(const SDL_WindowEvent& e);
+	void onMouseMt(const SDL_MouseMotionEvent& e);
 
 	void update();
 	void draw();

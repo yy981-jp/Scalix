@@ -47,3 +47,9 @@ const std::unordered_map<SDL_Keycode, KCode> keyMap = {
 	{ SDLK_DELETE, KCode::Delete },
 	{ SDLK_BACKSPACE, KCode::BkSpace },
 };
+
+const std::unordered_map<Uint8, MCode> mMap = {
+	{ SDL_BUTTON_LEFT, MCode::Left},
+	{ SDL_BUTTON_RIGHT, MCode::Right },
+	{ SDL_BUTTON_MIDDLE, MCode::Mid }
+};

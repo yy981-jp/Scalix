@@ -45,6 +45,10 @@ Game::Game() {
 	if (!bgfx::init(init))
 		throw std::runtime_error("bgfx init failed");
 
+	// set mouse mode
+
+	SDL_SetRelativeMouseMode(static_cast<SDL_bool>(mouseRelMode));
+
 	gameInit();
 }
 
@@ -61,6 +65,10 @@ void Game::tick() {
 			case SDL_QUIT: running = false; break;
             case SDL_KEYDOWN: onKeyDown(event.key); break;
             case SDL_KEYUP: onKeyUp(event.key); break;
+			case SDL_MOUSEBUTTONDOWN: onMouseBtDown(event.button);
+			case SDL_MOUSEBUTTONUP: onMouseBtUp(event.button);
+			case SDL_WINDOWEVENT: onWindowEve(event.window);
+			case SDL_MOUSEMOTION: onMouseMt(event.motion);
 		}
 	}
 
@@ -74,6 +82,7 @@ void Game::tick() {
 
 void Game::update() {
 	if (has(keyStat,KCode::Esc)) running = false;
+
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam.update({0.0f, 0.7f, -15},{0,0,1});
 	avaterSystem.update(gctx);
@@ -86,6 +95,8 @@ void Game::draw() {
 }
 
 void Game::gameInit() {
+	mStat.relMode = mouseRelMode;
+
 	// set camera
 	camId = CameraType::_1;
 
@@ -116,11 +127,39 @@ void Game::onKeyDown(const SDL_KeyboardEvent& e) {
 	if (e.repeat) return;
 	auto it = keyMap.find(e.keysym.sym);
 	if (it != keyMap.end())
-		keyStat |= static_cast<uint64_t>(it->second);
+		keyStat |= static_cast<KCodes>(it->second);
 }
 
 void Game::onKeyUp(const SDL_KeyboardEvent& e) {
 	auto it = keyMap.find(e.keysym.sym);
 	if (it != keyMap.end())
-		keyStat &= ~static_cast<uint64_t>(it->second);
+		keyStat &= ~static_cast<KCodes>(it->second);
+}
+
+void Game::onMouseBtDown(const SDL_MouseButtonEvent& e) {
+	auto it = mMap.find(e.button);
+	if (it != mMap.end())
+		mStat.codes |= static_cast<MCodes>(it->second);
+}
+
+void Game::onMouseBtUp(const SDL_MouseButtonEvent& e) {
+	auto it = mMap.find(e.button);
+	if (it != mMap.end())
+		mStat.codes &= ~static_cast<MCodes>(it->second);
+}
+
+void Game::onWindowEve(const SDL_WindowEvent& e) {
+/*
+	if (e.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
+	}
+*/
+}
+
+void Game::onMouseMt(const SDL_MouseMotionEvent& e) {
+	mStat.cursorAbsPos.x = e.x;
+	mStat.cursorAbsPos.y = e.y;
+	mStat.cursorRelPos.x = e.xrel;
+	mStat.cursorRelPos.y = e.yrel;
+	// printf("D:   abs.x: %d,  abs.y: %d,  rel.x: %d,  rel.y: %d\n", e.x, e.y, e.xrel, e.yrel);
 }
