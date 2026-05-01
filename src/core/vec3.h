@@ -5,7 +5,7 @@
 struct vec3f {
     float x, y, z;
 
-    vec3f() : x(0), y(0), z(9) {}
+    vec3f() : x(0), y(0), z(0) {}
     vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
     vec3f(const bx::Vec3& v): x(v.x), y(v.y), z(v.z) {};
 

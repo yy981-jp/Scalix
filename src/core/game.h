@@ -41,7 +41,7 @@ class Game {
 	// bgfx::UniformHandle u_bones;
 	AvaterSystem avaterSystem;
 
-	Camera cam{WIDTH,HEIGHT};
+	Camera cam;
 	CameraType camId;
 
 	Grid grid;

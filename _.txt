@@ -74,3 +74,5 @@ boneMtx（= palette）
 そのうちGameからEngineを分離させるべきかもな
 
 grid用とavater用(tex想定)の2つ目のshaderを作らないといけない まあでも今はgridが黒で一応動いてるから後回し?
+	-> 修正済み
+

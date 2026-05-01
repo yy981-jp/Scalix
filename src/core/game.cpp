@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-Game::Game() {
+Game::Game(): cam(WIDTH,HEIGHT,0.1) {
 	SDL_Init(SDL_INIT_VIDEO);
 
 	// ===== window 作成 (SDL2) =====
@@ -100,7 +100,7 @@ void Game::gameInit() {
 	mStat.relMode = mouseRelMode;
 
 	// set camera
-	camId = CameraType::DEBUG;
+	camId = CameraType::_1;
 
 	grid.init(50,10, 0xffd6d661);
 

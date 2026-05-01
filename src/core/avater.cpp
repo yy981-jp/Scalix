@@ -43,8 +43,18 @@ void Avater::update(GameContext& ctx) {
 
     lookDir = bx::normalize(lookDir);
 
+    float qYaw[4];
+    float qPitch[4];
+
+    // yawはY軸
+    quatRotateAxis(qYaw, 0, 1, 0, head.yaw);
+
+    // pitchはX軸
+    quatRotateAxis(qPitch, 1, 0, 0, head.pitch);
+
+    // 合成（順序重要）
     float rot[4];
-    quatFromTo(rot, {0,0,1}, lookDir);
+    quatMul(rot, qYaw, qPitch);
 
     for (int i = 0; i < 4; i++)
         headNode.rot[i] = rot[i];
