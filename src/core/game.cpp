@@ -4,17 +4,26 @@
 
 #include <iostream>
 
-Game::Game(): cam(WIDTH,HEIGHT,0.03) {
+Game::Game() {
 	SDL_Init(SDL_INIT_VIDEO);
+	if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
 
 	// ===== window 作成 (SDL2) =====
 	window = SDL_CreateWindow(
 		"Scalix",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		WIDTH, HEIGHT,
-		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+		T_WIDTH, T_HEIGHT,
+		SDL_WINDOW_FULLSCREEN_DESKTOP
 	);
+
+	// get window size
+	SDL_GetWindowSize(window, &width, &height);
+
+	// logo system
+	logo = new LogoRenderer(window);
+	logo->draw();
+
 
 	// ===== bgfx初期化 =====
 	SDL_SysWMinfo wmi;
@@ -38,9 +47,9 @@ Game::Game(): cam(WIDTH,HEIGHT,0.03) {
 
 	init.platformData.nwh = pd.nwh;
 
-	init.resolution.width = WIDTH;
-	init.resolution.height = HEIGHT;
-	init.resolution.reset = BGFX_RESET_VSYNC;
+	init.resolution.width = width;
+	init.resolution.height = height;
+	init.resolution.reset = BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4;
 
 	if (!bgfx::init(init))
 		throw std::runtime_error("bgfx init failed");
@@ -56,6 +65,7 @@ Game::~Game() {
 	bgfx::shutdown();
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	IMG_Quit();
 }
 
 void Game::tick() {
@@ -84,7 +94,7 @@ void Game::update() {
 	if (has(keyStat,KCode::Esc)) running = false;
 
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
 	avaterSystem.update(gctx);
 
 	mStat.relPos = {0, 0};
@@ -101,6 +111,7 @@ void Game::gameInit() {
 
 	// set camera
 	camId = CameraType::_1;
+	cam0.init(width,height,0.03);
 
 	grid.init(50,10, 0xffd6d661);
 
@@ -108,7 +119,7 @@ void Game::gameInit() {
 	bgfx::setViewClear(0,
 		BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
 		0x303030ff, 1.0f, 0);
-	bgfx::setViewRect(0, 0, 0, WIDTH, HEIGHT);
+	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
 	avaterSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
@@ -122,6 +133,8 @@ void Game::gameInit() {
 	// std::cout << "max: " << maxMat4 << "\n";
 
 	// u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+
+	delete logo;
 
 }
 

@@ -13,6 +13,7 @@
 #include "camera.h"
 #include "gctx.h"
 #include "grid.h"
+#include "../ui/logo.h"
 
 #include "avaterSystem.h"
 
@@ -26,7 +27,7 @@ class Game {
 	GameContext gctx = {
 		.keyStat = keyStat,
 		.mStat = mStat,
-		.cam = cam,
+		.cam = cam0,
 		.cam_type = camId
 	};
 
@@ -41,14 +42,18 @@ class Game {
 	// bgfx::UniformHandle u_bones;
 	AvaterSystem avaterSystem;
 
-	Camera cam;
+	LogoRenderer* logo;
+
+	Camera cam0;
 	CameraType camId;
 
 	Grid grid;
 
-	constexpr static int
-		WIDTH = 1200,
-		HEIGHT = 900;
+	static constexpr int
+		T_WIDTH = 1200,
+		T_HEIGHT = 900;
+
+	int width, height;
 
 
 	void gameInit();

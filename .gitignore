@@ -1,5 +1,6 @@
 build*/
 /docs/
+/assets/
 /runtime/
 *.pyc
 *.o

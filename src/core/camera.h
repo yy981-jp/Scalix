@@ -11,14 +11,15 @@ enum class CameraType {
 
 
 class Camera {
-    const int WIDTH, HEIGHT;
-	const float SceneAspect;
+    int WIDTH, HEIGHT;
+	float SceneAspect;
     float proj[16];
 
 public:
-    Camera(int width, int height, float near_):
-      WIDTH(width), HEIGHT(height),
-      SceneAspect((float)width / (float)height) {
+    void init(int width, int height, float near_) {
+        WIDTH = width;
+        HEIGHT = height;
+        SceneAspect = (float)width / (float)height;
         bx::mtxProj(proj, 60.0f, SceneAspect, near_, 100.0f, bgfx::getCaps()->homogeneousDepth);
     }
 
