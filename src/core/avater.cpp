@@ -6,17 +6,28 @@
 
 
 void Avater::update(GameContext& ctx) {
-    // 体の向き（移動用）
-    if (has(ctx.keyStat, KCode::A)) yaw += 0.05f;
-    if (has(ctx.keyStat, KCode::D)) yaw -= 0.05f;
+    // 移動
+    float fx = -lutsv.getSin(yaw);
+    float fz =  lutsv.getCos(yaw);
+
+    float rx =  fz;   // = cos(yaw)
+    float rz = -fx;   // = sin(yaw)
 
     if (has(ctx.keyStat, KCode::W)) {
-        pos.x -= lutsv.getSin(yaw) * speed;
-        pos.z += lutsv.getCos(yaw) * speed;
+        pos.x += fx * speed;
+        pos.z += fz * speed;
     }
     if (has(ctx.keyStat, KCode::S)) {
-        pos.x += lutsv.getSin(yaw) * speed;
-        pos.z -= lutsv.getCos(yaw) * speed;
+        pos.x -= fx * speed;
+        pos.z -= fz * speed;
+    }
+    if (has(ctx.keyStat, KCode::A)) {
+        pos.x -= rx * speed;
+        pos.z -= rz * speed;
+    }
+    if (has(ctx.keyStat, KCode::D)) {
+        pos.x += rx * speed;
+        pos.z += rz * speed;
     }
 
     // 視点変更
@@ -30,8 +41,14 @@ void Avater::update(GameContext& ctx) {
     if (head.pitch >  headPitchLimit) head.pitch =  headPitchLimit;
     if (head.pitch < -headPitchLimit) head.pitch = -headPitchLimit;
 
-    if (head.yaw >  headYawLimit) head.yaw =  headYawLimit;
-    if (head.yaw < -headYawLimit) head.yaw = -headYawLimit;
+    if (head.yaw >  headYawLimit) {
+        yaw -= head.yaw - headYawLimit; // 体を視点に追従
+        head.yaw =  headYawLimit;
+    }
+    if (head.yaw < -headYawLimit) {
+        yaw += -headYawLimit - head.yaw;
+        head.yaw = -headYawLimit;
+    }
 
     // --- neck（pitch） ---
     int neckIdx = humanoid.bones[(size_t)HBT::neck];

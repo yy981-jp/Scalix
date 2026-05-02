@@ -83,7 +83,7 @@ struct Avater {
 	Euler head;
     const float sensitivity = 0.01f;
     const float headPitchLimit = 1.2f;
-    const float headYawLimit = 1.5f;
+    const float headYawLimit = 0.5f; // 1.5も良かった
 
 	Status status = Status::stay;
 	float speed = 0.2;
