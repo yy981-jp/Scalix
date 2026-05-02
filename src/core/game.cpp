@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-Game::Game(): cam(WIDTH,HEIGHT,0.1) {
+Game::Game(): cam(WIDTH,HEIGHT,0.03) {
 	SDL_Init(SDL_INIT_VIDEO);
 
 	// ===== window 作成 (SDL2) =====

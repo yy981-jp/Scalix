@@ -6,11 +6,10 @@
 
 
 void Avater::update(GameContext& ctx) {
-    // 向き操作
+    // 体の向き（移動用）
     if (has(ctx.keyStat, KCode::A)) yaw += 0.05f;
     if (has(ctx.keyStat, KCode::D)) yaw -= 0.05f;
 
-    // 移動 → yawから直接XZ成分を計算してpos更新
     if (has(ctx.keyStat, KCode::W)) {
         pos.x -= lutsv.getSin(yaw) * speed;
         pos.z += lutsv.getCos(yaw) * speed;
@@ -20,64 +19,68 @@ void Avater::update(GameContext& ctx) {
         pos.z -= lutsv.getCos(yaw) * speed;
     }
 
-    if (has(ctx.keyStat, KCode::K)) c_u -= 0.1;
-    if (has(ctx.keyStat, KCode::I)) c_u += 0.1;
+    // 視点変更
+    if (has(ctx.keyStat, KCode::n0)) ctx.cam_type = CameraType::DEBUG;
+    else if (has(ctx.keyStat, KCode::n1)) ctx.cam_type = CameraType::_1;
 
-    
-	int headIdx = humanoid.bones[(size_t)HBT::head];
+    head.yaw   += ctx.mStat.relPos.x * sensitivity;
+    head.pitch -= ctx.mStat.relPos.y * sensitivity;
+
+    // 制限（重要）
+    if (head.pitch >  headPitchLimit) head.pitch =  headPitchLimit;
+    if (head.pitch < -headPitchLimit) head.pitch = -headPitchLimit;
+
+    if (head.yaw >  headYawLimit) head.yaw =  headYawLimit;
+    if (head.yaw < -headYawLimit) head.yaw = -headYawLimit;
+
+    // --- neck（pitch） ---
+    int neckIdx = humanoid.bones[(size_t)HBT::neck];
+    auto& neckNode = model.nodes[neckIdx];
+    neckNode.hasRotation = true;
+
+    float qPitch[4];
+    quatRotateAxis(qPitch, 1, 0, 0, head.pitch);
+
+    for (int i = 0; i < 4; i++)
+        neckNode.rot[i] = qPitch[i];
+
+    // --- head（yaw） ---
+    int headIdx = humanoid.bones[(size_t)HBT::head];
     auto& headNode = model.nodes[headIdx];
     headNode.hasRotation = true;
 
-    float sensitivity = 0.01;
+    quatRotateAxis(headNode.rot, 0, 1, 0, head.yaw);
 
-    head.yaw   -= ctx.mStat.relPos.x * sensitivity;
-    head.pitch -= ctx.mStat.relPos.y * sensitivity;
-
-	// printf("D:   abs.x: %d,  abs.y: %d,  rel.x: %d,  rel.y: %d\n",
-    //     ctx.mStat.absPos.x, ctx.mStat.absPos.y, ctx.mStat.relPos.x, ctx.mStat.relPos.y);
+    // printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
+}
 
 
-    lookDir.x = lutsv.getCos(head.yaw) * lutsv.getCos(head.pitch);
-    lookDir.y = lutsv.getSin(head.pitch);
-    lookDir.z = lutsv.getSin(head.yaw) * lutsv.getCos(head.pitch);
+void Avater::draw(Camera& cam) {
+    int headIdx = humanoid.bones[(size_t)HBT::head];
+
+    float* m = globalMtxs[headIdx].data();
+
+    vec3f headPos = {
+        m[12],
+        m[13],
+        m[14]
+    };
+
+    // ★ headの向きから直接forward取得
+    vec3f lookDir = {
+        m[8],
+        m[9],
+        m[10]
+    };
 
     lookDir = bx::normalize(lookDir);
 
-    float qYaw[4];
-    float qPitch[4];
+    // モデルによっては逆向きなので必要なら反転
+    // lookDir = -lookDir;
 
-    // yawはY軸
-    quatRotateAxis(qYaw, 0, 1, 0, head.yaw);
+    vec3f camPos = headPos
+        + lookDir * 0.1f
+        + vec3f{0, 0.05f, 0};
 
-    // pitchはX軸
-    quatRotateAxis(qPitch, 1, 0, 0, head.pitch);
-
-    // 合成（順序重要）
-    float rot[4];
-    quatMul(rot, qYaw, qPitch);
-
-    for (int i = 0; i < 4; i++)
-        headNode.rot[i] = rot[i];
-
-}
-
-void Avater::draw(Camera& cam) {
-	int headIdx = humanoid.bones[(size_t)HBT::head];
-
-	float* m = globalMtxs[headIdx].data();
-
-	vec3f headPos = {
-		m[12],
-		m[13],
-		m[14]
-	};
-
-    // 少し前＆ちょい上
-	vec3f camPos = headPos
-		+ lookDir * 0.1f
-		+ vec3f{0, 0.05f, 0};
-
-	cam.update(camPos, camPos + lookDir);
-    // printf("D: lookDir: x:%g, y:%g, z:%g\n",
-    //     lookDir.x, lookDir.y, lookDir.z );
+    cam.update(camPos, camPos + lookDir);
 }

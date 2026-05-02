@@ -39,7 +39,7 @@ enum class Status {
 };
 
 enum class HBT {
-	head,
+	head, neck,
 	arm_left_up, arm_left_low,
 	arm_right_up, arm_right_low,
 	leg_left_up, leg_left_low,
@@ -48,6 +48,7 @@ enum class HBT {
 	Count
 };
 
+/// @brief 骨格
 struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
@@ -56,6 +57,7 @@ struct Humanoid {
 	std::vector<int> spines;
 };
 
+/// @brief 構造そのもの
 struct Model {
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
@@ -66,6 +68,7 @@ struct Model {
 
 using AvaterID = int;
 
+/// @brief 状態を含む1つのアバター
 struct Avater {
 	Model model;
 	Humanoid humanoid;
@@ -78,7 +81,9 @@ struct Avater {
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
 	Euler head;
-	vec3f lookDir;
+    const float sensitivity = 0.01f;
+    const float headPitchLimit = 1.2f;
+    const float headYawLimit = 1.5f;
 
 	Status status = Status::stay;
 	float speed = 0.2;

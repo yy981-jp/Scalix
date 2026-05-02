@@ -49,6 +49,7 @@ bool has(const std::vector<std::string>& w, const Targets&... targets_arg) {
 enum class BoneType: uint8_t {
 	unknown,
 	head,
+	neck,
 	spine,
 	hips,
 	arm,
@@ -82,6 +83,7 @@ struct NodeInfo {
 
 static const std::unordered_map<std::string, BoneType> wordMap = {
 	{"head", BoneType::head},
+	{"neck", BoneType::neck},
 	{"spine", BoneType::spine},
 	{"hips", BoneType::hips},
 	{"pelvis", BoneType::hips},
@@ -155,6 +157,10 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 			case BoneType::head: {
 				bones_init[static_cast<size_t>(HBT::head)].push_back(node);
 			} break;
+
+			case BoneType::neck: {
+				bones_init[static_cast<size_t>(HBT::neck)].push_back(node);
+			}
 
 			case BoneType::arm: {
 				if (node.side == Side::left) {
