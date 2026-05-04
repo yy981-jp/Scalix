@@ -90,8 +90,6 @@ struct Avater {
 
 	AvaterID id;
 
-    float c_u = 0; // tmp
-
 	void update(GameContext& keyStat);
 	void draw(Camera& cam);
 };

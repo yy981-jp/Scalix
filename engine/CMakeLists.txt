@@ -1,0 +1,28 @@
+# exec
+file(GLOB_RECURSE SOURCES src/*.cpp)
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+# package
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SDL2 REQUIRED sdl2)
+pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external
+    ${SDL2_INCLUDE_DIRS}
+    ${SDL2_IMAGE_INCLUDE_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    bgfx
+    bx
+    bimg
+    ${SDL2_LIBRARIES}
+    ${SDL2_IMAGE_LIBRARIES}
+)
+
+# mode
+target_compile_options(${PROJECT_NAME} PRIVATE
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:RelWithDebInfo>:-O3 -g>
+)

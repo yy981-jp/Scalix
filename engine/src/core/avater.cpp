@@ -13,22 +13,30 @@ void Avater::update(GameContext& ctx) {
     float rx =  fz;   // = cos(yaw)
     float rz = -fx;   // = sin(yaw)
 
+    bool walking = false;
+
     if (has(ctx.keyStat, KCode::W)) {
+        walking = true;
         pos.x += fx * speed;
         pos.z += fz * speed;
     }
     if (has(ctx.keyStat, KCode::S)) {
+        walking = true;
         pos.x -= fx * speed;
         pos.z -= fz * speed;
     }
     if (has(ctx.keyStat, KCode::A)) {
+        walking = true;
         pos.x -= rx * speed;
         pos.z -= rz * speed;
     }
     if (has(ctx.keyStat, KCode::D)) {
+        walking = true;
         pos.x += rx * speed;
         pos.z += rz * speed;
     }
+
+    status = (walking? Status::walk : Status::stay);
 
     // 視点変更
     if (has(ctx.keyStat, KCode::n0)) ctx.cam_type = CameraType::DEBUG;
@@ -37,7 +45,7 @@ void Avater::update(GameContext& ctx) {
     head.yaw   += ctx.mStat.relPos.x * sensitivity;
     head.pitch -= ctx.mStat.relPos.y * sensitivity;
 
-    // 制限（重要）
+    // 制限
     if (head.pitch >  headPitchLimit) head.pitch =  headPitchLimit;
     if (head.pitch < -headPitchLimit) head.pitch = -headPitchLimit;
 
@@ -50,7 +58,7 @@ void Avater::update(GameContext& ctx) {
         head.yaw = -headYawLimit;
     }
 
-    // --- neck（pitch） ---
+    // --- neck (pitch) ---
     int neckIdx = humanoid.bones[(size_t)HBT::neck];
     auto& neckNode = model.nodes[neckIdx];
     neckNode.hasRotation = true;
@@ -61,7 +69,7 @@ void Avater::update(GameContext& ctx) {
     for (int i = 0; i < 4; i++)
         neckNode.rot[i] = qPitch[i];
 
-    // --- head（yaw） ---
+    // --- head (yaw) ---
     int headIdx = humanoid.bones[(size_t)HBT::head];
     auto& headNode = model.nodes[headIdx];
     headNode.hasRotation = true;
@@ -83,7 +91,7 @@ void Avater::draw(Camera& cam) {
         m[14]
     };
 
-    // ★ headの向きから直接forward取得
+    // headの向きから直接forward取得
     vec3f lookDir = {
         m[8],
         m[9],
