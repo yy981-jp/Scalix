@@ -2,6 +2,7 @@ build*/
 /docs/
 /assets/
 /runtime/
+install/
 *.pyc
 *.o
 *.exe

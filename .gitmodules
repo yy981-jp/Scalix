@@ -13,3 +13,9 @@
 [submodule "external/tinygltf"]
 	path = external/tinygltf
 	url = git@github.com:syoyo/tinygltf.git
+[submodule "external/yaml-cpp"]
+	path = external/yaml-cpp
+	url = git@github.com:jbeder/yaml-cpp.git
+[submodule "external/nlohmann"]
+	path = external/nlohmann
+	url = git@github.com:nlohmann/json.git

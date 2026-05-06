@@ -16,7 +16,8 @@ unityのanimationは純粋な座標移動ではないので、いったん見送
 このため、avaterは人型想定とする
 
 ScalixAnimation(.sxa = json) と ScalixState(.sxs = json) でanimationを表現する
-unityのanimとcontrollerを解析して.sxs(条件)と.sxa(動き)に格納する そのシステムの名前がScalixImporter
+unityのanimとcontrollerを解析して.sxs(条件)と.sxa(動き本体)に格納する そのシステムの名前がScalixImporter(=sxim)
+	-> controller解析は大変なので、animのファイル名から推測程度で良いかも 推測で分類できなかったものはゲーム内UIからユーザに実行させられるようにするとか
 
 
 // ===== 埋め込みウィンドウ =====
