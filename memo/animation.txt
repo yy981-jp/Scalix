@@ -2,15 +2,10 @@
   "version": 1,
   "duration": 2.0,
 
-  "targets": [
-    { "id": "head", "type": "bone" },
-    { "id": "weapon", "type": "object" }
-  ],
-
   "tracks": [
     {
       "target": "head",
-      "path": "rotation",
+      "proc": "rotation",
       "type": "quat",
       "interpolation": "linear",
       "keys": [
@@ -20,7 +15,7 @@
     },
     {
       "target": "weapon",
-      "path": "visible",
+      "proc": "visible",
       "type": "bool",
       "interpolation": "step",
       "keys": [

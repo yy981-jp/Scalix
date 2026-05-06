@@ -1,11 +1,19 @@
+#include <iostream>
 #include <fstream>
+#include <limits>
 
 #include <yaml-cpp/yaml.h>
 #include <nlohmann/json.hpp>
 
+#include "../../shared/format.h"
+
 
 using json = nlohmann::json;
 using Yaml = YAML::Node;
+
+void dev_checkPattern() {
+	throw std::runtime_error("dev_checkPattern");
+}
 
 
 bool hasTwoOrMore(const std::string& str, const std::string& target) {
@@ -22,16 +30,19 @@ bool hasTwoOrMore(const std::string& str, const std::string& target) {
 }
 
 void removeUnity(std::string& file) {
-	file.find("\n");
+	size_t break1 = file.find("\n");
+	size_t break2 = file.find("\n", break1 + 1);
+	size_t break3 = file.find("\n", break2 + 1);
+	file.erase(0,break3+1);
 }
 
 
 json yamlToJson(const Yaml& node) {
 	if(node.IsScalar()) {
-        try { return node.as<int>(); } catch(...) {}
-        try { return node.as<double>(); } catch(...) {}
-        try { return node.as<bool>(); } catch(...) {}
-        return node.as<std::string>();
+		try { return node.as<int>(); } catch(...) {}
+		try { return node.as<double>(); } catch(...) {}
+		try { return node.as<bool>(); } catch(...) {}
+		return node.as<std::string>();
 	}
 	else if(node.IsSequence()) {
 		json j = json::array();
@@ -50,15 +61,102 @@ json yamlToJson(const Yaml& node) {
 	return {};
 }
 
-std::vector<Yaml> parseUnityYaml(const std::string& path) {
+Yaml parseUnityYaml(const std::string& path) {
 	std::ifstream ifs(path);
 	if (!ifs) throw std::runtime_error("ifs");
-	std::string file;
+	std::string file{std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>()};
 	if (hasTwoOrMore(file,"---")) throw std::runtime_error("unknown anim file");
 	removeUnity(file);
+	return YAML::Load(file);
+}
+
+template<typename T>
+void pack(json& o, const T& dat, const std::string& key) {
+    o[key] = dat;
+}
+
+class Pack {
+	const json& input;
+	json output;
+
+public:
+	Pack(const json& input): input(input) {}
+
+	void set(const std::string& from, const std::string& to) {
+		output[to] = input[from];
+	}
+
+	json get() { return output; }
+};
+
+Format::Key::Value parseValue(const json& v) {
+	if (v.is_boolean()) return v.get<bool>();
+	if (v.is_number()) return v.get<float>();
+	if (v.is_array())  return v.get<std::array<float,4>>();
+	if (v.is_string() && (v.get<std::string>() == "Infinity")) return std::numeric_limits<float>::infinity();
+	throw std::runtime_error("invalid value");
+}
+
+Format convertUnityAnim(const json& ori) {
+	const json& j = ori["AnimationClip"];
+	Format f;
+	f.sampleRate = j["m_SampleRate"];
+	f.name = j["m_Name"];
+
+	std::unordered_map<std::string, Format::Proc> map = {
+		{"m_RotationCurves", Format::Proc::rotation},
+		{"m_PositionCurves", Format::Proc::position},
+		{"m_ScaleCurves", Format::Proc::scale},
+		{"m_FloatCurves", Format::Proc::float_},
+	};
+
+	// tracks
+	for (const auto& [key,path]: map) {
+		// curve配列単位
+		for (const json& value: j[key]) {
+			// curve単位
+			Format::Track f_track;
+
+			f_track.proc = path;
+
+			switch (path) {
+				using enum Format::Proc;
+				
+				case float_: {
+					for (const json& tracks: value["curve"]["m_Curve"]) {
+						Format::Key key;
+						key.time = tracks["time"];
+						key.value = parseValue(tracks["value"]);
+						f_track.keys.push_back(key);
+					}
+					f_track.interpolation = Format::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
+					f_track.type = Format::Type::float_;
+					f_track.target = value["path"];
+
+					std::string blendShape = value["attribute"];
+					if (blendShape.starts_with("blendShape.")) {
+						blendShape.erase(0,11); // "blendShape."を除去
+						f_track.proc = Format::Proc::morph;
+					} else f_track.proc = Format::Proc::active;
+					f_track.attrTarget = blendShape;
+				} break;
+
+				default: dev_checkPattern();
+			}
+			f.tracks.push_back(f_track);
+		}
+	}
+	return f;
 }
 
 
-int main() {
+json run(const std::string& path) {
+	Yaml yml = parseUnityYaml(path);
+	json j = yamlToJson(yml);
+	Format fm = convertUnityAnim(j);
+	return fm;
+}
 
+int main() {
+	std::cout << run("Sweater_OFF.anim").dump(4);
 }

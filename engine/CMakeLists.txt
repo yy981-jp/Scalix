@@ -1,5 +1,5 @@
 # exec
-file(GLOB_RECURSE SOURCES src/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp ../shared/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # bgfx

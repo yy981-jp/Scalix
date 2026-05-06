@@ -1,7 +1,7 @@
 set(sxim "sxim") # Scalix impoter
 
 # exec
-file(GLOB_RECURSE SOURCES src/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp ../shared/*.cpp)
 add_executable(${sxim} ${SOURCES})
 
 # package
