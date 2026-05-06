@@ -13,6 +13,7 @@
 #include "camera.h"
 #include "gctx.h"
 #include "grid.h"
+#include "../ui/logo.h"
 
 #include "avaterSystem.h"
 
@@ -25,33 +26,44 @@ enum class ShaderId {
 class Game {
 	GameContext gctx = {
 		.keyStat = keyStat,
-		.cam = cam,
+		.mStat = mStat,
+		.cam = cam0,
 		.cam_type = camId
 	};
 
 	SDL_Window* window;
 
 	bool running = true;
-    uint64_t keyStat = 0; // KCode
+    KCodes keyStat = 0; // KCode
+	bool mouseRelMode = true;
+	MouseState mStat;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
 	// bgfx::UniformHandle u_bones;
 	AvaterSystem avaterSystem;
 
-	Camera cam{WIDTH,HEIGHT};
+	LogoRenderer* logo;
+
+	Camera cam0;
 	CameraType camId;
 
 	Grid grid;
 
-	constexpr static int
-		WIDTH = 1200,
-		HEIGHT = 900;
+	static constexpr int
+		T_WIDTH = 1200,
+		T_HEIGHT = 900;
+
+	int width, height;
 
 
 	void gameInit();
 
 	void onKeyDown(const SDL_KeyboardEvent& e);
     void onKeyUp(const SDL_KeyboardEvent& e);
+	void onMouseBtDown(const SDL_MouseButtonEvent& e);
+	void onMouseBtUp(const SDL_MouseButtonEvent& e);
+	void onWindowEve(const SDL_WindowEvent& e);
+	void onMouseMt(const SDL_MouseMotionEvent& e);
 
 	void update();
 	void draw();

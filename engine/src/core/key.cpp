@@ -2,6 +2,17 @@
 #include <SDL.h>
 
 const std::unordered_map<SDL_Keycode, KCode> keyMap = {
+	{ SDLK_0, KCode::n0 },
+	{ SDLK_1, KCode::n1 },
+	{ SDLK_2, KCode::n2 },
+	{ SDLK_3, KCode::n3 },
+	{ SDLK_4, KCode::n4 },
+	{ SDLK_5, KCode::n5 },
+	{ SDLK_6, KCode::n6 },
+	{ SDLK_7, KCode::n7 },
+	{ SDLK_8, KCode::n8 },
+	{ SDLK_9, KCode::n9 },
+
 	{ SDLK_a, KCode::A },
 	{ SDLK_b, KCode::B },
 	{ SDLK_c, KCode::C },
@@ -46,4 +57,10 @@ const std::unordered_map<SDL_Keycode, KCode> keyMap = {
 	{ SDLK_RETURN, KCode::Enter },
 	{ SDLK_DELETE, KCode::Delete },
 	{ SDLK_BACKSPACE, KCode::BkSpace },
+};
+
+const std::unordered_map<Uint8, MCode> mMap = {
+	{ SDL_BUTTON_LEFT, MCode::Left},
+	{ SDL_BUTTON_RIGHT, MCode::Right },
+	{ SDL_BUTTON_MIDDLE, MCode::Mid }
 };

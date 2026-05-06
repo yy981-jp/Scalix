@@ -6,6 +6,7 @@
 #include "gctx.h"
 
 
+/// @brief avater 全体管理&描画システム
 class AvaterSystem {
 	std::vector<Avater> avaters;
 	AvaterID playableAvater = 0;

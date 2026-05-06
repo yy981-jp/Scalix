@@ -84,31 +84,6 @@ void AvaterSystem::update(GameContext& ctx) {
         bx::mtxMul(entityMtx, tmp2, t);
 
 
-
-
-        int nodeIdx = avater.humanoid.bones[
-            static_cast<size_t>(HBT::arm_left_low)
-        ];
-
-        // int nodeIdx = avater.humanoid.spines[0];
-
-        auto& node = avater.model.nodes[nodeIdx];
-
-        // printf("bone idx: %d name: %s\n",
-        //     nodeIdx,
-        //     avater.model.nodes[nodeIdx].name.c_str()
-        // );
-
-
-        float addRot[4];
-        quatRotateAxis(addRot, 1, 0, 0, 0.5f);
-
-        quatMul(node.rot, addRot, node.rot);
-        quatNormalize(node.rot);
-
-
-
-
         // local mtx
         std::vector<std::array<float, 16>> localMtxs;
         localMtxs.resize(avater.model.nodes.size());
