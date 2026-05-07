@@ -14,17 +14,21 @@ using json = nlohmann::json;
 
 struct Format {
 	enum class Type {
-		unknown, quat, float_
+		unknown,
+		quat,		// float x 4
+		vec3f,		// float x 3
+		float_		// float x 1
 	};
 
 	enum class Interpolation {
-		unknown, liner, step
+		unknown, liner, step, hermite/*点で傾き+速度で制御*/,
 	};
 
 	using Quat = std::array<float, 4>;
+	using vec3f = std::array<float, 3>;
 
 	struct Key {
-		using Value = std::variant<float, Quat, bool>;
+		using Value = std::variant<float, vec3f, Quat, bool>;
 		float time;
 		Value value = std::numeric_limits<float>::quiet_NaN();
 	};
@@ -54,6 +58,7 @@ struct Format {
 void to_json(json& j, const Format::Key& k);
 void from_json(const json& j, Format::Key& k);
 
+void from_json(const json& j, Format::vec3f& v);
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Format::Track,
 	target, proc, type, interpolation, attrTarget, keys)

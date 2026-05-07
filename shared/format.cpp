@@ -23,3 +23,9 @@ void from_json(const json& j, Format::Key& k) {
 	else if (v.is_array())
 		k.value = v.get<Format::Quat>();
 }
+
+void from_json(const json& j, Format::vec3f& v) {
+    v[0] = j.at("x").get<float>();
+    v[1] = j.at("y").get<float>();
+    v[2] = j.at("z").get<float>();
+}

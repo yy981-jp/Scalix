@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <filesystem>
 
 #include <yaml-cpp/yaml.h>
 #include <nlohmann/json.hpp>
@@ -10,9 +11,10 @@
 
 using json = nlohmann::json;
 using Yaml = YAML::Node;
+namespace fs = std::filesystem;
 
 void dev_checkPattern() {
-	throw std::runtime_error("dev_checkPattern");
+	// throw std::runtime_error("dev_checkPattern");
 }
 
 
@@ -70,30 +72,22 @@ Yaml parseUnityYaml(const std::string& path) {
 	return YAML::Load(file);
 }
 
-template<typename T>
-void pack(json& o, const T& dat, const std::string& key) {
-    o[key] = dat;
-}
-
-class Pack {
-	const json& input;
-	json output;
-
-public:
-	Pack(const json& input): input(input) {}
-
-	void set(const std::string& from, const std::string& to) {
-		output[to] = input[from];
-	}
-
-	json get() { return output; }
-};
-
 Format::Key::Value parseValue(const json& v) {
 	if (v.is_boolean()) return v.get<bool>();
 	if (v.is_number()) return v.get<float>();
-	if (v.is_array())  return v.get<std::array<float,4>>();
+	// if (v.is_array())  return v.get<Format::Quat>();
+	if (v.is_object()) {
+		// printf("object-size: %d", v.size());
+		switch (v.size()) {
+			case 3: return Format::vec3f{
+				v["x"].get<float>(),
+				v["y"].get<float>(),
+				v["z"].get<float>()
+			};
+		}
+	}
 	if (v.is_string() && (v.get<std::string>() == "Infinity")) return std::numeric_limits<float>::infinity();
+	std::cout << v.dump(4) << "\n";
 	throw std::runtime_error("invalid value");
 }
 
@@ -103,7 +97,7 @@ Format convertUnityAnim(const json& ori) {
 	f.sampleRate = j["m_SampleRate"];
 	f.name = j["m_Name"];
 
-	std::unordered_map<std::string, Format::Proc> map = {
+	static const std::unordered_map<std::string, Format::Proc> map = {
 		{"m_RotationCurves", Format::Proc::rotation},
 		{"m_PositionCurves", Format::Proc::position},
 		{"m_ScaleCurves", Format::Proc::scale},
@@ -119,6 +113,9 @@ Format convertUnityAnim(const json& ori) {
 
 			f_track.proc = path;
 
+			if (!value["path"].is_null()) // nullはrootであり、正常値
+				f_track.target = value["path"];
+
 			switch (path) {
 				using enum Format::Proc;
 				
@@ -131,8 +128,6 @@ Format convertUnityAnim(const json& ori) {
 					}
 					f_track.interpolation = Format::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
 					f_track.type = Format::Type::float_;
-					f_track.target = value["path"];
-
 					std::string blendShape = value["attribute"];
 					if (blendShape.starts_with("blendShape.")) {
 						blendShape.erase(0,11); // "blendShape."を除去
@@ -140,6 +135,17 @@ Format convertUnityAnim(const json& ori) {
 					} else f_track.proc = Format::Proc::active;
 					f_track.attrTarget = blendShape;
 				} break;
+
+				case scale: {
+					for (const json& tracks: value["curve"]["m_Curve"]) {
+						Format::Key key;
+						key.time = tracks["time"];
+						key.value = parseValue(tracks["value"]);
+						f_track.keys.push_back(key);
+					}
+					f_track.interpolation = Format::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
+					f_track.type = Format::Type::vec3f;
+				}
 
 				default: dev_checkPattern();
 			}
@@ -157,6 +163,30 @@ json run(const std::string& path) {
 	return fm;
 }
 
-int main() {
-	std::cout << run("Sweater_OFF.anim").dump(4);
+int main(int argc, char* argv[]) {
+	if (argc < 2) {
+		std::cout << "Usage: <targetDir>\n";
+		return 1;
+	}
+	fs::path targetDir = argv[1];
+	// fs::path currentDir = fs::current_path();
+
+	// fs::create_directory("sxim_o");
+
+	// std::cout << run("Sweater_OFF.anim").dump(4);
+
+	json res;
+	res["version"] = 1;
+	res["body"] = json::array();
+
+	for (const auto& e: fs::recursive_directory_iterator(targetDir)) {
+		if (e.path().extension() != ".anim" ) continue;
+		const fs::path& f = e.path().string();
+		// fs::path rel = fs::relative(f,targetDir);
+		//  currentDir / "sxim_o" / rel
+		res["body"].push_back(run(f.string()));
+	}
+
+	std::ofstream ofs("test.sxa");
+	ofs << res;
 }

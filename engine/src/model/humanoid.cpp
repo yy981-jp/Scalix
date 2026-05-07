@@ -1,41 +1,10 @@
 #include "model.h"
+#include "../core/fmutil.h"
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
 #include <ranges>
 
-
-std::vector<std::string> splitWords(const std::string& input) {
-	std::vector<std::string> result;
-	std::string current;
-
-	auto push = [&]() {
-		if (!current.empty()) {
-			result.push_back(current);
-			current.clear();
-		}
-	};
-
-	for (size_t i = 0; i < input.size(); ++i) {
-		char c = input[i];
-
-		// 記号で区切る
-		if (c == '_' || c == '.' || c == '-' || c == ':') {
-			push();
-			continue;
-		}
-
-		// 大文字で区切る（camelCase / PascalCase）
-		if (std::isupper(c) && !current.empty()) {
-			push();
-		}
-
-		current += std::tolower(c);
-	}
-
-	push();
-	return result;
-}
 
 template <typename... Targets>
 bool has(const std::vector<std::string>& w, const Targets&... targets_arg) {
@@ -128,7 +97,7 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	// 属性をつける
 	for (const auto& skin: skins) {
 		for (const int& nodeId: skin.joints) {
-			const std::vector<std::string> words = splitWords(nodes[nodeId].name);
+			const std::vector<std::string> words = tokenizer(nodes[nodeId].name);
 			NodeInfo cand;
 			cand.nodeId = nodeId;
 			for (auto& w : words) {
