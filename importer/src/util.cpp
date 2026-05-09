@@ -2,7 +2,7 @@
 
 
 void dev_checkPattern() {
-	// throw std::runtime_error("dev_checkPattern");
+	throw std::runtime_error("dev_checkPattern");
 }
 
 

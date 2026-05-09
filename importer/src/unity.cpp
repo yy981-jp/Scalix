@@ -68,17 +68,20 @@ Format convertUnityAnim(const json& ori) {
 			if (!value["path"].is_null()) // nullはrootであり、正常値
 				f_track.target = value["path"];
 
+			for (const json& tracks: value["curve"]["m_Curve"]) {
+				Format::Key key;
+				key.time = tracks["time"];
+				key.value = parseValue(tracks["value"]);
+				f_track.keys.push_back(key);
+			}
+
+			f_track.interpolation = Format::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
+
+
 			switch (path) {
 				using enum Format::Proc;
 				
 				case float_: {
-					for (const json& tracks: value["curve"]["m_Curve"]) {
-						Format::Key key;
-						key.time = tracks["time"];
-						key.value = parseValue(tracks["value"]);
-						f_track.keys.push_back(key);
-					}
-					f_track.interpolation = Format::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
 					f_track.type = Format::Type::float_;
 					std::string blendShape = value["attribute"];
 					if (blendShape.starts_with("blendShape.")) {
@@ -89,15 +92,12 @@ Format convertUnityAnim(const json& ori) {
 				} break;
 
 				case scale: {
-					for (const json& tracks: value["curve"]["m_Curve"]) {
-						Format::Key key;
-						key.time = tracks["time"];
-						key.value = parseValue(tracks["value"]);
-						f_track.keys.push_back(key);
-					}
-					f_track.interpolation = Format::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
 					f_track.type = Format::Type::vec3f;
-				}
+				} break;
+
+				case position: {
+					f_track.type = Format::Type::vec3f;
+				} break;
 
 				default: dev_checkPattern();
 			}
@@ -105,4 +105,11 @@ Format convertUnityAnim(const json& ori) {
 		}
 	}
 	return f;
+}
+
+json run_unity(const std::string& path) {
+	Yaml yml = parseUnityYaml(path);
+	json j = yamlToJson(yml);
+	Format fm = convertUnityAnim(j);
+	return fm;
 }
