@@ -16,7 +16,7 @@ void AvaterSystem::loadData(const std::vector<std::string> path) {
 		avaters.push_back( loadEntity(file) );
         auto& avater = avaters.back();
         avater.id = id++;
-        avater.humanoid.init(avater.model.nodes, avater.model.skins);
+        avater.init();
     }
 }
 

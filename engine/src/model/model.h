@@ -8,6 +8,8 @@
 #include "../core/gctx.h"
 #include "../core/euler.h"
 
+#include "../../../shared/format.h"
+
 
 struct Node {
 	std::string name;
@@ -85,6 +87,8 @@ struct Avater {
     const float headPitchLimit = 1.2f;
     const float headYawLimit = 0.5f; // 1.5も良かった
 
+	std::vector<Format> anims;
+
 	Status status = Status::stay;
 	float speed = 0.2;
 
@@ -92,4 +96,5 @@ struct Avater {
 
 	void update(GameContext& keyStat);
 	void draw(Camera& cam);
+	void init();
 };

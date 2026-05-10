@@ -1,4 +1,5 @@
 #include "../model/model.h"
+#include "../anim/loader.h"
 #include "cache.h"
 #include "key.h"
 #include "gctx.h"
@@ -108,4 +109,9 @@ void Avater::draw(Camera& cam) {
         + vec3f{0, 0.05f, 0};
 
     cam.update(camPos, camPos + lookDir);
+}
+
+void Avater::init() {
+    humanoid.init(model.nodes, model.skins);
+    anims = loadAnim("test.sxa");
 }

@@ -58,6 +58,7 @@ struct Format {
 void to_json(json& j, const Format::Key& k);
 void from_json(const json& j, Format::Key& k);
 
+// void to_json(json& j, const Format::vec3f& v);
 void from_json(const json& j, Format::vec3f& v);
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Format::Track,
