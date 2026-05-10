@@ -4,6 +4,7 @@
 
 #include "../model/model.h"
 #include "gctx.h"
+#include "avater.h"
 
 
 /// @brief avater 全体管理&描画システム

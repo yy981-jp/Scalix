@@ -32,16 +32,16 @@ void GltfLoaderImpl::parseMesh(int nodeId) {
 		posView = model.bufferViews[posAcc.bufferView];
 		posBuf = model.buffers[posView.buffer];
 
-		posStride = posAcc.ByteStride(posView);
+		size_t posStride = posAcc.ByteStride(posView);
 		if (posStride == 0) posStride = sizeof(float) * 3;
 
-		posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
+		const uint8_t* posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
 
 		// ===== Normal/UV クリア =====
-		norPtr = nullptr;
-		norStride = 0;
-		uvPtr = nullptr;
-		uvStride = 0;
+		const float* norPtr = nullptr;
+		size_t norStride = 0;
+		const float* uvPtr = nullptr;
+		size_t uvStride = 0;
 
 		// ===== NORMAL（任意）=====
 		if (attrs.count("NORMAL")) {

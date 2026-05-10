@@ -1,7 +1,8 @@
 #pragma once
 #include "../gfx/mesh.h"
 #include "../gfx/texture.h"
-#include "../model/model.h"
+// #include "../model/model.h"
+#include "../core/avater.h"
 #include <tinygltf/tiny_gltf.h>
 
 
@@ -13,13 +14,6 @@ class GltfLoaderImpl {
 	tinygltf::Accessor posAcc;
 	tinygltf::BufferView posView;
 	tinygltf::Buffer posBuf;
-
-	const uint8_t* posPtr;
-	size_t posStride;
-	const float* norPtr = nullptr;
-	size_t norStride = 0;
-	const float* uvPtr = nullptr;
-	size_t uvStride = 0;
 
 	Model scalixModel;
 
@@ -37,10 +31,4 @@ inline Model loadGltf(const std::string& path) {
 	GltfLoaderImpl loader(path);
 	loader.load();
 	return loader.get();
-}
-
-inline Avater loadEntity(const std::string& glTFPath) {
-	Avater ent;
-	ent.model = loadGltf(glTFPath);
-	return ent;
 }

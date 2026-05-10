@@ -13,10 +13,9 @@
 void AvaterSystem::loadData(const std::vector<std::string> path) {
     AvaterID id = 0;
     for (const auto& file: path) {
-		avaters.push_back( loadEntity(file) );
-        auto& avater = avaters.back();
+        Avater avater(file);
         avater.id = id++;
-        avater.init();
+		avaters.push_back(avater);
     }
 }
 

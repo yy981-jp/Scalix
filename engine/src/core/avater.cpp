@@ -1,5 +1,6 @@
-#include "../model/model.h"
+#include "avater.h"
 #include "../anim/loader.h"
+#include "../gltf/loader.h"
 #include "cache.h"
 #include "key.h"
 #include "gctx.h"
@@ -111,7 +112,8 @@ void Avater::draw(Camera& cam) {
     cam.update(camPos, camPos + lookDir);
 }
 
-void Avater::init() {
+Avater::Avater(const std::string& glTFPath) {
+	model = loadGltf(glTFPath);
     humanoid.init(model.nodes, model.skins);
     anims = loadAnim("test.sxa");
 }
