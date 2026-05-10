@@ -22,7 +22,7 @@ struct Avater {
     const float headPitchLimit = 1.2f;
     const float headYawLimit = 0.5f; // 1.5も良かった
 
-	std::vector<Format> anims;
+	std::vector<RuntimeFormat> anims;
 
 	Status status = Status::stay;
 	float speed = 0.2;

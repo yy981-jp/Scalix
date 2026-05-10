@@ -1,6 +1,6 @@
 #pragma once
-#include "../../../shared/format.h"
+#include "../anim/format.h"
 #include "../core/json.h"
 
 
-std::vector<Format> loadAnim(const std::string& path);
+std::vector<RuntimeFormat> loadAnim(const std::string& path);

@@ -23,14 +23,14 @@ Yaml parseUnityYaml(const std::string& path) {
 	return YAML::Load(file);
 }
 
-Format::Key::Value parseValue(const json& v) {
+FormatDef::Key::Value parseValue(const json& v) {
 	if (v.is_boolean()) return v.get<bool>();
 	if (v.is_number()) return v.get<float>();
-	// if (v.is_array())  return v.get<Format::Quat>();
+	// if (v.is_array())  return v.get<FormatDef::Quat>();
 	if (v.is_object()) {
 		// printf("object-size: %d", v.size());
 		switch (v.size()) {
-			case 3: return Format::vec3f{
+			case 3: return FormatDef::vec3f{
 				v["x"].get<float>(),
 				v["y"].get<float>(),
 				v["z"].get<float>()
@@ -43,17 +43,17 @@ Format::Key::Value parseValue(const json& v) {
 }
 
 
-Format convertUnityAnim(const json& ori) {
+ImportFormat convertUnityAnim(const json& ori) {
 	const json& j = ori["AnimationClip"];
-	Format f;
+	ImportFormat f;
 	f.sampleRate = j["m_SampleRate"];
 	f.name = j["m_Name"];
 
-	static const std::unordered_map<std::string, Format::Proc> map = {
-		{"m_RotationCurves", Format::Proc::rotation},
-		{"m_PositionCurves", Format::Proc::position},
-		{"m_ScaleCurves", Format::Proc::scale},
-		{"m_FloatCurves", Format::Proc::float_},
+	static const std::unordered_map<std::string, FormatDef::Proc> map = {
+		{"m_RotationCurves", FormatDef::Proc::rotation},
+		{"m_PositionCurves", FormatDef::Proc::position},
+		{"m_ScaleCurves", FormatDef::Proc::scale},
+		{"m_FloatCurves", FormatDef::Proc::float_},
 	};
 
 	// tracks
@@ -61,7 +61,7 @@ Format convertUnityAnim(const json& ori) {
 		// curve配列単位
 		for (const json& value: j[key]) {
 			// curve単位
-			Format::Track f_track;
+			ImportFormat::Track f_track;
 
 			f_track.proc = path;
 
@@ -69,34 +69,34 @@ Format convertUnityAnim(const json& ori) {
 				f_track.target = value["path"];
 
 			for (const json& tracks: value["curve"]["m_Curve"]) {
-				Format::Key key;
+				FormatDef::Key key;
 				key.time = tracks["time"];
 				key.value = parseValue(tracks["value"]);
 				f_track.keys.push_back(key);
 			}
 
-			f_track.interpolation = Format::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
+			f_track.interpolation = FormatDef::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
 
 
 			switch (path) {
-				using enum Format::Proc;
+				using enum FormatDef::Proc;
 				
 				case float_: {
-					f_track.type = Format::Type::float_;
+					f_track.type = FormatDef::Type::float_;
 					std::string blendShape = value["attribute"];
 					if (blendShape.starts_with("blendShape.")) {
 						blendShape.erase(0,11); // "blendShape."を除去
-						f_track.proc = Format::Proc::morph;
-					} else f_track.proc = Format::Proc::active;
+						f_track.proc = FormatDef::Proc::morph;
+					} else f_track.proc = FormatDef::Proc::active;
 					f_track.attrTarget = blendShape;
 				} break;
 
 				case scale: {
-					f_track.type = Format::Type::vec3f;
+					f_track.type = FormatDef::Type::vec3f;
 				} break;
 
 				case position: {
-					f_track.type = Format::Type::vec3f;
+					f_track.type = FormatDef::Type::vec3f;
 				} break;
 
 				default: dev_checkPattern();
@@ -110,6 +110,6 @@ Format convertUnityAnim(const json& ori) {
 json run_unity(const std::string& path) {
 	Yaml yml = parseUnityYaml(path);
 	json j = yamlToJson(yml);
-	Format fm = convertUnityAnim(j);
+	ImportFormat fm = convertUnityAnim(j);
 	return fm;
 }

@@ -8,7 +8,7 @@
 #include "../core/gctx.h"
 #include "../core/euler.h"
 
-#include "../../../shared/format.h"
+#include "../anim/format.h"
 
 
 struct Node {

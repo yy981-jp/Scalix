@@ -8,11 +8,12 @@
 
 #include <nlohmann/json.hpp>
 
+#include "../engine/src/core/sid.h"
 
 using json = nlohmann::json;
 
 
-struct Format {
+namespace FormatDef {
 	enum class Type {
 		unknown,
 		quat,		// float x 4
@@ -36,33 +37,77 @@ struct Format {
 	enum class Proc {
 		unknown, rotation, position, scale, float_, active, morph
 	};
+}
 
+template<class T>
+T ConvertString(const T& s) {
+	return s;
+}
+
+inline StId ConvertString(const std::string& s) {
+	return StId(s);
+}
+
+template<class StrT>
+struct Format {
 	/// @brief 1動作
 	struct Track {
-		std::string target; // 動作対象
-		Proc proc = Proc::unknown; // 処理の種類
-		Type type = Type::unknown; // 型
-		Interpolation interpolation = Interpolation::unknown; // 補完タイプ
-		std::string attrTarget; // 具体的な動作の対象 moph名だとか
-		std::vector<Key> keys; // キーフレーム
+		StrT target; // 動作対象
+		FormatDef::Proc proc = FormatDef::Proc::unknown; // 処理の種類
+		FormatDef::Type type = FormatDef::Type::unknown; // 型
+		FormatDef::Interpolation interpolation = FormatDef::Interpolation::unknown; // 補完タイプ
+		StrT attrTarget; // 具体的な動作の対象 moph名だとか
+		std::vector<FormatDef::Key> keys; // キーフレーム
 	};
 
-
-
 	int sampleRate;
-	std::string name;
+	StrT name;
 	std::vector<Track> tracks;
+
+	template<class OtherStrT>
+	Format(const Format<OtherStrT>& src)
+		: sampleRate(src.sampleRate) {
+		name = ConvertString(src.name);
+
+		tracks.reserve(src.tracks.size());
+
+		for (const auto& t : src.tracks) {
+			Track track;
+			track.target = ConvertString(t.target);
+			track.proc = t.proc;
+			track.type = t.type;
+			track.interpolation = t.interpolation;
+			track.attrTarget = ConvertString(t.attrTarget);
+			track.keys = t.keys;
+			tracks.push_back(track);
+		}
+	}
+
+	Format() = default;
+
 };
 
 
-void to_json(json& j, const Format::Key& k);
-void from_json(const json& j, Format::Key& k);
+// Forward declarations for custom JSON serialization
+namespace nlohmann {
+	template <>
+	struct adl_serializer<FormatDef::Key> {
+		static void to_json(json& j, const FormatDef::Key& k);
+		static void from_json(const json& j, FormatDef::Key& k);
+	};
+}
 
-// void to_json(json& j, const Format::vec3f& v);
-void from_json(const json& j, Format::vec3f& v);
+void to_json(json& j, const FormatDef::Key& k);
+void from_json(const json& j, FormatDef::Key& k);
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Format::Track,
+// void to_json(json& j, const FormatDef::vec3f& v);
+void from_json(const json& j, FormatDef::vec3f& v);
+
+
+using ImportFormat = Format<std::string>;
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImportFormat::Track,
 	target, proc, type, interpolation, attrTarget, keys)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Format,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImportFormat,
 	sampleRate, name, tracks)

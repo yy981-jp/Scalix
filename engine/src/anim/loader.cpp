@@ -1,8 +1,8 @@
 #include "loader.h"
 
 
-std::vector<Format> loadAnim(const std::string& path) {
-    std::vector<Format> anims;
+std::vector<RuntimeFormat> loadAnim(const std::string& path) {
+    std::vector<RuntimeFormat> anims;
     json j = readJson(path);
 
     // check json
@@ -16,7 +16,8 @@ std::vector<Format> loadAnim(const std::string& path) {
 
     // process
     for (const json& e: j["body"]) {
-        anims.emplace_back(e);
+        RuntimeFormat rf = e.get<ImportFormat>();
+        anims.push_back(rf);
     }
 
     return anims;
