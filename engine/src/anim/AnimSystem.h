@@ -1,16 +1,17 @@
 #pragma once
 
 #include "../core/sid.h"
+#include "loader.h"
 
 #include <unordered_map>
 
 
 class AnimSystem {
-    std::unordered_map anims;
+    std::unordered_map<StId, RtAnimFmt> anims;
 
 public:
-    AnimSystem() {
-
+    void init(const std::string& path) {
+        anims = loadAnim(path);
     }
 
     void run(StId animName) {

@@ -2,5 +2,7 @@
 #include "../anim/format.h"
 #include "../core/json.h"
 
+#include <unordered_map>
 
-std::vector<RuntimeFormat> loadAnim(const std::string& path);
+
+std::unordered_map<StId,RtAnimFmt> loadAnim(const std::string& path);

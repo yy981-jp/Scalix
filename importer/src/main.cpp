@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 
 	json res;
 	res["version"] = 1;
-	res["body"] = json::array();
+	res["body"] = json::object();
 
 	size_t fileNum = 0;
 	for (const auto& e: fs::recursive_directory_iterator(targetDir)) {

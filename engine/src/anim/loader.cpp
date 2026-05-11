@@ -1,8 +1,8 @@
 #include "loader.h"
 
 
-std::vector<RuntimeFormat> loadAnim(const std::string& path) {
-    std::vector<RuntimeFormat> anims;
+std::unordered_map<StId,RtAnimFmt> loadAnim(const std::string& path) {
+    std::unordered_map<StId,RtAnimFmt> anims;
     json j = readJson(path);
 
     // check json
@@ -15,9 +15,9 @@ std::vector<RuntimeFormat> loadAnim(const std::string& path) {
     }
 
     // process
-    for (const json& e: j["body"]) {
-        RuntimeFormat rf = e.get<ImportFormat>();
-        anims.push_back(rf);
+    for (const auto& [key,value]: j["body"].items()) {
+        RtAnimFmt rf = value.get<ImAnimFmt>();
+        anims[StId(key)] = rf;
     }
 
     return anims;

@@ -1,3 +1,8 @@
+/**
+ * @brief String Id
+ */
+
+
 #pragma once
 
 #include <cstdint>

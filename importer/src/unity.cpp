@@ -42,12 +42,15 @@ FormatDef::Key::Value parseValue(const json& v) {
 	throw std::runtime_error("invalid value");
 }
 
+using ImAnimObj = std::pair<std::string,ImAnimFmt>;
 
-ImportFormat convertUnityAnim(const json& ori) {
+ImAnimObj convertUnityAnim(const json& ori) {
 	const json& j = ori["AnimationClip"];
-	ImportFormat f;
+	ImAnimObj res;
+	res.first = j["m_Name"];
+	
+	ImAnimFmt f = res.second;
 	f.sampleRate = j["m_SampleRate"];
-	f.name = j["m_Name"];
 
 	static const std::unordered_map<std::string, FormatDef::Proc> map = {
 		{"m_RotationCurves", FormatDef::Proc::rotation},
@@ -61,7 +64,7 @@ ImportFormat convertUnityAnim(const json& ori) {
 		// curve配列単位
 		for (const json& value: j[key]) {
 			// curve単位
-			ImportFormat::Track f_track;
+			ImAnimFmt::Track f_track;
 
 			f_track.proc = path;
 
@@ -104,12 +107,12 @@ ImportFormat convertUnityAnim(const json& ori) {
 			f.tracks.push_back(f_track);
 		}
 	}
-	return f;
+	return res;
 }
 
 json run_unity(const std::string& path) {
 	Yaml yml = parseUnityYaml(path);
 	json j = yamlToJson(yml);
-	ImportFormat fm = convertUnityAnim(j);
-	return fm;
+	ImAnimObj res = convertUnityAnim(j);
+	return res;
 }

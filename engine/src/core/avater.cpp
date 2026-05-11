@@ -115,5 +115,5 @@ void Avater::draw(Camera& cam) {
 Avater::Avater(const std::string& glTFPath) {
 	model = loadGltf(glTFPath);
     humanoid.init(model.nodes, model.skins);
-    anims = loadAnim("test.sxa");
+    anim.init("test.sxa");
 }

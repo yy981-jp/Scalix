@@ -61,13 +61,13 @@ struct Format {
 	};
 
 	int sampleRate;
-	StrT name;
+	// StrT name;
 	std::vector<Track> tracks;
 
 	template<class OtherStrT>
 	Format(const Format<OtherStrT>& src)
 		: sampleRate(src.sampleRate) {
-		name = ConvertString(src.name);
+		// name = ConvertString(src.name);
 
 		tracks.reserve(src.tracks.size());
 
@@ -104,10 +104,10 @@ void from_json(const json& j, FormatDef::Key& k);
 void from_json(const json& j, FormatDef::vec3f& v);
 
 
-using ImportFormat = Format<std::string>;
+using ImAnimFmt = Format<std::string>;
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImportFormat::Track,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImAnimFmt::Track,
 	target, proc, type, interpolation, attrTarget, keys)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImportFormat,
-	sampleRate, name, tracks)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImAnimFmt,
+	sampleRate, tracks)
