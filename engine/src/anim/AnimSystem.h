@@ -14,7 +14,7 @@ struct Pose {
 };
 
 class AnimSystem {
-    std::unordered_map<StId, RtAnimFmt> anims;
+    std::unordered_map<StId, AnimRtFmt> anims;
 
 public:
     void init(const std::string& path) {
@@ -22,7 +22,7 @@ public:
     }
 
     void run(StId animName) {
-        const RtAnimFmt& anim = anims[animName];
+        const AnimRtFmt& anim = anims[animName];
 
     }
 };

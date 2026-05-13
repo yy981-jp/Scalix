@@ -91,10 +91,10 @@ boneMtx（= palette）
 
 そのうちGameからEngineを分離させるべきかもな
 
-grid用とavater用(tex想定)の2つ目のshaderを作らないといけない まあでも今はgridが黒で一応動いてるから後回し?
-	-> 修正済み
-
 なぜ起動時にアバターの頭が右を向く... なんでだ...
 	-> 気にしなければ問題なし
 
 auto tangent はunityeditorが計算して.animに保存するからそれを抽出する つまりScalixがautotangentを行う必要はない
+
+まずはanimation補完は線形でやってみようと思う
+データパイプラインとかがある程度整備出来てきたら本命のhermiteに行きたい

@@ -56,7 +56,7 @@ ImAnimObj convertUnityAnim(const json& ori) {
 	ImAnimObj res;
 	res.first = j["m_Name"];
 	
-	ImAnimFmt& f = res.second;
+	AnimImFmt& f = res.second;
 	f.sampleRate = j["m_SampleRate"];
 
 	static const std::unordered_map<std::string, FormatDef::Proc> map = {
@@ -71,7 +71,7 @@ ImAnimObj convertUnityAnim(const json& ori) {
 		// curve配列単位
 		for (const auto& value: j[key]) {
 			// curve単位
-			ImAnimFmt::Track f_track;
+			AnimImFmt::Track f_track;
 
 			f_track.proc = proc;
 

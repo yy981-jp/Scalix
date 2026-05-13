@@ -36,8 +36,8 @@ void from_json(const json& j, FormatDef::Key& k) {
 	nlohmann::adl_serializer<FormatDef::Key>::from_json(j, k);
 }
 
-void from_json(const json& j, FormatDef::vec3f& v) {
-    v[0] = j.at("x").get<float>();
-    v[1] = j.at("y").get<float>();
-    v[2] = j.at("z").get<float>();
-}
+// void from_json(const json& j, FormatDef::vec3f& v) {
+//     v[0] = j.at("x").get<float>();
+//     v[1] = j.at("y").get<float>();
+//     v[2] = j.at("z").get<float>();
+// }

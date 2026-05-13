@@ -5,10 +5,10 @@
 #include "../core/json.h"
 
 
-using RtAnimFmt = Format<StId>;
+using AnimRtFmt = Format<StId>;
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RtAnimFmt::Track,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AnimRtFmt::Track,
 	target, proc, type, interpolation, attrTarget, keys)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RtAnimFmt,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AnimRtFmt,
 	sampleRate, tracks)

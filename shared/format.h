@@ -22,7 +22,10 @@ namespace FormatDef {
 	};
 
 	enum class Interpolation {
-		unknown, liner, step, hermite/*点で傾き+速度で制御*/,
+		unknown,
+		liner,		// 線形補完
+		step,		// 補完無し
+		hermite,	// 点で傾き+速度で制御
 	};
 
 	using Quat = std::array<float, 4>;
@@ -97,17 +100,11 @@ namespace nlohmann {
 	};
 }
 
-void to_json(json& j, const FormatDef::Key& k);
-void from_json(const json& j, FormatDef::Key& k);
 
-// void to_json(json& j, const FormatDef::vec3f& v);
-void from_json(const json& j, FormatDef::vec3f& v);
+using AnimImFmt = Format<std::string>;
 
-
-using ImAnimFmt = Format<std::string>;
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImAnimFmt::Track,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AnimImFmt::Track,
 	target, proc, type, interpolation, attrTarget, keys)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImAnimFmt,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AnimImFmt,
 	sampleRate, tracks)

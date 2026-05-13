@@ -22,8 +22,6 @@ int main(int argc, char* argv[]) {
 	fs::path targetDir = argv[1];
 	const auto start = getUnixTime();
 
-	// std::cout << run("Sweater_OFF.anim").dump(4);
-
 	json res;
 	res["version"] = 1;
 	res["body"] = json::object();
