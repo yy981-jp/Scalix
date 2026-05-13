@@ -68,6 +68,10 @@ worldはsystem内部では分割しつつも、連続した世界を作りたい
 
 
 ########## MEMO ##########
+!!! quatの並びは、xyzwに統一
+
+
+
 entityMtx
    ↓
 localMtx（アニメ適用後）

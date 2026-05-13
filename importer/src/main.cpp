@@ -9,7 +9,7 @@
 #include "def.h"
 
 
-json run(const std::string& path) {
+ImAnimObj run(const std::string& path) {
 	return run_unity(path);
 }
 
@@ -32,11 +32,13 @@ int main(int argc, char* argv[]) {
 	for (const auto& e: fs::recursive_directory_iterator(targetDir)) {
 		if (e.path().extension() != ".anim" ) continue;
 		const fs::path& f = e.path().string();
-		res["body"].push_back(run(f.string()));
+		const ImAnimObj& obj = run(f.string());
+		res["body"][obj.first] = obj.second;
 	}
 
 	std::ofstream ofs("test.sxa");
 	ofs << res;
+	// std::cout << res.dump(4);
 
 	const auto end = getUnixTime();
 	std::cout << formatSec(end-start) << " - "

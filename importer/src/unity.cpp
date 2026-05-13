@@ -35,21 +35,28 @@ FormatDef::Key::Value parseValue(const json& v) {
 				v["y"].get<float>(),
 				v["z"].get<float>()
 			};
+			case 4: return FormatDef::Quat{
+				v["x"].get<float>(),
+				v["y"].get<float>(),
+				v["z"].get<float>(),
+				v["w"].get<float>()
+			};
 		}
 	}
 	if (v.is_string() && (v.get<std::string>() == "Infinity")) return std::numeric_limits<float>::infinity();
-	std::cout << v.dump(4) << "\n";
+	std::cerr << v.dump(4) << "\n";
 	throw std::runtime_error("invalid value");
 }
 
-using ImAnimObj = std::pair<std::string,ImAnimFmt>;
+
+void dumpJson(const json& j) { std::cout << j.dump(); }
 
 ImAnimObj convertUnityAnim(const json& ori) {
 	const json& j = ori["AnimationClip"];
 	ImAnimObj res;
 	res.first = j["m_Name"];
 	
-	ImAnimFmt f = res.second;
+	ImAnimFmt& f = res.second;
 	f.sampleRate = j["m_SampleRate"];
 
 	static const std::unordered_map<std::string, FormatDef::Proc> map = {
