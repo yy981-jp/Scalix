@@ -69,20 +69,24 @@ ImAnimObj convertUnityAnim(const json& ori) {
 	// tracks
 	for (const auto& [key,path]: map) {
 		// curve配列単位
-		for (const json& value: j[key]) {
+		for (const auto& value: j[key]) {
 			// curve単位
 			ImAnimFmt::Track f_track;
 
 			f_track.proc = path;
 
+			f_track.keys.reserve(value["curve"]["m_Curve"].size());
+
 			if (!value["path"].is_null()) // nullはrootであり、正常値
 				f_track.target = value["path"];
 
+			size_t f_track_index = 0;
 			for (const json& tracks: value["curve"]["m_Curve"]) {
 				FormatDef::Key key;
 				key.time = tracks["time"];
 				key.value = parseValue(tracks["value"]);
-				f_track.keys.push_back(key);
+				f_track.keys.push_back(std::move(key));
+				f_track_index++;
 			}
 
 			f_track.interpolation = FormatDef::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
@@ -109,17 +113,21 @@ ImAnimObj convertUnityAnim(const json& ori) {
 					f_track.type = FormatDef::Type::vec3f;
 				} break;
 
+				case rotation: {
+					f_track.type = FormatDef::Type::quat;
+				} break;
+
 				default: dev_checkPattern();
 			}
-			f.tracks.push_back(f_track);
+			f.tracks.push_back(std::move(f_track));
 		}
 	}
 	return res;
 }
 
-json run_unity(const std::string& path) {
+ImAnimObj run_unity(const std::string& path) {
 	Yaml yml = parseUnityYaml(path);
 	json j = yamlToJson(yml);
-	ImAnimObj res = convertUnityAnim(j);
-	return res;
+	yml = {};
+	return convertUnityAnim(j);
 }
