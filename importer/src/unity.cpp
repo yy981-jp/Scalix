@@ -67,13 +67,18 @@ ImAnimObj convertUnityAnim(const json& ori) {
 	};
 
 	// tracks
-	for (const auto& [key,path]: map) {
+	for (const auto& [key,proc]: map) {
 		// curve配列単位
 		for (const auto& value: j[key]) {
 			// curve単位
 			ImAnimFmt::Track f_track;
 
-			f_track.proc = path;
+			f_track.proc = proc;
+
+			if (!(
+				value.contains("curve") &&
+				value["curve"].contains("m_Curve")
+			)) throw std::runtime_error("unknown anim format: curve");
 
 			f_track.keys.reserve(value["curve"]["m_Curve"].size());
 
@@ -92,7 +97,7 @@ ImAnimObj convertUnityAnim(const json& ori) {
 			f_track.interpolation = FormatDef::Interpolation::liner; // TODO: 一旦これで... いいんちゃう?多分
 
 
-			switch (path) {
+			switch (proc) {
 				using enum FormatDef::Proc;
 				
 				case float_: {
@@ -108,13 +113,14 @@ ImAnimObj convertUnityAnim(const json& ori) {
 				case scale: {
 					f_track.type = FormatDef::Type::vec3f;
 				} break;
-
+				
 				case position: {
 					f_track.type = FormatDef::Type::vec3f;
 				} break;
-
+				
 				case rotation: {
 					f_track.type = FormatDef::Type::quat;
+					std::cout << value.dump() << "\n";
 				} break;
 
 				default: dev_checkPattern();
