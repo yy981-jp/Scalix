@@ -1,11 +1,11 @@
 #pragma once
 
 #include "../../../shared/format.h"
-#include "../core/sid.h"
+#include "../core/str.h"
 #include "../core/json.h"
 
 
-using AnimRtFmt = Format<StId>;
+using AnimRtFmt = Format<StrHs>;
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AnimRtFmt::Track,
 	target, proc, type, interpolation, attrTarget, keys)

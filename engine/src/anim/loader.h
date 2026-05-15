@@ -5,4 +5,4 @@
 #include <unordered_map>
 
 
-std::unordered_map<StId,AnimRtFmt> loadAnim(const std::string& path);
+std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path);

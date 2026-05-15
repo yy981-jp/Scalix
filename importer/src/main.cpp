@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
 	size_t fileNum = 0;
 	for (const auto& e: fs::recursive_directory_iterator(targetDir)) {
-		if (e.path().extension() != ".anim" ) continue;
+		if (e.path().extension() != ".anim") continue;
 		fileNum++;
 		const fs::path& f = e.path().string();
 		const ImAnimObj& obj = run(f.string());

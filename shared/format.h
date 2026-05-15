@@ -8,7 +8,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../engine/src/core/sid.h"
+#include "../engine/src/core/str.h"
 
 using json = nlohmann::json;
 
@@ -47,8 +47,8 @@ T ConvertString(const T& s) {
 	return s;
 }
 
-inline StId ConvertString(const std::string& s) {
-	return StId(s);
+inline StrHs ConvertString(const std::string& s) {
+	return StrHs(s);
 }
 
 template<class StrT>

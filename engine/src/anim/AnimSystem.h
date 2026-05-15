@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/sid.h"
+#include "../core/str.h"
 #include "../core/vec3.h"
 #include "../core/quat.h"
 #include "loader.h"
@@ -11,18 +11,34 @@
 struct Pose {
     vec3f pos;
     Quat rot;
+    vec3f scale;
+};
+
+struct PlayingAnim {
+	StrHs anim;
+
+	float time = 0.0f;
+	float speed = 1.0f;
+
+	bool loop = false;
+	bool finished = false;
 };
 
 class AnimSystem {
-    std::unordered_map<StId, AnimRtFmt> anims;
+    std::unordered_map<StrHs, AnimRtFmt> anims;
+    std::vector<PlayingAnim> playing;
 
 public:
     void init(const std::string& path) {
         anims = loadAnim(path);
     }
 
-    void run(StId animName) {
-        const AnimRtFmt& anim = anims[animName];
+    // Pose run(StrHs animName) {
+    //     const AnimRtFmt& anim = anims[animName];
+    //     playing.push_back({.anim = animName});
+    // }
 
+    void update() {
+        
     }
 };

@@ -1,8 +1,8 @@
 #include "loader.h"
 
 
-std::unordered_map<StId,AnimRtFmt> loadAnim(const std::string& path) {
-    std::unordered_map<StId,AnimRtFmt> anims;
+std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path) {
+    std::unordered_map<StrHs,AnimRtFmt> anims;
     json j = readJson(path);
 
     // check json
@@ -17,7 +17,7 @@ std::unordered_map<StId,AnimRtFmt> loadAnim(const std::string& path) {
     // process
     for (const auto& [key,value]: j["body"].items()) {
         AnimRtFmt rf = value.get<AnimImFmt>();
-        anims[StId(key)] = rf;
+        anims[StrHs(key)] = rf;
     }
 
     return anims;
