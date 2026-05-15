@@ -14,6 +14,6 @@ class AvaterSystem {
 
 public:
 	void loadData(const std::vector<std::string> path);
-	void update(GameContext& gctx);
+	void update(GameContext& gctx, float dt);
 	void draw(bgfx::ProgramHandle program);
 };

@@ -26,11 +26,11 @@ struct Avater {
 	AnimSystem anim;
 
 	Status status = Status::stay;
-	float speed = 0.2;
+	float speed = 7;
 
 	AvaterID id;
 
-	void update(GameContext& keyStat);
+	void update(GameContext& keyStat, float dt);
 	void draw(Camera& cam);
 	
 	Avater(const std::string& glTFPath);

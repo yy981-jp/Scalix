@@ -92,10 +92,11 @@ void Game::tick() {
 
 void Game::update() {
 	if (has(keyStat,KCode::Esc)) running = false;
+    float dt = elap.get();
 
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
-	avaterSystem.update(gctx);
+	avaterSystem.update(gctx,dt);
 
 	mStat.relPos = {0, 0};
 }
@@ -133,6 +134,8 @@ void Game::gameInit() {
 	// std::cout << "max: " << maxMat4 << "\n";
 
 	// u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+
+	elap.init();
 
 	delete logo;
 

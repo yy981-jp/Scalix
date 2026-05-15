@@ -56,14 +56,14 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
 }
 
 
-void AvaterSystem::update(GameContext& ctx) {
+void AvaterSystem::update(GameContext& ctx, float dt) {
     for (auto& avater : avaters) {
 
         // printf("D: avater.id: %d, playable: %d\n", avater.id, playableAvater);
         if (avater.id != playableAvater) continue; // player以外の制御はしない
 
         // avater update
-        avater.update(ctx);
+        avater.update(ctx,dt);
 
         avater.globalMtxs.clear();
         avater.globalMtxs.resize(avater.model.nodes.size());
