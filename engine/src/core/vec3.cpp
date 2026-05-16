@@ -4,15 +4,11 @@ vec3f::operator bx::Vec3() const {
     return bx::Vec3{x, y, z};
 }
 
-// bx用の変換関数 (入力)
-vec3f& vec3f::operator=(const bx::Vec3& v) {
-    x = v.x;
-    y = v.y;
-    z = v.z;
-    return *this;
+vec3f::operator FormatDef::vec3f() const {
+    return {x, y, z};
 }
 
-// 加算
+// 演算
 vec3f vec3f::operator+(const vec3f& other) const {
     return {
         x + other.x,
@@ -21,17 +17,12 @@ vec3f vec3f::operator+(const vec3f& other) const {
     };
 }
 
-// 減算
 vec3f vec3f::operator-(const vec3f& other) const {
     return {
         x - other.x,
         y - other.y,
         z - other.z
     };
-}
-
-vec3f vec3f::operator-() const  {
-    return *this * -1;
 }
 
 vec3f& vec3f::operator+=(const vec3f& other) {
@@ -41,7 +32,19 @@ vec3f& vec3f::operator+=(const vec3f& other) {
     return *this;
 }
 
-// scaler乗算
+vec3f& vec3f::operator-=(const vec3f& other) {
+    x -= other.x;
+    y -= other.y;
+    z -= other.z;
+    return *this;
+}
+
+vec3f vec3f::operator-() const  {
+    return *this * -1;
+}
+
+
+
 vec3f vec3f::operator*(float scalar) const {
     return {
         x * scalar,
@@ -56,4 +59,8 @@ vec3f vec3f::operator/(float scalar) const {
         y / scalar,
         z / scalar
     };
+}
+
+vec3f vec3f::lerp(const vec3f& a, const vec3f& b, float t) {
+    return bx::lerp(a,b,t);
 }

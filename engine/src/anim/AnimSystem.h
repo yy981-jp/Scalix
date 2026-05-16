@@ -8,15 +8,8 @@
 #include <unordered_map>
 
 
-constexpr float lerp(float a, float b, float t) { return std::lerp(a,b,t); }
-constexpr vec3f lerp(const vec3f& a, const vec3f& b, float t) { return a + (b - a) * t; }
-constexpr Quat lerp(const Quat& a, Quat b, float t) {
-	if (dot(a, b) < 0.0f)
-		b = -b;
-	return bx::normalize(
-		a + (b - a) * t
-	);
-}
+// constexpr float lerp(float a, float b, float t) { return std::lerp(a,b,t); }
+// constexpr vec3f lerp(const FormatDef::vec3f& a, const FormatDef::vec3f& b, float t) { return a + (b - a) * t; }
 
 struct Pose {
     vec3f pos;
@@ -58,6 +51,7 @@ public:
     }
 
     Pose update(float dt) {
+        Pose res;
         for (PlayingAnim& anim_p: playing) {
             AnimRtFmt& anim = anims[anim_p.anim];
             anim_p.time += dt;
@@ -75,11 +69,17 @@ public:
                 float t = (anim_p.time - f.time) / (n.time - f.time);
 
 
-                float value = std::visit(
+                std::variant<float, vec3f, Quat, bool> value = std::visit(
                     [&](const auto& f, const auto& n) {
                         using T = std::decay_t<decltype(f)>;
 
-                        return lerp(f, n, t);
+                        if constexpr (std::is_same_v<T, float>) {
+                            return std::lerp(f, n, t);
+                        } else if constexpr (std::is_same_v<T, FormatDef::vec3f>) {
+                            return lerp(f, n, t);
+                        } else if constexpr (std::is_same_v<T, FormatDef::Quat>) {
+                            return Quat::lerp(f, n, t);
+                        }
                     },
                     f.value,
                     n.value
@@ -87,5 +87,6 @@ public:
                 trackNumber++;
             }
         }
+        return pos;
     }
 };

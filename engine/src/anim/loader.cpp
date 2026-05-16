@@ -14,7 +14,7 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path) {
         invalid = true;
     }
 
-    throw std::runtime_error(".sxa is invalid");
+    if (invalid) throw std::runtime_error(".sxa is invalid");
 
     // process
     for (const auto& [key,value]: j["body"].items()) {
