@@ -59,6 +59,8 @@ ImAnimObj convertUnityAnim(const json& ori) {
 	AnimImFmt& f = res.second;
 	f.sampleRate = j["m_SampleRate"];
 
+	f.stopTime = j["m_AnimationClipSettings"]["m_StopTime"];
+
 	static const std::unordered_map<std::string, FormatDef::Proc> map = {
 		{"m_RotationCurves", FormatDef::Proc::rotation},
 		{"m_PositionCurves", FormatDef::Proc::position},

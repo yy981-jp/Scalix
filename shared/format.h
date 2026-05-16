@@ -64,6 +64,7 @@ struct Format {
 	};
 
 	int sampleRate;
+	float stopTime;
 	// StrT name;
 	std::vector<Track> tracks;
 

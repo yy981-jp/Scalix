@@ -6,7 +6,6 @@
 #include "../gfx/texture.h"
 #include "../core/def.h"
 #include "../core/gctx.h"
-#include "../core/euler.h"
 
 #include "../anim/format.h"
 

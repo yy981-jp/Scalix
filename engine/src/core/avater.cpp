@@ -43,6 +43,9 @@ void Avater::update(GameContext& ctx, float dt) {
 
     status = (walking? Status::walk : Status::stay);
 
+    // --- アニメーション ---
+    anim.update(dt);
+
     // --- 視点 ---
     if (has(ctx.keyStat, KCode::n0)) ctx.cam_type = CameraType::DEBUG;
     else if (has(ctx.keyStat, KCode::n1)) ctx.cam_type = CameraType::_1;
