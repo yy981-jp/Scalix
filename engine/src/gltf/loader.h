@@ -4,6 +4,7 @@
 // #include "../model/model.h"
 #include "../core/avater.h"
 #include "../core/str.h"
+#include "../core/def.h"
 #include <tinygltf/tiny_gltf.h>
 
 
@@ -19,7 +20,7 @@ class GltfLoaderImpl {
 	Model scalixModel;
 
 	void parse();
-	void parseMesh(int nodeId);
+	void parseMesh(NodeId nodeId);
 	void buildPalletCompress();
 
 public:

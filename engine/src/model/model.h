@@ -21,6 +21,7 @@ struct Node {
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
+	bool visible = true;
 
 	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
@@ -32,7 +33,7 @@ struct Node {
 };
 
 struct Skin {
-	std::vector<int> joints; // node index
+	std::vector<NodeId> joints; // node index
 	std::vector<std::array<float,16>> invBind;
 };
 
@@ -55,8 +56,8 @@ struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
 	// node index
-	int bones[static_cast<size_t>(HBT::Count)];
-	std::vector<int> spines;
+	NodeId bones[static_cast<size_t>(HBT::Count)];
+	std::vector<NodeId> spines;
 };
 
 /// @brief 構造そのもの

@@ -7,6 +7,8 @@
 
 
 struct Avater;
+using Value = std::variant<float, vec3f, Quat, bool>;
+
 
 struct PlayingAnim {
 	StrHs anim;
@@ -23,6 +25,10 @@ class AnimSystem {
     std::unordered_map<StrHs, AnimRtFmt> anims;
     std::vector<PlayingAnim> playing;
 
+    std::vector<Value> blendBuffer;
+    void blend(float dt);
+    void apply(Avater& avater);
+    
 public:
     void init(const std::string& path);
 

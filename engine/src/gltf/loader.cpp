@@ -9,7 +9,7 @@
 #include <iostream>
 
 
-void GltfLoaderImpl::parseMesh(int nodeId) {
+void GltfLoaderImpl::parseMesh(NodeId nodeId) {
 	const auto& tn = model.nodes[nodeId];
 	const auto& tnmesh = model.meshes[tn.mesh];
 

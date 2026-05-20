@@ -45,7 +45,7 @@ void Avater::update(GameContext& ctx, float dt) {
 
     // --- アニメーション ---
     anim.run("Sweater_OFF"_hs);
-    
+
     anim.update(*this,dt);
 
 
@@ -70,7 +70,7 @@ void Avater::update(GameContext& ctx, float dt) {
     }
 
     // --- neck (pitch) ---
-    int neckIdx = humanoid.bones[(size_t)HBT::neck];
+    NodeId neckIdx = humanoid.bones[(size_t)HBT::neck];
     auto& neckNode = model.nodes[neckIdx];
     neckNode.hasRotation = true;
 
@@ -81,7 +81,7 @@ void Avater::update(GameContext& ctx, float dt) {
         neckNode.rot[i] = qPitch[i];
 
     // --- head (yaw) ---
-    int headIdx = humanoid.bones[(size_t)HBT::head];
+    NodeId headIdx = humanoid.bones[(size_t)HBT::head];
     auto& headNode = model.nodes[headIdx];
     headNode.hasRotation = true;
 
