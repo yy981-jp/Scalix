@@ -1,7 +1,7 @@
 #pragma once
 
 #include <bx/math.h>
-#include "def.h"
+#include "vec3.h"
 
 // TRS行列を組み立てるヘルパー
 void buildTRS(float* out, const vec3f& pos, const float* rot,

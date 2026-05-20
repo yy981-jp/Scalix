@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 
 #include "../engine/src/core/str.h"
+#include "../engine/src/core/def.h"
 
 using json = nlohmann::json;
 
@@ -42,14 +43,12 @@ namespace FormatDef {
 	};
 }
 
-template<class T>
-T ConvertString(const T& s) {
-	return s;
-}
+// template<class T>
+// T AnimFmt_convStr(const T& s) {
+// 	return s;
+// }
 
-inline StrHs ConvertString(const std::string& s) {
-	return StrHs(s);
-}
+// NodeId AnimFmt_convStr(const std::string_view& s);
 
 template<class StrT>
 struct Format {
@@ -71,17 +70,17 @@ struct Format {
 	template<class OtherStrT>
 	Format(const Format<OtherStrT>& src)
 		: sampleRate(src.sampleRate) {
-		// name = ConvertString(src.name);
+		// name = AnimFmt_convStr(src.name);
 
 		tracks.reserve(src.tracks.size());
 
 		for (const auto& t : src.tracks) {
 			Track track;
-			track.target = ConvertString(t.target);
+			// track.target = AnimFmt_convStr(t.target);
 			track.proc = t.proc;
 			track.type = t.type;
 			track.interpolation = t.interpolation;
-			track.attrTarget = ConvertString(t.attrTarget);
+			// track.attrTarget = AnimFmt_convStr(t.attrTarget);
 			track.keys = t.keys;
 			tracks.push_back(track);
 		}

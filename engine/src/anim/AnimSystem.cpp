@@ -1,8 +1,10 @@
 #include "AnimSystem.h"
 
+#include "../core/avater.h"
 
-void AnimSystem::init(const std::string& path) {
-    anims = loadAnim(path);
+
+void AnimSystem::init(const std::string& path, const Avater& avater) {
+    anims = loadAnim(path,avater);
 }
 
 void AnimSystem::run(StrHs animName) {
@@ -28,12 +30,17 @@ void AnimSystem::update(Avater& avater, float dt) {
 void AnimSystem::apply(Avater& avater) {
     for (const PlayingAnim& anim_p: playing) {
         AnimRtFmt& anim = anims[anim_p.anim];
+        size_t i = 0;
         for (const auto& track: anim.fmt.tracks) {
+            i++;
             switch (track.proc) {
                 using enum FormatDef::Proc;
-                // case active: {
-                //     track.target
-                // } break;
+                case active: {
+                    Node& target = avater.model.nodes[track.target];
+                    target.visible = std::get<float>(blendBuffer[i]);
+                } break;
+                
+                default: i--; break;
             }
         }
     }
@@ -46,22 +53,21 @@ void AnimSystem::blend(float dt) {
         AnimRtFmt& anim = anims[anim_p.anim];
         anim_p.time += dt;
         int trackNumber = 0;
-
-        
+        bool shouldRemove = false;
 
         for (const auto& track: anim.fmt.tracks) {
             // 各track単位
             auto& anim_p_crtKeyIdx = anim_p.crtKeyIdxs[trackNumber];
             while (
+                anim_p_crtKeyIdx + 1 < track.keys.size() &&
                 anim_p.time >= track.keys[anim_p_crtKeyIdx + 1].time
             ) { anim_p_crtKeyIdx++; }
 
             if (anim_p_crtKeyIdx + 1 >= track.keys.size()) {
-                // swap&pop
-                playing[i] = std::move(playing.back());
-                playing.pop_back();
-                // TODO: もしかしてここcontinue必要だったりする?
-            } else i++;
+                // アニメーション終了、ループを抜ける
+                shouldRemove = true;
+                break;
+            }
 
             const auto& f = track.keys[anim_p_crtKeyIdx];
             const auto& n = track.keys[anim_p_crtKeyIdx + 1];
@@ -97,6 +103,14 @@ void AnimSystem::blend(float dt) {
             blendBuffer.push_back( std::move(value) );
 
             trackNumber++;
+        }
+
+        if (shouldRemove) {
+            // swap&pop
+            playing[i] = std::move(playing.back());
+            playing.pop_back();
+        } else {
+            i++;
         }
     }
 }

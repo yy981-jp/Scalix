@@ -310,6 +310,7 @@ void GltfLoaderImpl::parse() {
 
 			scalixModel.nodes[child].parent = i;
 		}
+		node.id = i;
 		node.children = tn.children;
 
 	}

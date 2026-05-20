@@ -5,4 +5,6 @@
 #include <unordered_map>
 
 
-std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path);
+struct Avater;
+
+std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avater& avater);

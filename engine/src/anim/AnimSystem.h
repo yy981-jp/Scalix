@@ -30,7 +30,7 @@ class AnimSystem {
     void apply(Avater& avater);
     
 public:
-    void init(const std::string& path);
+    void init(const std::string& path, const Avater& avater);
 
     void run(StrHs animName);
     void stop(StrHs animName);

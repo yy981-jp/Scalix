@@ -4,7 +4,6 @@
 // #include "../model/model.h"
 #include "../core/avater.h"
 #include "../core/str.h"
-#include "../core/def.h"
 #include <tinygltf/tiny_gltf.h>
 
 

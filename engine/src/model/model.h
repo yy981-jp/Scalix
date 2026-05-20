@@ -14,8 +14,9 @@
 struct Node {
 	StrHs name;
 
-	int parent = -1;
-	std::vector<int> children;
+	NodeId parent = -1;
+	NodeId id = -1;
+	std::vector<NodeId> children;
 
 	int skinIndex = -1;
 
