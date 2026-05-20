@@ -6,12 +6,13 @@
 #include "../gfx/texture.h"
 #include "../core/def.h"
 #include "../core/gctx.h"
+#include "../core/str.h"
 
 #include "../anim/format.h"
 
 
 struct Node {
-	std::string name;
+	StrHs name;
 
 	int parent = -1;
 	std::vector<int> children;

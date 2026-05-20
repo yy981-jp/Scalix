@@ -6,6 +6,6 @@
 #pragma once
 
 #include <vector>
-#include <string>
+#include <string_view>
 
-std::vector<std::string> tokenizer(const std::string& input);
+std::vector<std::string> tokenizer(const std::string_view& input);

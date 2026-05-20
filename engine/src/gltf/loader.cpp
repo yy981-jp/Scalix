@@ -321,7 +321,7 @@ void GltfLoaderImpl::parse() {
 		// printf("model_skin.joints.size: %d\n", model_skin.joints.size());
 		for (int joint: model_skin.joints) {
 			skin.joints.push_back(joint);
-			scalixModel.nodes[joint].name = model.nodes[joint].name;
+			scalixModel.nodes[joint].name = strsv().entry( model.nodes[joint].name );
 			// printf("joint: %d\n", joint);
 		}
 		// skin

@@ -1,18 +1,12 @@
 #pragma once
 
-#include "../core/str.h"
-#include "../core/vec3.h"
-#include "../core/quat.h"
 #include "loader.h"
+#include "../core/pose.h"
 
 #include <unordered_map>
 
 
-struct Pose {
-    vec3f pos;
-    Quat rot;
-    vec3f scale;
-};
+struct Avater;
 
 struct PlayingAnim {
 	StrHs anim;
@@ -35,5 +29,5 @@ public:
     void run(StrHs animName);
     void stop(StrHs animName);
 
-    Pose update(float dt);
+    void update(Avater& avater, float dt);
 };

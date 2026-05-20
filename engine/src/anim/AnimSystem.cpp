@@ -20,8 +20,7 @@ void AnimSystem::stop(StrHs animName) {
     });
 }
 
-Pose AnimSystem::update(float dt) {
-    Pose res;
+void AnimSystem::update(Avater& avater, float dt) {
     for (size_t i = 0; i < playing.size(); ) {
         PlayingAnim& anim_p = playing[i];
         AnimRtFmt& anim = anims[anim_p.anim];
@@ -58,7 +57,7 @@ Pose AnimSystem::update(float dt) {
                         } else if constexpr (std::is_same_v<T1, vec3f>) {
                             return lerp(f, n, t);
                         } else if constexpr (std::is_same_v<T1, Quat>) {
-                            return Quat::lerp(f, n, t);
+                            return lerp(f, n, t);
                         } else if constexpr (std::is_same_v<T1, bool>) {
                             return t < 0.5f ? f : n;
                         }
@@ -74,5 +73,4 @@ Pose AnimSystem::update(float dt) {
             trackNumber++;
         }
     }
-    return res;
 }

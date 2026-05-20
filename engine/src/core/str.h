@@ -62,8 +62,10 @@ class StrTable {
 	std::unordered_map<StrHs,std::string> table;
 
 public:
-	void entry(std::string_view str) {
-		table[StrHs(str)] = str;
+	StrHs entry(std::string_view str) {
+		StrHs hs = StrHs(str);
+		table[hs] = str;
+		return hs;
 	}
 
 	std::string_view get(StrHs hash) {
@@ -72,3 +74,10 @@ public:
 			else return {};
 	}
 };
+
+
+// string table server ...関数名はそのうち改名しても良いかもね
+constexpr StrTable& strsv() {
+	static StrTable table;
+	return table;
+}

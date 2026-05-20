@@ -2,7 +2,8 @@
 
 #include "../model/model.h"
 #include "../anim/animSystem.h"
-#include "../core/euler.h"
+#include "euler.h"
+#include "pose.h"
 
 
 using AvaterID = int;

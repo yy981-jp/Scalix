@@ -1,7 +1,8 @@
 #include "fmutil.h"
+#include <string>
 
 
-std::vector<std::string> tokenizer(const std::string& input) {
+std::vector<std::string> tokenizer(const std::string_view& input) {
 	std::vector<std::string> result;
 	std::string current;
 

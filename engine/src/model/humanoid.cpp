@@ -97,7 +97,7 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	// 属性をつける
 	for (const auto& skin: skins) {
 		for (const int& nodeId: skin.joints) {
-			const std::vector<std::string> words = tokenizer(nodes[nodeId].name);
+			const std::vector<std::string> words = tokenizer(strsv().get( nodes[nodeId].name ));
 			NodeInfo cand;
 			cand.nodeId = nodeId;
 			for (auto& w : words) {
