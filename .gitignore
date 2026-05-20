@@ -3,7 +3,6 @@ build*/
 /assets/
 /runtime/
 install/
-*.pyc
 *.o
 *.exe
 *.zip

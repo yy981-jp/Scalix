@@ -4,6 +4,7 @@
 
 #include "../model/model.h"
 #include "gctx.h"
+#include "avater.h"
 
 
 /// @brief avater 全体管理&描画システム
@@ -13,6 +14,6 @@ class AvaterSystem {
 
 public:
 	void loadData(const std::vector<std::string> path);
-	void update(GameContext& gctx);
+	void update(GameContext& gctx, float dt);
 	void draw(bgfx::ProgramHandle program);
 };

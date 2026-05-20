@@ -1,41 +1,10 @@
 #include "model.h"
+#include "../core/fmutil.h"
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
 #include <ranges>
 
-
-std::vector<std::string> splitWords(const std::string& input) {
-	std::vector<std::string> result;
-	std::string current;
-
-	auto push = [&]() {
-		if (!current.empty()) {
-			result.push_back(current);
-			current.clear();
-		}
-	};
-
-	for (size_t i = 0; i < input.size(); ++i) {
-		char c = input[i];
-
-		// 記号で区切る
-		if (c == '_' || c == '.' || c == '-' || c == ':') {
-			push();
-			continue;
-		}
-
-		// 大文字で区切る（camelCase / PascalCase）
-		if (std::isupper(c) && !current.empty()) {
-			push();
-		}
-
-		current += std::tolower(c);
-	}
-
-	push();
-	return result;
-}
 
 template <typename... Targets>
 bool has(const std::vector<std::string>& w, const Targets&... targets_arg) {
@@ -73,7 +42,7 @@ enum class Level: uint8_t {
 
 // 属性をidに付与
 struct NodeInfo {
-	int nodeId = -404;
+	NodeId nodeId = static_cast<NodeId>(-404);
 	BoneType type = BoneType::unknown;
 	Side side = Side::unknown;
 	Level level = Level::unknown;
@@ -114,12 +83,12 @@ static const std::unordered_map<std::string, Level> levelMap = {
 /// @brief 最適なnodeを選択
 /// @param vec 
 /// @return nodeId
-inline int select(const std::vector<NodeInfo> vec) {
-	if (vec.empty()) return -404;
+inline NodeId select(const std::vector<NodeInfo> vec) {
+	if (vec.empty()) return static_cast<NodeId>(-404);
 	return std::ranges::max_element(vec, {}, &NodeInfo::score) ->nodeId;
 }
 
-static inline void selectHelper(std::span<int> to, std::span<const std::vector<NodeInfo>> from, HBT target) {
+static inline void selectHelper(std::span<NodeId> to, std::span<const std::vector<NodeInfo>> from, HBT target) {
 	to[static_cast<size_t>(target)] = select( from[static_cast<size_t>(target)] );
 }
 
@@ -127,8 +96,8 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	std::vector<NodeInfo> cands;
 	// 属性をつける
 	for (const auto& skin: skins) {
-		for (const int& nodeId: skin.joints) {
-			const std::vector<std::string> words = splitWords(nodes[nodeId].name);
+		for (const NodeId& nodeId: skin.joints) {
+			const std::vector<std::string> words = tokenizer(strsv().get( nodes[nodeId].name ));
 			NodeInfo cand;
 			cand.nodeId = nodeId;
 			for (auto& w : words) {

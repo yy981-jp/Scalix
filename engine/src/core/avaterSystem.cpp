@@ -13,10 +13,9 @@
 void AvaterSystem::loadData(const std::vector<std::string> path) {
     AvaterID id = 0;
     for (const auto& file: path) {
-		avaters.push_back( loadEntity(file) );
-        auto& avater = avaters.back();
+        Avater avater(file);
         avater.id = id++;
-        avater.humanoid.init(avater.model.nodes, avater.model.skins);
+		avaters.push_back(avater);
     }
 }
 
@@ -57,14 +56,14 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
 }
 
 
-void AvaterSystem::update(GameContext& ctx) {
+void AvaterSystem::update(GameContext& ctx, float dt) {
     for (auto& avater : avaters) {
 
         // printf("D: avater.id: %d, playable: %d\n", avater.id, playableAvater);
         if (avater.id != playableAvater) continue; // player以外の制御はしない
 
         // avater update
-        avater.update(ctx);
+        avater.update(ctx,dt);
 
         avater.globalMtxs.clear();
         avater.globalMtxs.resize(avater.model.nodes.size());
@@ -125,7 +124,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
         jointMtx.resize(skin.joints.size());
 
         for (int i = 0; i < (int)skin.joints.size(); i++) {
-            int nodeIdx = skin.joints[i];
+            NodeId nodeIdx = skin.joints[i];
 
             bx::mtxMul(
                 jointMtx[i].data(),
@@ -134,8 +133,10 @@ void AvaterSystem::draw(bgfx::ProgramHandle program) {
             );
         }
 
-        for (int nodeIdx = 0; nodeIdx < (int)avater.model.nodes.size(); nodeIdx++) {
+        for (NodeId nodeIdx = 0; nodeIdx < (int)avater.model.nodes.size(); nodeIdx++) {
             const auto& node = avater.model.nodes[nodeIdx];
+
+            if (!node.visible) continue;
 
             for (int i = 0; i < node.meshCount; i++) {
                 const Mesh& m = avater.model.meshes[node.meshStartIndex + i];
@@ -249,7 +250,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
             jointMtx.resize(skin.joints.size());
 
             for (int i = 0; i < (int)skin.joints.size(); i++) {
-                int nodeIdx = skin.joints[i];
+                NodeId nodeIdx = skin.joints[i];
 
                 // 順序検証済み
                 bx::mtxMul(
@@ -259,7 +260,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                 );
             }
             for (int i = 0; i < 10; i++) {
-                int nodeIdx = skin.joints[i];
+                NodeId nodeIdx = skin.joints[i];
 
                 printf("joint %d -> node %d\n", i, nodeIdx);
 
@@ -273,7 +274,7 @@ void AvaterSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 
 
         // === nodeのloop 描画loop本体とも言える ===
-        for (int nodeId = 0; nodeId < avater.model.nodes.size(); nodeId++) {
+        for (NodeId nodeId = 0; nodeId < avater.model.nodes.size(); nodeId++) {
             const Node& node = avater.model.nodes[nodeId];
 
             // 処理する必要のないものを除外

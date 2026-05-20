@@ -1,64 +1,46 @@
+#include <iostream>
 #include <fstream>
+#include <limits>
+#include <ctime>
 
-#include <yaml-cpp/yaml.h>
-#include <nlohmann/json.hpp>
+#include "format.h"
+#include "unity.h"
+#include "util.h"
+#include "def.h"
 
 
-using json = nlohmann::json;
-using Yaml = YAML::Node;
-
-
-bool hasTwoOrMore(const std::string& str, const std::string& target) {
-    size_t pos = 0;
-    int count = 0;
-
-    while ((pos = str.find(target, pos)) != std::string::npos) {
-        count++;
-        if (count >= 2) return true;
-        pos += target.length(); // 次の位置へ
-    }
-
-    return false;
-}
-
-void removeUnity(std::string& file) {
-	file.find("\n");
+ImAnimObj run(const std::string& path) {
+	return run_unity(path);
 }
 
 
-json yamlToJson(const Yaml& node) {
-	if(node.IsScalar()) {
-        try { return node.as<int>(); } catch(...) {}
-        try { return node.as<double>(); } catch(...) {}
-        try { return node.as<bool>(); } catch(...) {}
-        return node.as<std::string>();
+int main(int argc, char* argv[]) {
+	if (argc < 2) {
+		std::cout << "Usage: <targetDir>\n";
+		return 1;
 	}
-	else if(node.IsSequence()) {
-		json j = json::array();
-		for(const auto& it : node) {
-			j.push_back(yamlToJson(it));
-		}
-		return j;
+	fs::path targetDir = argv[1];
+	const auto start = getUnixTime();
+
+	json res;
+	res["version"] = 1;
+	res["body"] = json::object();
+
+	size_t fileNum = 0;
+	for (const auto& e: fs::recursive_directory_iterator(targetDir)) {
+		if (e.path().extension() != ".anim") continue;
+		fileNum++;
+		const fs::path& f = e.path().string();
+		const ImAnimObj& obj = run(f.string());
+		res["body"][obj.first] = obj.second;
 	}
-	else if(node.IsMap()) {
-		json j;
-		for(const auto& it : node) {
-			j[it.first.as<std::string>()] = yamlToJson(it.second);
-		}
-		return j;
-	}
-	return {};
-}
 
-std::vector<Yaml> parseUnityYaml(const std::string& path) {
-	std::ifstream ifs(path);
-	if (!ifs) throw std::runtime_error("ifs");
-	std::string file;
-	if (hasTwoOrMore(file,"---")) throw std::runtime_error("unknown anim file");
-	removeUnity(file);
-}
+	std::ofstream ofs("test.sxa");
+	ofs << res;
+	// std::cout << res.dump(4);
 
-
-int main() {
-
+	const auto end = getUnixTime();
+	std::cout << formatSec(end-start) << " - "
+			  << fileNum << " files\n"
+			  << "done.\n";
 }

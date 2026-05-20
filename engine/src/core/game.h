@@ -13,6 +13,7 @@
 #include "camera.h"
 #include "gctx.h"
 #include "grid.h"
+#include "time.h"
 #include "../ui/logo.h"
 
 #include "avaterSystem.h"
@@ -37,6 +38,7 @@ class Game {
     KCodes keyStat = 0; // KCode
 	bool mouseRelMode = true;
 	MouseState mStat;
+	ElapsedTime elap;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
 	// bgfx::UniformHandle u_bones;

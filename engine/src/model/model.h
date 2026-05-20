@@ -6,19 +6,23 @@
 #include "../gfx/texture.h"
 #include "../core/def.h"
 #include "../core/gctx.h"
-#include "../core/euler.h"
+#include "../core/str.h"
+
+#include "../anim/format.h"
 
 
 struct Node {
-	std::string name;
+	StrHs name;
 
-	int parent = -1;
-	std::vector<int> children;
+	NodeId parent = -1;
+	NodeId id = -1;
+	std::vector<NodeId> children;
 
 	int skinIndex = -1;
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
+	bool visible = true;
 
 	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
@@ -30,7 +34,7 @@ struct Node {
 };
 
 struct Skin {
-	std::vector<int> joints; // node index
+	std::vector<NodeId> joints; // node index
 	std::vector<std::array<float,16>> invBind;
 };
 
@@ -53,8 +57,8 @@ struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
 	// node index
-	int bones[static_cast<size_t>(HBT::Count)];
-	std::vector<int> spines;
+	NodeId bones[static_cast<size_t>(HBT::Count)];
+	std::vector<NodeId> spines;
 };
 
 /// @brief 構造そのもの
@@ -66,30 +70,3 @@ struct Model {
 	std::vector<int> materialToImage; // map
 };
 
-using AvaterID = int;
-
-/// @brief 状態を含む1つのアバター
-struct Avater {
-	Model model;
-	Humanoid humanoid;
-
-	// nodes mtx
-	std::vector<std::array<float, 16>> globalMtxs;
-
-	vec3f pos   = {0.0f, 0.0f, 0.0f};
-	float yaw;
-	float scale[3] = {1.0f, 1.0f, 1.0f};
-
-	Euler head;
-    const float sensitivity = 0.01f;
-    const float headPitchLimit = 1.2f;
-    const float headYawLimit = 0.5f; // 1.5も良かった
-
-	Status status = Status::stay;
-	float speed = 0.2;
-
-	AvaterID id;
-
-	void update(GameContext& keyStat);
-	void draw(Camera& cam);
-};

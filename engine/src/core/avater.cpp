@@ -1,12 +1,14 @@
-#include "../model/model.h"
+#include "avater.h"
+#include "../anim/loader.h"
+#include "../gltf/loader.h"
 #include "cache.h"
 #include "key.h"
 #include "gctx.h"
 #include "quatutil.h"
 
 
-void Avater::update(GameContext& ctx) {
-    // 移動
+void Avater::update(GameContext& ctx, float dt) {
+    // --- 移動 ---
     float fx = -lutsv.getSin(yaw);
     float fz =  lutsv.getCos(yaw);
 
@@ -15,30 +17,39 @@ void Avater::update(GameContext& ctx) {
 
     bool walking = false;
 
+    float rlMove = 0.7;
+    float aplSpeed = speed * dt;
+
     if (has(ctx.keyStat, KCode::W)) {
         walking = true;
-        pos.x += fx * speed;
-        pos.z += fz * speed;
+        pos.x += fx * aplSpeed;
+        pos.z += fz * aplSpeed;
     }
     if (has(ctx.keyStat, KCode::S)) {
         walking = true;
-        pos.x -= fx * speed;
-        pos.z -= fz * speed;
+        pos.x -= fx * aplSpeed;
+        pos.z -= fz * aplSpeed;
     }
     if (has(ctx.keyStat, KCode::A)) {
         walking = true;
-        pos.x -= rx * speed;
-        pos.z -= rz * speed;
+        pos.x -= rx * aplSpeed * rlMove;
+        pos.z -= rz * aplSpeed * rlMove;
     }
     if (has(ctx.keyStat, KCode::D)) {
         walking = true;
-        pos.x += rx * speed;
-        pos.z += rz * speed;
+        pos.x += rx * aplSpeed * rlMove;
+        pos.z += rz * aplSpeed * rlMove;
     }
 
     status = (walking? Status::walk : Status::stay);
 
-    // 視点変更
+    // --- アニメーション ---
+    anim.run("Sweater_OFF"_hs);
+
+    anim.update(*this,dt);
+
+
+    // --- 視点 ---
     if (has(ctx.keyStat, KCode::n0)) ctx.cam_type = CameraType::DEBUG;
     else if (has(ctx.keyStat, KCode::n1)) ctx.cam_type = CameraType::_1;
 
@@ -59,7 +70,7 @@ void Avater::update(GameContext& ctx) {
     }
 
     // --- neck (pitch) ---
-    int neckIdx = humanoid.bones[(size_t)HBT::neck];
+    NodeId neckIdx = humanoid.bones[(size_t)HBT::neck];
     auto& neckNode = model.nodes[neckIdx];
     neckNode.hasRotation = true;
 
@@ -70,7 +81,7 @@ void Avater::update(GameContext& ctx) {
         neckNode.rot[i] = qPitch[i];
 
     // --- head (yaw) ---
-    int headIdx = humanoid.bones[(size_t)HBT::head];
+    NodeId headIdx = humanoid.bones[(size_t)HBT::head];
     auto& headNode = model.nodes[headIdx];
     headNode.hasRotation = true;
 
@@ -108,4 +119,10 @@ void Avater::draw(Camera& cam) {
         + vec3f{0, 0.05f, 0};
 
     cam.update(camPos, camPos + lookDir);
+}
+
+Avater::Avater(const std::string& glTFPath) {
+	model = loadGltf(glTFPath);
+    humanoid.init(model.nodes, model.skins);
+    anim.init("test.sxa",*this);
 }

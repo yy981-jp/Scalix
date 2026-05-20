@@ -9,7 +9,7 @@
 #include <iostream>
 
 
-void GltfLoaderImpl::parseMesh(int nodeId) {
+void GltfLoaderImpl::parseMesh(NodeId nodeId) {
 	const auto& tn = model.nodes[nodeId];
 	const auto& tnmesh = model.meshes[tn.mesh];
 
@@ -32,16 +32,16 @@ void GltfLoaderImpl::parseMesh(int nodeId) {
 		posView = model.bufferViews[posAcc.bufferView];
 		posBuf = model.buffers[posView.buffer];
 
-		posStride = posAcc.ByteStride(posView);
+		size_t posStride = posAcc.ByteStride(posView);
 		if (posStride == 0) posStride = sizeof(float) * 3;
 
-		posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
+		const uint8_t* posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
 
 		// ===== Normal/UV クリア =====
-		norPtr = nullptr;
-		norStride = 0;
-		uvPtr = nullptr;
-		uvStride = 0;
+		const float* norPtr = nullptr;
+		size_t norStride = 0;
+		const float* uvPtr = nullptr;
+		size_t uvStride = 0;
 
 		// ===== NORMAL（任意）=====
 		if (attrs.count("NORMAL")) {
@@ -310,6 +310,7 @@ void GltfLoaderImpl::parse() {
 
 			scalixModel.nodes[child].parent = i;
 		}
+		node.id = i;
 		node.children = tn.children;
 
 	}
@@ -321,7 +322,7 @@ void GltfLoaderImpl::parse() {
 		// printf("model_skin.joints.size: %d\n", model_skin.joints.size());
 		for (int joint: model_skin.joints) {
 			skin.joints.push_back(joint);
-			scalixModel.nodes[joint].name = model.nodes[joint].name;
+			scalixModel.nodes[joint].name = strsv().entry( model.nodes[joint].name );
 			// printf("joint: %d\n", joint);
 		}
 		// skin
