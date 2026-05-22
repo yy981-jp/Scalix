@@ -7,6 +7,13 @@
 #include <set>
 #include <cassert>
 #include <iostream>
+#include <fstream>
+
+
+void dumpJson(const json& j) {
+	std::ofstream ofs("debug.json");
+	ofs << j.dump(4);
+}
 
 
 void GltfLoaderImpl::parseMesh(NodeId nodeId) {

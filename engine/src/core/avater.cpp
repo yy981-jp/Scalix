@@ -5,6 +5,7 @@
 #include "key.h"
 #include "gctx.h"
 #include "quatutil.h"
+#include <cstdio>
 
 
 void Avater::update(GameContext& ctx, float dt) {
@@ -46,7 +47,7 @@ void Avater::update(GameContext& ctx, float dt) {
     // --- アニメーション ---
     anim.run("Sweater_OFF"_hs);
 
-    anim.update(*this,dt);
+    anim.tick(*this,dt);
 
 
     // --- 視点 ---

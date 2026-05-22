@@ -24,7 +24,6 @@ Game::Game() {
 	logo = new LogoRenderer(window);
 	logo->draw();
 
-
 	// ===== bgfx初期化 =====
 	SDL_SysWMinfo wmi;
 	SDL_VERSION(&wmi.version);

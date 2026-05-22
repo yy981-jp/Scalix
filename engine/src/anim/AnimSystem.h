@@ -35,5 +35,5 @@ public:
     void run(StrHs animName);
     void stop(StrHs animName);
 
-    void update(Avater& avater, float dt);
+    void tick(Avater& avater, float dt);
 };

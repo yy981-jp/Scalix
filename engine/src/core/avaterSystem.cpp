@@ -57,6 +57,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
 
 
 void AvaterSystem::update(GameContext& ctx, float dt) {
+    
     for (auto& avater : avaters) {
 
         // printf("D: avater.id: %d, playable: %d\n", avater.id, playableAvater);
