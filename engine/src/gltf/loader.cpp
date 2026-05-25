@@ -507,10 +507,12 @@ void GltfLoaderImpl::load() {
 			if (imgIdx >= static_cast<int>(scalixModel.textures.size())) {
 				scalixModel.textures.resize(imgIdx + 1);
 			}
-			scalixModel.textures[imgIdx] = tex;
+			scalixModel.textures[imgIdx] = std::move(tex);
 			// printf("Texture[%d] created successfully\n", imgIdx);
 		} catch (const std::exception& e) {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
+		} catch (...) {
+			throw std::runtime_error("unknown error: gltf/loader - image");
 		}
 	}
 

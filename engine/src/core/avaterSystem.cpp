@@ -15,7 +15,7 @@ void AvaterSystem::loadData(const std::vector<std::string> path) {
     for (const auto& file: path) {
         Avater avater(file);
         avater.id = id++;
-		avaters.push_back(avater);
+		avaters.push_back(std::move(avater));
     }
 }
 

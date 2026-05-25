@@ -5,6 +5,7 @@
 #include "../core/avater.h"
 #include "../core/str.h"
 #include <tinygltf/tiny_gltf.h>
+#include <utility>
 
 
 class GltfLoaderImpl {
@@ -25,7 +26,7 @@ class GltfLoaderImpl {
 public:
 	GltfLoaderImpl(const std::string& path);
 	void load();
-	inline Model get() { return scalixModel; }
+	inline Model get() { return std::move(scalixModel); }
 };
 
 inline Model loadGltf(const std::string& path) {
