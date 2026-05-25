@@ -2,6 +2,8 @@
 
 #include "../core/avater.h"
 #include <unordered_map>
+#include <unordered_set>
+#include <fstream>
 
 
 std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avater& avater) {
@@ -23,9 +25,50 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
     // process pre
     std::unordered_map<StrHs,NodeId> map;
     map.reserve(avater.model.nodes.size());
+    std::ofstream ofs("test.txt");
     for (const Node& node: avater.model.nodes) {
         map[node.name] = node.id;
+        ofs << node.name.hash << "\t\t\t" << strsv().get(node.name) << "\t=\t" << node.id << "\n";
     }
+
+    for (size_t i = 0; i < 10; i++) ofs << "\n";
+
+    ofs << "----------\n";
+
+    for (const auto& node: avater.model.nodes) {
+        ofs << strsv().get(node.name) << "\n";
+    }
+
+    for (size_t i = 0; i < 10; i++) ofs << "\n";
+    
+    // --- DEBUG: Track missing node analysis ---
+    ofs << "===== TRACK TARGET ANALYSIS =====\n";
+    std::unordered_set<std::string> missingTargets;
+    std::unordered_set<std::string> foundTargets;
+    
+    for (const auto& [key,value]: j["body"].items()) {
+        const AnimImFmt& imf = value.get<AnimImFmt>();
+        for (const auto& track_i: imf.tracks) {
+            auto it = map.find(StrHs(track_i.target));
+            if (it == map.end()) {
+                missingTargets.insert(track_i.target);
+            } else {
+                foundTargets.insert(track_i.target);
+            }
+        }
+    }
+    
+    ofs << "Found targets: " << foundTargets.size() << "\n";
+    for (const auto& t: foundTargets) {
+        ofs << "  OK: " << t << "\n";
+    }
+    
+    ofs << "\nMissing targets: " << missingTargets.size() << "\n";
+    for (const auto& t: missingTargets) {
+        ofs << "  MISSING: " << t << "\n";
+    }
+    ofs << "===== END TRACK ANALYSIS =====\n\n";
+    
 
     // process
     for (const auto& [key,value]: j["body"].items()) {
@@ -36,8 +79,18 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
             auto& track_i = imf.tracks[i];
             
             auto it = map.find(StrHs(track_i.target));
-            if (it == map.end()) continue;
-            track_r.target = it->second;
+            if (it != map.end()) {
+                track_r.target = it->second;
+                ofs << "D: found: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
+            } else {
+                track_r.target = -404;
+                ofs << "D: notfound: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
+                // TODO: track_i.tarket.empty の場合の処理を考える必要があるかもしれない
+                // if (track_i.target == "") {
+                //     throw std::exception();
+                // }
+                continue;
+            }
         }
 
         AnimRtFmt rf;

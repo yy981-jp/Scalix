@@ -15,7 +15,7 @@ void AvaterSystem::loadData(const std::vector<std::string> path) {
     for (const auto& file: path) {
         Avater avater(file);
         avater.id = id++;
-		avaters.push_back(avater);
+		avaters.push_back(std::move(avater));
     }
 }
 
@@ -57,6 +57,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avater& avater,
 
 
 void AvaterSystem::update(GameContext& ctx, float dt) {
+    
     for (auto& avater : avaters) {
 
         // printf("D: avater.id: %d, playable: %d\n", avater.id, playableAvater);

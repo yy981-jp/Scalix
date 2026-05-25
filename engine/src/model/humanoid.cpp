@@ -42,7 +42,7 @@ enum class Level: uint8_t {
 
 // 属性をidに付与
 struct NodeInfo {
-	NodeId nodeId = static_cast<NodeId>(-404);
+	NodeId nodeId = -404;
 	BoneType type = BoneType::unknown;
 	Side side = Side::unknown;
 	Level level = Level::unknown;
@@ -95,7 +95,7 @@ static inline void selectHelper(std::span<NodeId> to, std::span<const std::vecto
 void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skins) {
 	std::vector<NodeInfo> cands;
 	// 属性をつける
-	for (const auto& skin: skins) {
+	for (const auto& skin: skins) { // skins.size() == 1 であることも多い
 		for (const NodeId& nodeId: skin.joints) {
 			const std::vector<std::string> words = tokenizer(strsv().get( nodes[nodeId].name ));
 			NodeInfo cand;

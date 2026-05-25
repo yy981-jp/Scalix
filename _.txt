@@ -100,3 +100,5 @@ auto tangent はunityeditorが計算して.animに保存するからそれを抽
 データパイプラインとかがある程度整備出来てきたら本命のhermiteに行きたい
 
 まずはdeltatimeを整備
+
+AnimRtFmt::endは一体どうなってる unityから抽出するんじゃないのか? ここについて検証が必要そう

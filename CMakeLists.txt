@@ -9,3 +9,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 # Scalix
 add_subdirectory(engine)
 add_subdirectory(importer)
+add_subdirectory(dev)

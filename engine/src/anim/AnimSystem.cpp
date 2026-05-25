@@ -10,6 +10,7 @@ void AnimSystem::init(const std::string& path, const Avater& avater) {
 void AnimSystem::run(StrHs animName) {
     const AnimRtFmt& anim = anims[animName];
     PlayingAnim plAnim;
+    plAnim.anim = animName;
     plAnim.crtKeyIdxs.resize(anim.fmt.tracks.size());
     playing.push_back(std::move(plAnim));
 }
@@ -20,7 +21,7 @@ void AnimSystem::stop(StrHs animName) {
     });
 }
 
-void AnimSystem::update(Avater& avater, float dt) {
+void AnimSystem::tick(Avater& avater, float dt) {
     blendBuffer.clear();
     blend(dt);
     apply(avater);
@@ -105,12 +106,10 @@ void AnimSystem::blend(float dt) {
             trackNumber++;
         }
 
+
         if (shouldRemove) {
-            // swap&pop
             playing[i] = std::move(playing.back());
             playing.pop_back();
-        } else {
-            i++;
-        }
+        } else i++;
     }
 }

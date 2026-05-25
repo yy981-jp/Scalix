@@ -7,6 +7,13 @@
 #include <set>
 #include <cassert>
 #include <iostream>
+#include <fstream>
+
+
+void dumpJson(const json& j) {
+	std::ofstream ofs("debug.json");
+	ofs << j.dump(4);
+}
 
 
 void GltfLoaderImpl::parseMesh(NodeId nodeId) {
@@ -311,6 +318,7 @@ void GltfLoaderImpl::parse() {
 			scalixModel.nodes[child].parent = i;
 		}
 		node.id = i;
+		node.name = strsv().entry(tn.name);
 		node.children = tn.children;
 
 	}
@@ -322,7 +330,6 @@ void GltfLoaderImpl::parse() {
 		// printf("model_skin.joints.size: %d\n", model_skin.joints.size());
 		for (int joint: model_skin.joints) {
 			skin.joints.push_back(joint);
-			scalixModel.nodes[joint].name = strsv().entry( model.nodes[joint].name );
 			// printf("joint: %d\n", joint);
 		}
 		// skin
@@ -500,10 +507,12 @@ void GltfLoaderImpl::load() {
 			if (imgIdx >= static_cast<int>(scalixModel.textures.size())) {
 				scalixModel.textures.resize(imgIdx + 1);
 			}
-			scalixModel.textures[imgIdx] = tex;
+			scalixModel.textures[imgIdx] = std::move(tex);
 			// printf("Texture[%d] created successfully\n", imgIdx);
 		} catch (const std::exception& e) {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
+		} catch (...) {
+			throw std::runtime_error("unknown error: gltf/loader - image");
 		}
 	}
 
