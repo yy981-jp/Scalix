@@ -1,9 +1,8 @@
 #include "texture.h"
 #include <vector>
 
-
-void bp() {
-	printf("D:tex-dest\n");
+namespace {
+	bgfx::UniformHandle g_sampler = BGFX_INVALID_HANDLE;
 }
 
 void Texture::createFromRGBA(int w, int h, const uint8_t* rgba_data, size_t size) {
@@ -30,10 +29,11 @@ void Texture::createFromRGBA(int w, int h, const uint8_t* rgba_data, size_t size
 		throw std::runtime_error("Failed to create texture");
 	}
 
-	// サンプラーユニフォームを作成（一度だけ）
-	if (!bgfx::isValid(sampler)) {
-		sampler = bgfx::createUniform("s_tex", bgfx::UniformType::Sampler);
+	// サンプラーユニフォームを作成（一度だけ、全テクスチャ共有）
+	if (!bgfx::isValid(g_sampler)) {
+		g_sampler = bgfx::createUniform("s_tex", bgfx::UniformType::Sampler);
 	}
+	sampler = g_sampler;
 }
 
 // RGB画像からRGBA変換して作成
@@ -67,6 +67,10 @@ bool Texture::isValid() const {
 Texture::Texture(Texture&& other) noexcept {
 	handle = other.handle;
 	other.handle = BGFX_INVALID_HANDLE;
+	sampler = other.sampler;
+	other.sampler = BGFX_INVALID_HANDLE;
+	width = other.width;
+	height = other.height;
 }
 
 Texture& Texture::operator=(Texture&& other) noexcept {
@@ -78,19 +82,18 @@ Texture& Texture::operator=(Texture&& other) noexcept {
 
 		handle = other.handle;
 		other.handle = BGFX_INVALID_HANDLE;
+		sampler = other.sampler;
+		other.sampler = BGFX_INVALID_HANDLE;
+		width = other.width;
+		height = other.height;
 	}
 	return *this;
 }
 
 
 Texture::~Texture() {
-	bp();
 	if (bgfx::isValid(handle)) {
 		bgfx::destroy(handle);
 		handle = BGFX_INVALID_HANDLE;
-	}
-	if (bgfx::isValid(sampler)) {
-		bgfx::destroy(sampler);
-		sampler = BGFX_INVALID_HANDLE;
 	}
 }
