@@ -5,8 +5,8 @@
 
 
 struct Texture {
-	bgfx::TextureHandle handle{};
-	bgfx::UniformHandle sampler{};
+	bgfx::TextureHandle handle = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle sampler = BGFX_INVALID_HANDLE;
 	int width = 0;
 	int height = 0;
 

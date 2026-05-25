@@ -3,9 +3,12 @@
 #include "core/game.h"
 
 int main() {
-	Game game;
+	{
+		Game game;
 
-	while (game.isRunning()) {
-		game.tick();
+		while (game.isRunning()) {
+			game.tick();
+		}
 	}
+	bgfx::shutdown();
 }
