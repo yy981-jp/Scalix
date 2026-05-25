@@ -48,12 +48,12 @@ Game::Game() {
 
 	init.resolution.width = width;
 	init.resolution.height = height;
-	init.resolution.reset = BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4;
+	init.resolution.reset = BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4/* | BGFX_RESET_MAXANISOTROPY*/;
 
-	// bgfx::setDebug(BGFX_DEBUG_STATS);
-
-	if (!bgfx::init(init))
-		throw std::runtime_error("bgfx init failed");
+	
+	if (!bgfx::init(init)) throw std::runtime_error("bgfx init failed");
+	
+	bgfx::setDebug(BGFX_DEBUG_STATS | BGFX_DEBUG_TEXT);
 
 	// set mouse mode
 
@@ -75,16 +75,21 @@ void Game::tick() {
 			case SDL_QUIT: running = false; break;
             case SDL_KEYDOWN: onKeyDown(event.key); break;
             case SDL_KEYUP: onKeyUp(event.key); break;
-			case SDL_MOUSEBUTTONDOWN: onMouseBtDown(event.button);
-			case SDL_MOUSEBUTTONUP: onMouseBtUp(event.button);
-			case SDL_WINDOWEVENT: onWindowEve(event.window);
-			case SDL_MOUSEMOTION: onMouseMt(event.motion);
+			case SDL_MOUSEBUTTONDOWN: onMouseBtDown(event.button); break;
+			case SDL_MOUSEBUTTONUP: onMouseBtUp(event.button); break;
+			case SDL_WINDOWEVENT: onWindowEve(event.window); break;
+			case SDL_MOUSEMOTION: onMouseMt(event.motion); break;
 		}
 	}
 
 	update();
-
+	
 	draw();
+	
+	// TODO: 何故動かない...?
+	bgfx::dbgTextClear();
+	bgfx::dbgTextPrintf(0, 25, 0x4f, "y9test: debug hello");
+
 
 	bgfx::frame();
 }
