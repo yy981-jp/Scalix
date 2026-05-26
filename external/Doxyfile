@@ -1,0 +1,38 @@
+PROJECT_NAME            = Scalix Externals
+OUTPUT_DIRECTORY        = docs
+OUTPUT_LANGUAGE         = Japanese
+NUM_PROC_THREADS        = 32
+
+INPUT                   = bgfx bimg bx nlohmann tinygltf yaml-cpp
+RECURSIVE               = YES
+EXCLUDE_PATTERNS        = */build/*
+
+JAVADOC_AUTOBRIEF       = YES
+MULTILINE_CPP_IS_BRIEF  = YES
+QT_AUTOBRIEF            = YES
+
+# EXTRACT_ALL             = YES
+# EXTRACT_STATIC          = YES
+FILE_PATTERNS           = *.cpp *.h *.hpp *.c
+HTML_FORMULA_FORMAT     = svg
+GENERATE_LATEX          = NO
+# HAVE_DOT                = YES
+# DOT_NUM_THREADS         = 32
+# DOT_UML_DETAILS         = YES
+# CALL_GRAPH              = YES
+# CALLER_GRAPH            = YES
+# DIR_GRAPH_MAX_DEPTH     = 25
+# DOT_IMAGE_FORMAT        = svg
+# INTERACTIVE_SVG         = YES
+HTML_COLORSTYLE         = DARK
+
+SOURCE_BROWSER          = YES
+INLINE_SOURCES          = NO
+STRIP_CODE_COMMENTS     = NO
+
+ENABLE_PREPROCESSING    = YES
+MACRO_EXPANSION         = YES
+
+FULL_PATH_NAMES         = NO
+SHOW_FILES              = YES
+SHOW_NAMESPACES         = YES

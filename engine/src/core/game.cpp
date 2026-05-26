@@ -87,8 +87,8 @@ void Game::tick() {
 	draw();
 	
 	// TODO: 何故動かない...?
-	bgfx::dbgTextClear();
-	bgfx::dbgTextPrintf(0, 25, 0x4f, "y9test: debug hello");
+	// bgfx::dbgTextClear();
+	// bgfx::dbgTextPrintf(0, 25, 0x4f, "y9test: debug hello");
 
 
 	bgfx::frame();
