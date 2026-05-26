@@ -69,7 +69,7 @@ struct Format {
 
 	template<class OtherStrT>
 	Format(const Format<OtherStrT>& src)
-		: sampleRate(src.sampleRate) {
+		: sampleRate(src.sampleRate), stopTime(src.stopTime) {
 		// name = AnimFmt_convStr(src.name);
 
 		tracks.reserve(src.tracks.size());

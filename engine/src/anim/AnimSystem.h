@@ -26,6 +26,7 @@ class AnimSystem {
     std::vector<PlayingAnim> playing;
 
     std::vector<Value> blendBuffer;
+    std::vector<bool> blendBufferSR;
     void blend(float dt);
     void apply(Avater& avater);
     

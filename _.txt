@@ -92,7 +92,7 @@ boneMtx（= palette）
 そのうちGameからEngineを分離させるべきかもな
 
 なぜ起動時にアバターの頭が右を向く... なんでだ...
-	-> 気にしなければ問題なし
+	-> おそらくマウスの初期地点に影響されている? 余裕がある時に検証
 
 auto tangent はunityeditorが計算して.animに保存するからそれを抽出する つまりScalixがautotangentを行う必要はない
 
@@ -102,3 +102,4 @@ auto tangent はunityeditorが計算して.animに保存するからそれを抽
 まずはdeltatimeを整備
 
 AnimRtFmt::endは一体どうなってる unityから抽出するんじゃないのか? ここについて検証が必要そう
+	-> 修正済み

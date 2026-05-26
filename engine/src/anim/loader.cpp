@@ -25,24 +25,26 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
     // process pre
     std::unordered_map<StrHs,NodeId> map;
     map.reserve(avater.model.nodes.size());
-    std::ofstream ofs("test.txt");
+    std::ofstream dbg("test.txt");
+    dbg << "===== node names =====";
     for (const Node& node: avater.model.nodes) {
         map[node.name] = node.id;
-        ofs << node.name.hash << "\t\t\t" << strsv().get(node.name) << "\t=\t" << node.id << "\n";
+        dbg << node.name.hash << "\t\t\t" << strsv().get(node.name) << "\t=\t" << node.id << "\n";
     }
 
-    for (size_t i = 0; i < 10; i++) ofs << "\n";
+    for (size_t i = 0; i < 10; i++) dbg << "\n";
+    dbg << "===== node names =====";
 
-    ofs << "----------\n";
 
-    for (const auto& node: avater.model.nodes) {
-        ofs << strsv().get(node.name) << "\n";
-    }
 
-    for (size_t i = 0; i < 10; i++) ofs << "\n";
-    
+    // dbg << "----------\n";
+
+    // for (const auto& node: avater.model.nodes) {
+    //     dbg << strsv().get(node.name) << "\n";
+    // }
+
     // --- DEBUG: Track missing node analysis ---
-    ofs << "===== TRACK TARGET ANALYSIS =====\n";
+    dbg << "===== TRACK TARGET ANALYSIS =====\n";
     std::unordered_set<std::string> missingTargets;
     std::unordered_set<std::string> foundTargets;
     
@@ -58,17 +60,20 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
         }
     }
     
-    ofs << "Found targets: " << foundTargets.size() << "\n";
+    dbg << "Found targets: " << foundTargets.size() << "\n";
     for (const auto& t: foundTargets) {
-        ofs << "  OK: " << t << "\n";
+        dbg << "  OK: " << t << "\n";
     }
     
-    ofs << "\nMissing targets: " << missingTargets.size() << "\n";
+    dbg << "\nMissing targets: " << missingTargets.size() << "\n";
     for (const auto& t: missingTargets) {
-        ofs << "  MISSING: " << t << "\n";
+        dbg << "  MISSING: " << t << "\n";
     }
-    ofs << "===== END TRACK ANALYSIS =====\n\n";
+    dbg << "===== END TRACK ANALYSIS =====\n\n";
     
+
+    for (size_t i = 0; i < 10; i++) dbg << "\n";
+    dbg << "===== anim names =====\n";
 
     // process
     for (const auto& [key,value]: j["body"].items()) {
@@ -81,10 +86,10 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
             auto it = map.find(StrHs(track_i.target));
             if (it != map.end()) {
                 track_r.target = it->second;
-                ofs << "D: found: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
+                // dbg << "D: found: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
             } else {
                 track_r.target = -404;
-                ofs << "D: notfound: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
+                // dbg << "D: notfound: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
                 // TODO: track_i.tarket.empty の場合の処理を考える必要があるかもしれない
                 // if (track_i.target == "") {
                 //     throw std::exception();
@@ -95,16 +100,12 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 
         AnimRtFmt rf;
         rf.fmt = std::move(rf_b);
-        anims[StrHs(key)] = rf;
-    }
+        rf.end = rf.fmt.stopTime;
 
-    // calc end
-    for (auto& [key,anim]: anims) {
-        float longest = 0.f;
-        for (const auto& track: anim.fmt.tracks) {
-            longest = std::max(longest, track.keys.back().time);
-        }
-        anim.end = longest;
+        StrHs hs = strsv().entry(key);
+        anims[hs] = rf;
+
+        dbg << key << "\t\t\t" << StrHs(key).hash << "\n";
     }
 
     return anims;
