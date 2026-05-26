@@ -1,12 +1,12 @@
 #include "loader.h"
 
-#include "../core/avater.h"
+#include "../core/avatar.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <fstream>
 
 
-std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avater& avater) {
+std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avatar& avatar) {
     std::unordered_map<StrHs,AnimRtFmt> anims;
     json j = readJson(path);
 
@@ -24,10 +24,10 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 
     // process pre
     std::unordered_map<StrHs,NodeId> map;
-    map.reserve(avater.model.nodes.size());
+    map.reserve(avatar.model.nodes.size());
     std::ofstream dbg("test.txt");
     dbg << "===== node names =====";
-    for (const Node& node: avater.model.nodes) {
+    for (const Node& node: avatar.model.nodes) {
         map[node.name] = node.id;
         dbg << node.name.hash << "\t\t\t" << strsv().get(node.name) << "\t=\t" << node.id << "\n";
     }
@@ -39,7 +39,7 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 
     // dbg << "----------\n";
 
-    // for (const auto& node: avater.model.nodes) {
+    // for (const auto& node: avatar.model.nodes) {
     //     dbg << strsv().get(node.name) << "\n";
     // }
 

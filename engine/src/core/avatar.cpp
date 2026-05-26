@@ -1,4 +1,4 @@
-#include "avater.h"
+#include "avatar.h"
 #include "../anim/loader.h"
 #include "../gltf/loader.h"
 #include "cache.h"
@@ -8,7 +8,7 @@
 #include <cstdio>
 
 
-void Avater::update(GameContext& ctx, float dt) {
+void Avatar::update(GameContext& ctx, float dt) {
     // --- 移動 ---
     float fx = -lutsv.getSin(yaw);
     float fz =  lutsv.getCos(yaw);
@@ -92,7 +92,7 @@ void Avater::update(GameContext& ctx, float dt) {
 }
 
 
-void Avater::draw(Camera& cam) {
+void Avatar::draw(Camera& cam) {
     int headIdx = humanoid.bones[(size_t)HBT::head];
 
     float* m = globalMtxs[headIdx].data();
@@ -122,7 +122,7 @@ void Avater::draw(Camera& cam) {
     cam.update(camPos, camPos + lookDir);
 }
 
-Avater::Avater(const std::string& glTFPath) {
+Avatar::Avatar(const std::string& glTFPath) {
 	model = loadGltf(glTFPath);
     humanoid.init(model.nodes, model.skins);
     anim.init("test.sxa",*this);

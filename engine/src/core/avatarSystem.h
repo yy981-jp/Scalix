@@ -4,13 +4,13 @@
 
 #include "../model/model.h"
 #include "gctx.h"
-#include "avater.h"
+#include "avatar.h"
 
 
-/// @brief avater 全体管理&描画システム
-class AvaterSystem {
-	std::vector<Avater> avaters;
-	AvaterID playableAvater = 0;
+/// @brief avatar 全体管理&描画システム
+class AvatarSystem {
+	std::vector<Avatar> avatars;
+	AvatarID playableAvatar = 0;
 
 public:
 	void loadData(const std::vector<std::string> path);

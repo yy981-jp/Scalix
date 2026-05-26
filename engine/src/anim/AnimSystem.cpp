@@ -1,12 +1,12 @@
 #include "AnimSystem.h"
 
-#include "../core/avater.h"
+#include "../core/avatar.h"
 
 #include <iostream>
 
 
-void AnimSystem::init(const std::string& path, const Avater& avater) {
-	anims = loadAnim(path, avater);
+void AnimSystem::init(const std::string& path, const Avatar& avatar) {
+	anims = loadAnim(path, avatar);
 }
 
 void AnimSystem::run(StrHs animName) {
@@ -25,16 +25,16 @@ void AnimSystem::stop(StrHs animName) {
 	});
 }
 
-void AnimSystem::tick(Avater& avater, float dt) {
+void AnimSystem::tick(Avatar& avatar, float dt) {
 	blendBuffer.clear();
 	blendBufferSR.clear();
 
 	blend(dt);
-	apply(avater);
+	apply(avatar);
 }
 
 
-void AnimSystem::apply(Avater& avater) {
+void AnimSystem::apply(Avatar& avatar) {
 	size_t blendIdx = 0;
 
 	for (size_t playIdx = 0; playIdx < playing.size();) {
@@ -48,7 +48,7 @@ void AnimSystem::apply(Avater& avater) {
 				using enum FormatDef::Proc;
 
 				case active: {
-					Node& target = avater.model.nodes[track.target];
+					Node& target = avatar.model.nodes[track.target];
 					target.visible = std::get<float>(blendBuffer[blendIdx]);
 				} break;
 			}

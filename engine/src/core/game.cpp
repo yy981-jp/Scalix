@@ -101,14 +101,14 @@ void Game::update() {
 
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
-	avaterSystem.update(gctx,dt);
+	avatarSystem.update(gctx,dt);
 
 	mStat.relPos = {0, 0};
 }
 
 
 void Game::draw() {
-	avaterSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)]);
+	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)]);
 	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
@@ -128,7 +128,7 @@ void Game::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
-	avaterSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+	avatarSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
