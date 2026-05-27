@@ -55,9 +55,7 @@ void Texture::createFromRGB(int w, int h, const uint8_t* rgb_data, size_t size) 
 }
 
 void Texture::bind(uint8_t stage) {
-	if (bgfx::isValid(handle) && bgfx::isValid(sampler)) {
-		bgfx::setTexture(stage, sampler, handle);
-	}
+	bgfx::setTexture(stage, sampler, handle);
 }
 
 bool Texture::isValid() const {

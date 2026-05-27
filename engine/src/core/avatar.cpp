@@ -45,7 +45,7 @@ void Avatar::update(GameContext& ctx, float dt) {
     status = (walking? Status::walk : Status::stay);
 
     // --- アニメーション ---
-    anim.run("Sweater_OFF"_hs);
+    // anim.run("Sweater_OFF"_hs);
 
     anim.tick(*this,dt);
 
@@ -76,17 +76,14 @@ void Avatar::update(GameContext& ctx, float dt) {
     neckNode.hasRotation = true;
 
     float qPitch[4];
-    quatRotateAxis(qPitch, 1, 0, 0, head.pitch);
-
-    for (int i = 0; i < 4; i++)
-        neckNode.rot[i] = qPitch[i];
+    neckNode.rot.rotateAxis(1, 0, 0, head.pitch);
 
     // --- head (yaw) ---
     NodeId headIdx = humanoid.bones[(size_t)HBT::head];
     auto& headNode = model.nodes[headIdx];
     headNode.hasRotation = true;
 
-    quatRotateAxis(headNode.rot, 0, 1, 0, head.yaw);
+    headNode.rot.rotateAxis(0, 1, 0, head.yaw);
 
     // printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 }

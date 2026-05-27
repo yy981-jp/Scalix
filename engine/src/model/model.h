@@ -6,6 +6,7 @@
 #include "../gfx/texture.h"
 #include "../core/def.h"
 #include "../core/gctx.h"
+#include "../core/quat.h"
 #include "../core/str.h"
 
 #include "../anim/format.h"
@@ -24,8 +25,8 @@ struct Node {
 	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
 	bool visible = true;
 
-	vec3f pos = {0.0f, 0.0f, 0.0f};
-	float rot[4] = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
+	vec3f pos; // local座標 (多分)
+	Quat rot;  // identity quaternion
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
 	bool hasTranslation = false;

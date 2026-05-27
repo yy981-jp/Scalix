@@ -283,10 +283,12 @@ void GltfLoaderImpl::parse() {
 		if (!tn.rotation.empty()) {
 			node.hasRotation = true;
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
-			node.rot[0] = -(float)tn.rotation[0];
-			node.rot[1] = -(float)tn.rotation[1];
-			node.rot[2] = -(float)tn.rotation[2];
-			node.rot[3] = (float)tn.rotation[3];
+			node.rot = {
+				-(float)tn.rotation[0],
+				-(float)tn.rotation[1],
+				-(float)tn.rotation[2],
+				(float)tn.rotation[3]
+			};
 		}
 
 		// scale

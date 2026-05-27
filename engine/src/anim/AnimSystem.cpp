@@ -44,13 +44,24 @@ void AnimSystem::apply(Avatar& avatar) {
 		bool shouldRemove = false;
 
 		for (const auto& track : anim.fmt.tracks) {
-			switch (track.proc) {
+            // track単位
+            Node& target = avatar.model.nodes[track.target];
+
+            switch (track.proc) {
 				using enum FormatDef::Proc;
 
 				case active: {
-					Node& target = avatar.model.nodes[track.target];
 					target.visible = std::get<float>(blendBuffer[blendIdx]);
 				} break;
+
+                case position: {
+                    target.pos = std::get<vec3f>(blendBuffer[blendIdx]);
+                } break;
+
+                case rotation: {
+                    target.rot; // TODO:
+                    target.hasRotation = true;
+                }
 			}
 
 			shouldRemove = blendBufferSR[blendIdx];

@@ -58,7 +58,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
 
 void AvatarSystem::update(GameContext& ctx, float dt) {
     
-    for (auto& avatar : avatars) {
+    for (auto& avatar: avatars) {
 
         // printf("D: avatar.id: %d, playable: %d\n", avatar.id, playableAvatar);
         if (avatar.id != playableAvatar) continue; // player以外の制御はしない
@@ -114,7 +114,7 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 
 
 void AvatarSystem::draw(bgfx::ProgramHandle program) {
-    for (auto& avatar : avatars) {
+    for (auto& avatar: avatars) {
 
         // ===== とりあえず skin 0 を使う =====
         if (avatar.model.skins.empty()) continue;
@@ -142,7 +142,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program) {
             for (int i = 0; i < node.meshCount; i++) {
                 const Mesh& m = avatar.model.meshes[node.meshStartIndex + i];
 
-                // ★ CPUスキニング用
+                // CPUスキニング用
                 std::vector<Vertex> deformed;
                 deformed.resize(m.verts.size());
 
@@ -165,7 +165,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program) {
                         if (w <= 0.0f) continue;
 
                         int jointIdx = v.joints[k];
-                        if (jointIdx < 0 || jointIdx >= (int)jointMtx.size()) continue;
+                        assert(jointIdx >= 0 && jointIdx < (int)jointMtx.size());
 
                         float tmp[4];
                         bx::vec4MulMtx(tmp, pos, jointMtx[jointIdx].data());
@@ -200,7 +200,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program) {
                     layout
                 );
 
-                // ★ transformはidentityにする（スキニング済みなので）
+                // transformはidentityにする（スキニング済みなので）
                 float identity[16];
                 bx::mtxIdentity(identity);
                 bgfx::setTransform(identity);
@@ -209,11 +209,9 @@ void AvatarSystem::draw(bgfx::ProgramHandle program) {
                 bgfx::setIndexBuffer(m.ibh);
 
                 // テクスチャ
-                if (m.materialIndex >= 0 && m.materialIndex < (int)avatar.model.materialToImage.size()) {
+                if (m.materialIndex >= 0) {
                     int imgIdx = avatar.model.materialToImage[m.materialIndex];
-                    if (imgIdx >= 0 && imgIdx < (int)avatar.model.textures.size() && avatar.model.textures[imgIdx].isValid()) {
-                        avatar.model.textures[imgIdx].bind();
-                    }
+                    avatar.model.textures[imgIdx].bind();
                 }
 
                 bgfx::setState(
@@ -235,7 +233,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program) {
 
 /*
 void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
-    for (auto& avatar : avatars) {
+    for (auto& avatar: avatars) {
 
         // 骨構造を持たないavatarは処理しない
         if (avatar.model.skins.empty()) continue;

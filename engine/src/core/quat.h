@@ -7,8 +7,8 @@
 struct Quat {
     float x, y, z, w;
 
-    Quat() : x(0), y(0), z(0), w(0) {}
-    Quat(float x, float y, float z, float w) : x(x), y(y), z(z), w(0) {}
+    Quat() : x(0), y(0), z(0), w(1) {}
+    Quat(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
     Quat(const bx::Quaternion& v): x(v.x), y(v.y), z(v.z), w(v.w) {};
     Quat(const FormatDef::Quat& v): x(v[0]), y(v[1]), z(v[2]), w(v[3]) {};
 
@@ -28,4 +28,6 @@ struct Quat {
 
     
     static Quat lerp(const Quat& a, const Quat& b, float t);
+    
+    void rotateAxis(float i_x, float i_y, float i_z, float angle);
 };
