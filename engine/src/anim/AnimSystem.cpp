@@ -59,9 +59,13 @@ void AnimSystem::apply(Avatar& avatar) {
                 } break;
 
                 case rotation: {
-                    target.rot; // TODO:
+                    target.rot = std::get<Quat>(blendBuffer[blendIdx]);
                     target.hasRotation = true;
-                }
+                } break;
+
+				case scale: {
+					// target.scale :TODO:
+				}
 			}
 
 			shouldRemove = blendBufferSR[blendIdx];
