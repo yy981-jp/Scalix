@@ -6,7 +6,12 @@
 #include <windows.h>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <vector>
+
+
+namespace fs = std::filesystem;
+
 
 struct PosVertex {
 	float x, y, z;
@@ -15,23 +20,7 @@ struct PosVertex {
 
 bgfx::VertexLayout PosVertex::layout;
 
-static bgfx::ShaderHandle loadShader(const char* path) {
-	std::ifstream file(path, std::ios::binary);
-	if(!file) {
-		std::cerr << "shader load failed: " << path << '\n';
-		return BGFX_INVALID_HANDLE;
-	}
-
-	file.seekg(0, std::ios::end);
-	size_t size = file.tellg();
-	file.seekg(0);
-
-	const bgfx::Memory* mem = bgfx::alloc(uint32_t(size + 1));
-	file.read((char*)mem->data, size);
-	mem->data[size] = '\0';
-
-	return bgfx::createShader(mem);
-}
+bgfx::ShaderHandle loadShader(const char* path);
 
 int main() {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -104,6 +93,7 @@ int main() {
 		bgfx::setViewClear(0,
 			BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
 			0x303030ff);
+		bgfx::setViewRect(0, 0, 0, 800, 600);
 
 		bgfx::touch(0);
 
