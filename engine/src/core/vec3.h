@@ -14,6 +14,9 @@ struct vec3f {
     operator bx::Vec3() const;
     operator FormatDef::vec3f() const;
 
+    static constexpr vec3f& invalid();
+    bool isValid();
+
     // 演算
     vec3f operator+(const vec3f& other) const;
     vec3f operator-(const vec3f& other) const;
