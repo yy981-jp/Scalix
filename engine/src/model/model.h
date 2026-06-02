@@ -27,7 +27,7 @@ struct Node {
 
 	vec3f pos; // local座標 (多分)
 	Quat rot;  // identity quaternion
-	float scale[3] = {1.0f, 1.0f, 1.0f};
+	vec3f scale = {1.0f, 1.0f, 1.0f};
 
 	bool hasTranslation = false;
 	bool hasRotation = false;

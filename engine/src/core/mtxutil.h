@@ -6,7 +6,7 @@
 
 // TRS行列を組み立てるヘルパー
 void buildTRS(float* out, const vec3f& pos, const Quat& rot,
-              const float* scale, bool hasRot = true) {
+              const vec3f& scale, bool hasRot = true) {
     float t[16], r[16], s[16], tmp[16];
 
     bx::mtxIdentity(t);
@@ -19,7 +19,7 @@ void buildTRS(float* out, const vec3f& pos, const Quat& rot,
         bx::mtxFromQuaternion(r, rot);
     }
 
-    s[0] = scale[0];  s[5] = scale[1];  s[10] = scale[2];
+    s[0] = scale.x;  s[5] = scale.y;  s[10] = scale.z;
 
     bx::mtxMul(tmp, s, r);       // R * S
     bx::mtxMul(out, tmp, t);     // (S * R) * T

@@ -35,6 +35,8 @@ void AnimSystem::tick(Avatar& avatar, float dt) {
 
 
 void AnimSystem::apply(Avatar& avatar) {
+	// ライブ楽しかった! 昨日の話だけど余韻が抜けん
+	
 	size_t blendIdx = 0;
 
 	for (size_t playIdx = 0; playIdx < playing.size();) {
@@ -56,12 +58,26 @@ void AnimSystem::apply(Avatar& avatar) {
 
                 case position: {
                     target.pos = std::get<vec3f>(blendBuffer[blendIdx]);
+					target.hasTranslation = true;
                 } break;
 
                 case rotation: {
-                    target.rot; // TODO:
+                    target.rot = std::get<Quat>(blendBuffer[blendIdx]);
                     target.hasRotation = true;
-                }
+                } break;
+
+				case scale: {
+					target.scale = std::get<vec3f>(blendBuffer[blendIdx]);
+					target.hasScale = true;
+				} break;
+
+				case morph: {
+					// TODO: morphについてより具体的に調べて実装する必要がありそう
+				} break;
+
+				case float_: {
+					// TODO: 具体的に何をするのか
+				} break;
 			}
 
 			shouldRemove = blendBufferSR[blendIdx];

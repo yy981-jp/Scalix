@@ -43,13 +43,6 @@ namespace FormatDef {
 	};
 }
 
-// template<class T>
-// T AnimFmt_convStr(const T& s) {
-// 	return s;
-// }
-
-// NodeId AnimFmt_convStr(const std::string_view& s);
-
 template<class StrT>
 struct Format {
 	/// @brief 1動作

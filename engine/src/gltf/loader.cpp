@@ -294,9 +294,11 @@ void GltfLoaderImpl::parse() {
 		// scale
 		if (!tn.scale.empty()) {
 			node.hasScale = true;
-			node.scale[0] = (float)tn.scale[0];
-			node.scale[1] = (float)tn.scale[1];
-			node.scale[2] = (float)tn.scale[2];
+			node.scale = {
+				(float)tn.scale[0],
+				(float)tn.scale[1],
+				(float)tn.scale[2]
+			};
 		}
 
 		// meshが存在するnodeに対してのみ実行
