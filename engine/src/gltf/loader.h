@@ -8,14 +8,17 @@
 #include <utility>
 
 
+struct AccessorView {
+	uint8_t* data;
+	size_t stride;
+	size_t count;
+};
+
 class GltfLoaderImpl {
 	const std::string& path;
 
 	// in processing data
 	tinygltf::Model model;
-	tinygltf::Accessor posAcc;
-	tinygltf::BufferView posView;
-	tinygltf::Buffer posBuf;
 
 	Model scalixModel;
 

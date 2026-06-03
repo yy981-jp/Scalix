@@ -141,14 +141,6 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
             }
             for (int i = 0; i < 10; i++) {
                 NodeId nodeIdx = skin.joints[i];
-
-                // printf("joint %d -> node %d\n", i, nodeIdx);
-
-                // printf("global pos: %f %f %f\n",
-                //     avatar.globalMtxs[nodeIdx][12],
-                //     avatar.globalMtxs[nodeIdx][13],
-                //     avatar.globalMtxs[nodeIdx][14]
-                // );
             }
         }
 
@@ -160,6 +152,8 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
             // 処理する必要のないものを除外
             if (node.meshCount == 0) continue;
             if (node.skinIndex < 0) continue;
+
+            // printf("DEBUG: node name: %s\n", std::string(strsv().get(node.name)).c_str());
 
             for (int i = 0; i < node.meshCount; i++) {
                 const Mesh& mesh = avatar.model.meshes[node.meshStartIndex + i];
@@ -173,17 +167,9 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                     palette[i] = allJointMtx[node.skinIndex][orig];
                 }
 
-                // for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {
-                //     int jointIdx = mesh.boneRemapInverse[i];
-
-                //     int nodeIdx =  avatar.model.skins[node.skinIndex].joints[jointIdx];
-
-                //     printf("palette[%d] -> joint %d -> node %d\n", i, jointIdx, nodeIdx);
-                // }
-
                 if (mesh.boneRemapInverse.size() > 120) {
                     printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
-                    printf("rem-inv: %d", mesh.boneRemapInverse.size());
+                    // printf("rem-inv: %d", mesh.boneRemapInverse.size());
                     continue;
                 }
                 
@@ -223,9 +209,10 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 
                 // ===== draw =====
                 bgfx::submit(0, program);
+
+                // printf("DEBUG: size: %d\n", mesh.boneRemapInverse.size());
             }
 
-            
         }
     }
 }

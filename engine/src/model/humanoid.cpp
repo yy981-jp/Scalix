@@ -164,6 +164,13 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 
 	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
+		
+		// TODO: fix: boneFlagに反映
+		if (bones[i] >= 0) {
+			boneFlag |= HBTFlag(static_cast<HBT>(i));
+		}
 	}
+
+
 
 }

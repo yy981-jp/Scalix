@@ -53,6 +53,10 @@ enum class HBT {
 	Count
 };
 
+constexpr uint64_t HBTFlag(HBT bone) {
+	return 1u << static_cast<uint64_t>(bone);
+}
+
 /// @brief 骨格
 struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
@@ -60,6 +64,12 @@ struct Humanoid {
 	// node index
 	NodeId bones[static_cast<size_t>(HBT::Count)];
 	std::vector<NodeId> spines;
+
+	uint64_t boneFlag = 0;
+	
+	bool has(HBT bone) {
+		return boneFlag & HBTFlag(bone);
+	}
 };
 
 /// @brief 構造そのもの

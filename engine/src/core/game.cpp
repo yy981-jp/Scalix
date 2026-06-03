@@ -129,6 +129,7 @@ void Game::gameInit() {
 
 	// ===== load glTF ====
 	avatarSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");

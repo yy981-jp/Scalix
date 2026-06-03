@@ -71,50 +71,56 @@ void Avatar::update(GameContext& ctx, float dt) {
     }
 
     // --- neck (pitch) ---
-    NodeId neckIdx = humanoid.bones[(size_t)HBT::neck];
-    auto& neckNode = model.nodes[neckIdx];
-    neckNode.hasRotation = true;
+    if (humanoid.has(HBT::neck)) {
+        NodeId neckIdx = humanoid.bones[(size_t)HBT::neck];
+        auto& neckNode = model.nodes[neckIdx];
+        neckNode.hasRotation = true;
 
-    float qPitch[4];
-    neckNode.rot.rotateAxis(1, 0, 0, head.pitch);
+        float qPitch[4];
+        neckNode.rot.rotateAxis(1, 0, 0, head.pitch);
+    }
 
-    // --- head (yaw) ---
-    NodeId headIdx = humanoid.bones[(size_t)HBT::head];
-    auto& headNode = model.nodes[headIdx];
-    headNode.hasRotation = true;
+    if (humanoid.has(HBT::head)) {
+        // --- head (yaw) ---
+        NodeId headIdx = humanoid.bones[(size_t)HBT::head];
+        auto& headNode = model.nodes[headIdx];
+        headNode.hasRotation = true;
 
-    headNode.rot.rotateAxis(0, 1, 0, head.yaw);
+        headNode.rot.rotateAxis(0, 1, 0, head.yaw);
 
-    // printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
+        // printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
+    }
 }
 
 
 void Avatar::draw(Camera& cam) {
+    // if (!humanoid.has(HBT::neck)) return;
+
     int headIdx = humanoid.bones[(size_t)HBT::head];
 
-    float* m = globalMtxs[headIdx].data();
+        float* m = globalMtxs[headIdx].data();
 
-    vec3f headPos = {
-        m[12],
-        m[13],
-        m[14]
-    };
+        vec3f headPos = {
+            m[12],
+            m[13],
+            m[14]
+        };
 
-    // headの向きから直接forward取得
-    vec3f lookDir = {
-        m[8],
-        m[9],
-        m[10]
-    };
+        // headの向きから直接forward取得
+        vec3f lookDir = {
+            m[8],
+            m[9],
+            m[10]
+        };
 
-    lookDir = bx::normalize(lookDir);
+        lookDir = bx::normalize(lookDir);
 
-    // モデルによっては逆向きなので必要なら反転
-    // lookDir = -lookDir;
+        // モデルによっては逆向きなので必要なら反転
+        // lookDir = -lookDir;
 
-    vec3f camPos = headPos
-        + lookDir * 0.1f
-        + vec3f{0, 0.05f, 0};
+        vec3f camPos = headPos
+            + lookDir * 0.1f
+            + vec3f{0, 0.05f, 0};
 
     cam.update(camPos, camPos + lookDir);
 }
