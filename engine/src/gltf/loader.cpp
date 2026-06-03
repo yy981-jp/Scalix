@@ -252,9 +252,9 @@ void GltfLoaderImpl::parseMesh(NodeId nodeId) {
 		}
 
 		mesh.verts = verts;
+		mesh.indices = idx;
 
 		// Mesh全体格納
-		mesh.create(verts, idx);
 		scalixModel.meshes.push_back(mesh);
 
 	}
@@ -380,47 +380,38 @@ void GltfLoaderImpl::buildPalletCompress() {
 	for (const auto& node : scalixModel.nodes) {
 
 		if (node.skinIndex < 0) continue;
+		if (node.skinIndex >= static_cast<int>(scalixModel.skins.size()))
+			throw std::runtime_error("invalid skin index");
 
 		const auto& skin = scalixModel.skins[node.skinIndex];
 		int totalBoneCount = skin.joints.size();
-
-		std::vector<int> remap(totalBoneCount, -1);
-		std::vector<int> remapInverse;
-
-		int newIndex = 0;
 
 		// このnodeに紐づくmeshだけ処理する必要あり
 		for (int mi = 0; mi < node.meshCount; mi++) {
 			auto& mesh = scalixModel.meshes[node.meshStartIndex + mi];
 
-					
-		for (auto& vert : mesh.verts) {
+			std::vector<int> remap(totalBoneCount, -1);
+			std::vector<int> remapInverse;
+			int newIndex = 0;
 
-			for (int i = 0; i < 4; i++) {
-				if (vert.weights[i] <= 0.0001f) continue;
+			for (auto& vert : mesh.verts) {
 
-				int nodeIndex = vert.joints[i]; // ← ここが本質
+				for (int i = 0; i < 4; i++) {
+					if (vert.weights[i] <= 0.0001f) continue;
 
-				// nodeIndex → jointIndex変換
-				int jointIndex = -1;
-				for (int j = 0; j < skin.joints.size(); j++) {
-					if (skin.joints[j] == nodeIndex) {
-						jointIndex = j;
-						break;
+					int orig = vert.joints[i];
+					if (orig < 0 || orig >= totalBoneCount)
+						throw std::runtime_error("invalid joint index");
+
+					// Compact the original skin joint index into this mesh palette.
+					if (remap[orig] == -1) {
+						remap[orig] = newIndex;
+						remapInverse.push_back(orig);
+						newIndex++;
 					}
-				}
-
-				if (jointIndex == -1) continue;
-
-				int orig = jointIndex;
-
-				if (remap[orig] == -1) {
-					remap[orig] = newIndex;
-					remapInverse.push_back(orig);
-					newIndex++;
+					vert.joints[i] = static_cast<uint16_t>(remap[orig]);
 				}
 			}
-		}
 
 
 			mesh.boneRemap = remap;
@@ -521,4 +512,8 @@ void GltfLoaderImpl::load() {
 	}
 
 	buildPalletCompress();
+
+	for (auto& mesh : scalixModel.meshes) {
+		mesh.create(mesh.verts, mesh.indices);
+	}
 }

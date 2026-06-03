@@ -28,8 +28,30 @@ struct Mesh {
 	int materialIndex = -1;  // glTFマテリアルインデックス
 
 	std::vector<Vertex> verts;
+	std::vector<uint16_t> indices;
 
+	/*	元jointindex -> 圧縮後index
+		@details
+		boneRemap = {
+			0, // Hip -> 0
+			1, // Spine -> 1
+			-1,// Chest 未使用
+			-1,// Neck 未使用
+			-1,// Head 未使用
+			2, // Arm_L -> 2
+			-1 // Arm_R 未使用
+		};
+	*/
 	std::vector<int> boneRemap;
+	
+	/*
+		圧縮後index -> 元jointindex
+		boneRemapInverse = {
+			0, // compact 0 = Hip
+			1, // compact 1 = Spine
+			5  // compact 2 = Arm_L
+		};
+	*/
 	std::vector<int> boneRemapInverse;
 
 	void create(const std::vector<Vertex>& v, const std::vector<uint16_t>& i) {
