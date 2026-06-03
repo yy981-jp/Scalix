@@ -1,5 +1,8 @@
 #include "vec3.h"
 
+#include <limits.h>
+
+
 vec3f::operator bx::Vec3() const {
     return bx::Vec3{x, y, z};
 }
@@ -7,6 +10,17 @@ vec3f::operator bx::Vec3() const {
 vec3f::operator FormatDef::vec3f() const {
     return {x, y, z};
 }
+
+constexpr vec3f& vec3f::invalid() {
+    static float fnan = std::numeric_limits<float>::quiet_NaN();
+    static vec3f invalid = {fnan, fnan, fnan};
+    return invalid;
+};
+
+bool vec3f::isValid() {
+    return !std::isnan(x) || !std::isnan(y) || !std::isnan(z);
+}
+
 
 // 演算
 vec3f vec3f::operator+(const vec3f& other) const {

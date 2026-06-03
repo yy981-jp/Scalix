@@ -2,6 +2,7 @@
 
 #include "core/game.h"
 
+
 int main() {
 	{
 		Game game;
@@ -12,3 +13,7 @@ int main() {
 	}
 	bgfx::shutdown();
 }
+
+
+
+// #include "../../test/sd.h"

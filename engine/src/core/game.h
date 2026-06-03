@@ -16,7 +16,7 @@
 #include "time.h"
 #include "../ui/logo.h"
 
-#include "avaterSystem.h"
+#include "avatarSystem.h"
 
 
 enum class ShaderId {
@@ -41,8 +41,9 @@ class Game {
 	ElapsedTime elap;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
-	// bgfx::UniformHandle u_bones;
-	AvaterSystem avaterSystem;
+	bgfx::UniformHandle u_bones;
+	int usingUni;
+	AvatarSystem avatarSystem;
 
 	LogoRenderer* logo;
 

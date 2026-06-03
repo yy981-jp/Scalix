@@ -29,8 +29,8 @@ struct StrHs {
 
 	constexpr StrHs() = default;
 
-	explicit constexpr StrHs(uint64_t i)
-		: hash(i) {}
+	// explicit constexpr StrHs(uint64_t i)
+		// : hash(i) {}
 
 	explicit constexpr StrHs(std::string_view s)
 		: hash(fnv1a(s)) {}
@@ -40,7 +40,7 @@ struct StrHs {
 
 
 constexpr StrHs operator ""_hs(const char* str, size_t len) {
-	return StrHs{fnv1a(std::string_view(str, len))};
+	return StrHs{std::string_view(str, len)};
 }
 
 
@@ -62,17 +62,8 @@ class StrTable {
 	std::unordered_map<StrHs,std::string> table;
 
 public:
-	StrHs entry(std::string_view str) {
-		StrHs hs = StrHs(str);
-		table[hs] = str;
-		return hs;
-	}
-
-	std::string_view get(StrHs hash) {
-		const auto& pos = table.find(hash);
-		if (pos != table.end()) return pos->second;
-			else return {};
-	}
+	StrHs entry(std::string_view str);
+	std::string_view get(StrHs hash);
 };
 
 

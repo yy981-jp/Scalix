@@ -87,8 +87,8 @@ void Game::tick() {
 	draw();
 	
 	// TODO: 何故動かない...?
-	bgfx::dbgTextClear();
-	bgfx::dbgTextPrintf(0, 25, 0x4f, "y9test: debug hello");
+	// bgfx::dbgTextClear();
+	// bgfx::dbgTextPrintf(0, 25, 0x4f, "y9test: debug hello");
 
 
 	bgfx::frame();
@@ -101,14 +101,14 @@ void Game::update() {
 
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
-	avaterSystem.update(gctx,dt);
+	avatarSystem.update(gctx,dt);
 
 	mStat.relPos = {0, 0};
 }
 
 
 void Game::draw() {
-	avaterSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)]);
+	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)], u_bones);
 	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
@@ -128,17 +128,18 @@ void Game::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
-	avaterSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+	avatarSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
 
-	// const bgfx::Caps* caps = bgfx::getCaps();
-	// int maxMat4 = caps->limits.maxUniforms / 4;
-	// std::cout << "max: " << maxMat4 << "\n";
+	const bgfx::Caps* caps = bgfx::getCaps();
+	int maxMat4 = caps->limits.maxUniforms / 4;
+	usingUni = maxMat4 * 0.8;
+	std::cout << "using uniform: " << usingUni << "\n";
 
-	// u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
 
 	elap.init();
 

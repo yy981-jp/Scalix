@@ -1,4 +1,4 @@
-#include "avater.h"
+#include "avatar.h"
 #include "../anim/loader.h"
 #include "../gltf/loader.h"
 #include "cache.h"
@@ -8,7 +8,7 @@
 #include <cstdio>
 
 
-void Avater::update(GameContext& ctx, float dt) {
+void Avatar::update(GameContext& ctx, float dt) {
     // --- 移動 ---
     float fx = -lutsv.getSin(yaw);
     float fz =  lutsv.getCos(yaw);
@@ -45,7 +45,7 @@ void Avater::update(GameContext& ctx, float dt) {
     status = (walking? Status::walk : Status::stay);
 
     // --- アニメーション ---
-    anim.run("Sweater_OFF"_hs);
+    // anim.run("Sweater_OFF"_hs);
 
     anim.tick(*this,dt);
 
@@ -76,23 +76,20 @@ void Avater::update(GameContext& ctx, float dt) {
     neckNode.hasRotation = true;
 
     float qPitch[4];
-    quatRotateAxis(qPitch, 1, 0, 0, head.pitch);
-
-    for (int i = 0; i < 4; i++)
-        neckNode.rot[i] = qPitch[i];
+    neckNode.rot.rotateAxis(1, 0, 0, head.pitch);
 
     // --- head (yaw) ---
     NodeId headIdx = humanoid.bones[(size_t)HBT::head];
     auto& headNode = model.nodes[headIdx];
     headNode.hasRotation = true;
 
-    quatRotateAxis(headNode.rot, 0, 1, 0, head.yaw);
+    headNode.rot.rotateAxis(0, 1, 0, head.yaw);
 
     // printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 }
 
 
-void Avater::draw(Camera& cam) {
+void Avatar::draw(Camera& cam) {
     int headIdx = humanoid.bones[(size_t)HBT::head];
 
     float* m = globalMtxs[headIdx].data();
@@ -122,7 +119,7 @@ void Avater::draw(Camera& cam) {
     cam.update(camPos, camPos + lookDir);
 }
 
-Avater::Avater(const std::string& glTFPath) {
+Avatar::Avatar(const std::string& glTFPath) {
 	model = loadGltf(glTFPath);
     humanoid.init(model.nodes, model.skins);
     anim.init("test.sxa",*this);

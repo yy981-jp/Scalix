@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 
-struct Avater;
+struct Avatar;
 using Value = std::variant<float, vec3f, Quat, bool>;
 
 
@@ -26,14 +26,15 @@ class AnimSystem {
     std::vector<PlayingAnim> playing;
 
     std::vector<Value> blendBuffer;
+    std::vector<bool> blendBufferSR;
     void blend(float dt);
-    void apply(Avater& avater);
+    void apply(Avatar& avatar);
     
 public:
-    void init(const std::string& path, const Avater& avater);
+    void init(const std::string& path, const Avatar& avatar);
 
     void run(StrHs animName);
     void stop(StrHs animName);
 
-    void tick(Avater& avater, float dt);
+    void tick(Avatar& avatar, float dt);
 };

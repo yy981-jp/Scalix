@@ -6,10 +6,10 @@
 #include "pose.h"
 
 
-using AvaterID = int;
+using AvatarID = int;
 
 /// @brief 状態を含む1つのアバター
-struct Avater {
+struct Avatar {
 	Model model;
 	Humanoid humanoid;
 
@@ -30,10 +30,10 @@ struct Avater {
 	Status status = Status::stay;
 	float speed = 7;
 
-	AvaterID id;
+	AvatarID id;
 
 	void update(GameContext& keyStat, float dt);
 	void draw(Camera& cam);
 	
-	Avater(const std::string& glTFPath);
+	Avatar(const std::string& glTFPath);
 };
