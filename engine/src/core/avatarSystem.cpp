@@ -113,6 +113,7 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 }
 
 
+/*
 void AvatarSystem::draw(bgfx::ProgramHandle program) {
     for (auto& avatar: avatars) {
 
@@ -229,9 +230,10 @@ void AvatarSystem::draw(bgfx::ProgramHandle program) {
         }
     }
 }
+*/
 
 
-/*
+
 void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
     for (auto& avatar: avatars) {
 
@@ -261,13 +263,13 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
             for (int i = 0; i < 10; i++) {
                 NodeId nodeIdx = skin.joints[i];
 
-                printf("joint %d -> node %d\n", i, nodeIdx);
+                // printf("joint %d -> node %d\n", i, nodeIdx);
 
-                printf("global pos: %f %f %f\n",
-                    avatar.globalMtxs[nodeIdx][12],
-                    avatar.globalMtxs[nodeIdx][13],
-                    avatar.globalMtxs[nodeIdx][14]
-                );
+                // printf("global pos: %f %f %f\n",
+                //     avatar.globalMtxs[nodeIdx][12],
+                //     avatar.globalMtxs[nodeIdx][13],
+                //     avatar.globalMtxs[nodeIdx][14]
+                // );
             }
         }
 
@@ -300,8 +302,9 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                 //     printf("palette[%d] -> joint %d -> node %d\n", i, jointIdx, nodeIdx);
                 // }
 
-                if (mesh.boneRemapInverse.size() > 120) {
+                if (mesh.boneRemapInverse.size() > 102) {
                     printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
+                    printf("rem-inv: %d", mesh.boneRemapInverse.size());
                     continue;
                 }
                 
@@ -347,4 +350,3 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
         }
     }
 }
-*/

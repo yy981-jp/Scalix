@@ -108,7 +108,7 @@ void Game::update() {
 
 
 void Game::draw() {
-	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)]);
+	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)], u_bones);
 	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
@@ -134,11 +134,12 @@ void Game::gameInit() {
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
 
-	// const bgfx::Caps* caps = bgfx::getCaps();
-	// int maxMat4 = caps->limits.maxUniforms / 4;
-	// std::cout << "max: " << maxMat4 << "\n";
+	const bgfx::Caps* caps = bgfx::getCaps();
+	int maxMat4 = caps->limits.maxUniforms / 4;
+	usingUni = maxMat4 * 0.8;
+	std::cout << "using uniform: " << usingUni << "\n";
 
-	// u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
 
 	elap.init();
 

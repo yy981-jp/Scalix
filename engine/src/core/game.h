@@ -41,7 +41,8 @@ class Game {
 	ElapsedTime elap;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
-	// bgfx::UniformHandle u_bones;
+	bgfx::UniformHandle u_bones;
+	int usingUni;
 	AvatarSystem avatarSystem;
 
 	LogoRenderer* logo;
