@@ -149,6 +149,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
             // 処理する必要のないものを除外
             if (node.meshCount == 0) continue;
             if (node.skinIndex < 0) continue;
+            if (!node.visible) continue;
 
             // printf("DEBUG: node name: %s\n", std::string(strsv().get(node.name)).c_str());
 

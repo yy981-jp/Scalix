@@ -153,13 +153,12 @@ void AnimSystem::blend(float dt) {
 					n.value
 				);
 
-			}/* else {
-				value = track.keys.back().value;
-			}*/
+			} else {
+				// TODO: valueに無効値を代入すべきか?
+			}
 
 			blendBuffer.push_back(std::move(value));
 			blendBufferSR.push_back(shouldRemove);
-
 			trackNumber++;
 		}
 	}

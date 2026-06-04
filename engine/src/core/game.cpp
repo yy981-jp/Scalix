@@ -135,10 +135,10 @@ void Game::gameInit() {
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
 
-	const bgfx::Caps* caps = bgfx::getCaps();
-	int maxMat4 = caps->limits.maxUniforms / 4;
-	usingUni = maxMat4 * 0.8;
-	std::cout << "using uniform: " << usingUni << "\n";
+	// const bgfx::Caps* caps = bgfx::getCaps();
+	// int maxMat4 = caps->limits.maxUniforms / 4;
+	// usingUni = maxMat4 * 0.8;
+	// std::cout << "using uniform: " << usingUni << "\n";
 
 	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
 
