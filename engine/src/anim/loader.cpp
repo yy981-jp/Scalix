@@ -88,12 +88,13 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
                 track_r.target = it->second;
                 // dbg << "D: found: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
             } else {
-                track_r.target = -404;
+                if (track_i.target.empty()) {
+                    track_r.target = -1; // アバター全体
+                } else {
+                    track_r.target = -404; // エラー
+                }
                 // dbg << "D: notfound: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
                 // TODO: track_i.tarket.empty の場合の処理を考える必要があるかもしれない
-                // if (track_i.target == "") {
-                //     throw std::exception();
-                // }
                 continue;
             }
         }

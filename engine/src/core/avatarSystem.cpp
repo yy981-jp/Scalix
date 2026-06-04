@@ -139,9 +139,6 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
                     avatar.globalMtxs[nodeIdx].data()
                 );
             }
-            for (int i = 0; i < 10; i++) {
-                NodeId nodeIdx = skin.joints[i];
-            }
         }
 
 

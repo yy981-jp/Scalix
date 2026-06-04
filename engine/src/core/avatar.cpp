@@ -9,6 +9,8 @@
 
 
 void Avatar::update(GameContext& ctx, float dt) {
+    // anim.run("Sweater_OFF"_hs);
+
     // --- 移動 ---
     float fx = -lutsv.getSin(yaw);
     float fz =  lutsv.getCos(yaw);
@@ -45,7 +47,7 @@ void Avatar::update(GameContext& ctx, float dt) {
     status = (walking? Status::walk : Status::stay);
 
     // --- アニメーション ---
-    // anim.run("Sweater_OFF"_hs);
+    anim.run("Sweater_OFF"_hs);
 
     anim.tick(*this,dt);
 
