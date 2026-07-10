@@ -44,12 +44,10 @@ FormatDef::Key::Value parseValue(const json& v) {
 		}
 	}
 	if (v.is_string() && (v.get<std::string>() == "Infinity")) return std::numeric_limits<float>::infinity();
-	std::cerr << v.dump(4) << "\n";
+	// std::cerr << v.dump(4) << "\n";
 	throw std::runtime_error("invalid value");
 }
 
-
-void dumpJson(const json& j) { std::cout << j.dump(); }
 
 ImAnimObj convertUnityAnim(const json& ori) {
 	const json& j = ori["AnimationClip"];
@@ -122,7 +120,7 @@ ImAnimObj convertUnityAnim(const json& ori) {
 				
 				case rotation: {
 					f_track.type = FormatDef::Type::quat;
-					std::cout << value.dump() << "\n";
+					// std::cout << value.dump() << "\n";
 				} break;
 
 				default: dev_checkPattern();
