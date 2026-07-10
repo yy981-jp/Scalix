@@ -1,6 +1,6 @@
-#include "quat.h"
+#include <def/quat.h>
 
-#include "cache.h"
+#include <util/cache.h>
 
 
 Quat::operator bx::Quaternion() const {

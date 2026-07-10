@@ -1,6 +1,6 @@
-#include "game.h"
+#include <core/game.h>
 
-#include "../gfx/shader.h"
+#include <gfx/shader.h>
 
 #include <iostream>
 

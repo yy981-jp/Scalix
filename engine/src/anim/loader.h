@@ -1,6 +1,6 @@
 #pragma once
-#include "../anim/format.h"
-#include "../core/json.h"
+#include <anim/format.h>
+#include <def/json.h>
 
 #include <unordered_map>
 

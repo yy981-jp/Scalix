@@ -33,6 +33,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/nlohmann/include
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/yaml/include
+    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/engine/src
+    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}
     ${SDL2_INCLUDE_DIRS}
     ${SDL2_IMAGE_INCLUDE_DIRS}
 )

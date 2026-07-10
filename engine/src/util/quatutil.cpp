@@ -1,5 +1,5 @@
-#include "quatutil.h"
-#include "cache.h"
+#include <util/quatutil.h>
+#include <util/cache.h>
 
 #include <cmath>
 

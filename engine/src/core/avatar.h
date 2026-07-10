@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../model/model.h"
-#include "../anim/animSystem.h"
-#include "euler.h"
-#include "pose.h"
+#include <model/model.h>
+#include <anim/animSystem.h>
+#include <def/euler.h>
+#include <def/pose.h>
 
 
 using AvatarID = int;

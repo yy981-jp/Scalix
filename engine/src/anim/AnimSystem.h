@@ -1,7 +1,7 @@
 #pragma once
 
-#include "loader.h"
-#include "../core/pose.h"
+#include <anim/loader.h>
+#include <def/pose.h>
 
 #include <unordered_map>
 

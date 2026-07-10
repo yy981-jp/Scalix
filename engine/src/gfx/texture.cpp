@@ -1,4 +1,4 @@
-#include "texture.h"
+#include <gfx/texture.h>
 #include <vector>
 
 namespace {

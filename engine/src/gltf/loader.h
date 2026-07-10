@@ -1,9 +1,8 @@
 #pragma once
-#include "../gfx/mesh.h"
-#include "../gfx/texture.h"
-// #include "../model/model.h"
-#include "../core/avatar.h"
-#include "../core/str.h"
+#include <gfx/mesh.h>
+#include <gfx/texture.h>
+#include <core/avatar.h>
+#include <def/str.h>
 #include <tinygltf/tiny_gltf.h>
 #include <utility>
 

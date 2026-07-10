@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <SDL.h>
-#include "vec2.h"
+#include <def/vec2.h>
 
 
 using KCodes = uint64_t;

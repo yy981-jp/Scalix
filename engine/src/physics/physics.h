@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec3.h"
+#include <def/vec3.h>
 
 
 
@@ -89,7 +89,7 @@ public:
 
 	void tick() {
 		
-		for ( aliveIndex)
+		// for ( aliveIndex) TODO
 
 	}
 

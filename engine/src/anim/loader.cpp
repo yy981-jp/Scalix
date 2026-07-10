@@ -1,6 +1,6 @@
-#include "loader.h"
+#include <anim/loader.h>
 
-#include "../core/avatar.h"
+#include <core/avatar.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <fstream>

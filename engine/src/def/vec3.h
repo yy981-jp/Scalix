@@ -1,6 +1,6 @@
 #pragma once
 #include <bx/math.h>
-#include "../../../shared/format.h"
+#include <shared/format.h>
 
 
 struct vec3f {

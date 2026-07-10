@@ -7,16 +7,16 @@
 #include <bx/math.h>
 #include <stdexcept>
 
-#include "../gfx/shader.h"
-#include "../gltf/loader.h"
-#include "key.h"
-#include "camera.h"
-#include "gctx.h"
-#include "grid.h"
-#include "time.h"
-#include "../ui/logo.h"
+#include <gfx/shader.h>
+#include <gltf/loader.h>
+#include <core/key.h>
+#include <core/camera.h>
+#include <core/gctx.h>
+#include <core/grid.h>
+#include <util/time.h>
+#include <ui/logo.h>
 
-#include "avatarSystem.h"
+#include <core/avatarSystem.h>
 
 
 enum class ShaderId {

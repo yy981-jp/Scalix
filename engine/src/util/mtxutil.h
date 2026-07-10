@@ -1,8 +1,8 @@
 #pragma once
 
 #include <bx/math.h>
-#include "vec3.h"
-#include "quat.h"
+#include <def/vec3.h>
+#include <def/quat.h>
 
 // TRS行列を組み立てるヘルパー
 void buildTRS(float* out, const vec3f& pos, const Quat& rot,

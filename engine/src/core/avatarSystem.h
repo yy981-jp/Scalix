@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "../model/model.h"
-#include "gctx.h"
-#include "avatar.h"
+#include <model/model.h>
+#include <core/gctx.h>
+#include <core/avatar.h>
 
 
 /// @brief avatar 全体管理&描画システム

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../shared/format.h"
+#include <shared/format.h>
 #include <bx/math.h>
 
 

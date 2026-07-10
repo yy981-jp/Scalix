@@ -1,8 +1,8 @@
 #pragma once
 
-#include "str.h"
-#include "vec3.h"
-#include "quat.h"
+#include <def/str.h>
+#include <def/vec3.h>
+#include <def/quat.h>
 
 
 struct Pose {

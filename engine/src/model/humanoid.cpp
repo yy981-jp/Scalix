@@ -1,5 +1,5 @@
-#include "model.h"
-#include "../core/fmutil.h"
+#include <model/model.h>
+#include <util/fmutil.h>
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>

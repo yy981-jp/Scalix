@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../../engine/src/core/str.h"
+#include "../../engine/src/def/str.h"
 
 
 int main(int argc, char* argv[]) {

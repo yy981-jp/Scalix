@@ -2,14 +2,14 @@
 
 #include <string>
 #include <array>
-#include "../gfx/mesh.h"
-#include "../gfx/texture.h"
-#include "../core/def.h"
-#include "../core/gctx.h"
-#include "../core/quat.h"
-#include "../core/str.h"
+#include <gfx/mesh.h>
+#include <gfx/texture.h>
+#include <core/gctx.h>
+#include <def/def.h>
+#include <def/quat.h>
+#include <def/str.h>
 
-#include "../anim/format.h"
+#include <anim/format.h>
 
 
 struct Node {

@@ -1,6 +1,6 @@
-#include "AnimSystem.h"
+#include <anim/AnimSystem.h>
 
-#include "../core/avatar.h"
+#include <core/avatar.h>
 
 #include <iostream>
 

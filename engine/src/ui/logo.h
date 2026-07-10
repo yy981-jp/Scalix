@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/def.h"
+#include <def/def.h>
 
 #include <SDL.h>
 #include <SDL_image.h>

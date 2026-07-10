@@ -1,4 +1,4 @@
-#include "key.h"
+#include <core/key.h>
 #include <SDL.h>
 
 const std::unordered_map<SDL_Keycode, KCode> keyMap = {

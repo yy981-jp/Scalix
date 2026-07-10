@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "vec3.h"
+#include <def/vec3.h>
 
 
 enum class CameraType {

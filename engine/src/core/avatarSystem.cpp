@@ -1,10 +1,10 @@
-#include "avatarSystem.h"
+#include <core/avatarSystem.h>
 
-#include "../gltf/loader.h"
-#include "key.h"
-#include "mtxutil.h"
-#include "cache.h"
-#include "quatutil.h"
+#include <gltf/loader.h>
+#include <core/key.h>
+#include <util/mtxutil.h>
+#include <util/cache.h>
+#include <util/quatutil.h>
 
 #include <bx/math.h>
 #include <iostream>
