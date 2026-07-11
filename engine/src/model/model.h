@@ -62,9 +62,9 @@ constexpr uint64_t HBTFlag(HBT bone) {
 struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
-	// node index
-	NodeId bones[static_cast<size_t>(HBT::Count)];
-	std::vector<NodeId> spines;
+	// node handle
+	NodeHandle bones[static_cast<size_t>(HBT::Count)];
+	std::vector<NodeHandle> spines;
 
 	uint64_t boneFlag = 0;
 	

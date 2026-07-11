@@ -17,6 +17,7 @@
 #include <ui/logo.h>
 
 #include <core/avatarSystem.h>
+#include <core/nodeRegistry.h>
 #include <physics/springBone.h>
 
 
@@ -47,6 +48,7 @@ class Game {
 	AvatarSystem avatarSystem;
 
 	SpringBoneSystem springBoneSystem;
+	NodeRegistry nodeReg;
 
 	LogoRenderer* logo;
 

@@ -7,6 +7,7 @@
 #include <core/gctx.h>
 #include <util/quatutil.h>
 #include <physics/springBone.h>
+#include <core/nodeRegistry.h>
 
 #include <cstdio>
 
@@ -73,8 +74,8 @@ void Avatar::update(GameContext& ctx, float dt) {
 
     // --- neck (pitch) ---
     if (humanoid.has(HBT::neck)) {
-        NodeId neckIdx = humanoid.bones[(size_t)HBT::neck];
-        auto& neckNode = model.nodes[neckIdx];
+        NodeHandle neckHandle = humanoid.bones[(size_t)HBT::neck];
+        auto& neckNode = nodeReg.get(neckHandle);
         neckNode.hasRotation = true;
 
         float qPitch[4];
@@ -83,8 +84,8 @@ void Avatar::update(GameContext& ctx, float dt) {
 
     if (humanoid.has(HBT::head)) {
         // --- head (yaw) ---
-        NodeId headIdx = humanoid.bones[(size_t)HBT::head];
-        auto& headNode = model.nodes[headIdx];
+        NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
+        auto& headNode = nodeReg.get(headHandle);
         headNode.hasRotation = true;
 
         headNode.rot.rotateAxis(0, 1, 0, head.yaw);
@@ -97,7 +98,19 @@ void Avatar::update(GameContext& ctx, float dt) {
 void Avatar::draw(Camera& cam) {
     // if (!humanoid.has(HBT::neck)) return;
 
-    int headIdx = humanoid.bones[(size_t)HBT::head];
+    NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
+    const Node& headNode = nodeReg.get(headHandle);
+
+        // Find the headNode in globalMtxs using the stored index
+        int headIdx = -1;
+        for (int i = 0; i < model.nodes.size(); i++) {
+            if (&model.nodes[i] == &headNode) {
+                headIdx = i;
+                break;
+            }
+        }
+
+        if (headIdx < 0) return;
 
         float* m = globalMtxs[headIdx].data();
 
@@ -128,7 +141,6 @@ void Avatar::draw(Camera& cam) {
 
 Avatar::Avatar(const std::string& glTFPath) {
 	model = loadGltf(glTFPath);
-    humanoid.init(model.nodes, model.skins);
     anim.init("test.sxa",*this);
 
     // anim.run("Sweater_OFF"_hs);

@@ -2,6 +2,7 @@
 
 #include <gltf/loader.h>
 #include <core/key.h>
+#include <core/nodeRegistry.h>
 #include <util/mtxutil.h>
 #include <util/cache.h>
 #include <util/quatutil.h>
@@ -15,7 +16,18 @@ void AvatarSystem::loadData(const std::vector<std::string> path) {
     for (const auto& file: path) {
         Avatar avatar(file);
         avatar.id = id++;
-		avatars.push_back(std::move(avatar));
+        avatars.push_back(std::move(avatar));
+        
+        // Get a reference to the newly added avatar
+        Avatar& addedAvatar = avatars.back();
+        
+        // Register all nodes in the registry
+        for (NodeId nodeId = 0; nodeId < (NodeId)addedAvatar.model.nodes.size(); nodeId++) {
+            nodeReg.create(&addedAvatar, nodeId);
+        }
+        
+        // Now initialize humanoid with the registered nodes
+        addedAvatar.humanoid.init(addedAvatar.model.nodes, addedAvatar.model.skins);
     }
 }
 

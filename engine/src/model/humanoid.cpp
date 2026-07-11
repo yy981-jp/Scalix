@@ -1,5 +1,6 @@
 #include <model/model.h>
 #include <util/fmutil.h>
+#include <core/nodeRegistry.h>
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
@@ -88,8 +89,9 @@ inline NodeId select(const std::vector<NodeInfo> vec) {
 	return std::ranges::max_element(vec, {}, &NodeInfo::score) ->nodeId;
 }
 
-static inline void selectHelper(std::span<NodeId> to, std::span<const std::vector<NodeInfo>> from, HBT target) {
-	to[static_cast<size_t>(target)] = select( from[static_cast<size_t>(target)] );
+static inline void selectHelper(std::span<NodeHandle> to, std::span<const std::vector<NodeInfo>> from, HBT target) {
+	NodeId nodeId = select( from[static_cast<size_t>(target)] );
+	to[static_cast<size_t>(target)] = nodeReg.nd_find(nodeId);
 }
 
 void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skins) {
@@ -160,13 +162,13 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	}
 	
 	// 最適解を選択
-	for (const auto& spine: spines_) this->spines.push_back(spine.nodeId); // spineはすべて使用
+	for (const auto& spine: spines_) this->spines.push_back(nodeReg.nd_find(spine.nodeId)); // spineはすべて使用
 
 	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
 		
 		// TODO: fix: boneFlagに反映
-		if (bones[i] >= 0) {
+		if (bones[i].id != UINT32_MAX) {
 			boneFlag |= HBTFlag(static_cast<HBT>(i));
 		}
 	}

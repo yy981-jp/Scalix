@@ -32,10 +32,22 @@ class NodeRegistry {
     static constexpr uint32_t INVALID = std::numeric_limits<uint32_t>::max();
 
 public:
-    NodeHandle create();
+    NodeHandle create(Avatar* avatar, NodeId id);
     void destroy(NodeHandle h);
     bool is_alive(NodeHandle h) const;
     uint32_t size() const;
 
-	Node& get(NodeHandle h) const;
+	Node& get(NodeHandle h);
+	NodeHandle nd_find(NodeId id) const {
+		for (uint32_t i = 0; i < records.size(); ++i) {
+			NodeHandle h{i, records[i].gen};
+
+			if (!is_alive(h)) continue;
+
+			if (h.id == id) return h;
+		}
+		return {};
+	}
 };
+
+extern NodeRegistry nodeReg;
