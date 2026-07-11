@@ -3,7 +3,7 @@
 
 NodeHandle NodeRegistry::create(Avatar* avatar, NodeId nodeid) {
     ++aliveCount;
-    NodeEntryId id;
+    NodeId id;
 
     if (freeHead != INVALID) {
         // フリースロットを再利用

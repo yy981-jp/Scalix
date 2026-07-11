@@ -43,7 +43,7 @@ enum class Level: uint8_t {
 
 // 属性をidに付与
 struct NodeInfo {
-	NodeId nodeId = -404;
+	NodeHandle node = {-404,0};
 	BoneType type = BoneType::unknown;
 	Side side = Side::unknown;
 	Level level = Level::unknown;
@@ -101,7 +101,7 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 		for (const NodeId& nodeId: skin.joints) {
 			const std::vector<std::string> words = tokenizer(strsv().get( nodes[nodeId].name ));
 			NodeInfo cand;
-			cand.nodeId = nodeId;
+			cand.node = nodeId;
 			for (auto& w : words) {
 				if (auto it = wordMap.find(w); it != wordMap.end())
 					cand.type = it->second;

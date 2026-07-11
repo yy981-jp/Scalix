@@ -148,9 +148,9 @@ void Game::gameInit() {
 	delete logo;
 
 
-	springBoneSystem.add(SpringBoneChain({nodeReg.nd_find(176),nodeReg.nd_find(113),nodeReg.nd_find(112),nodeReg.nd_find(111)/*,110*/})); // back d l
-	springBoneSystem.add(SpringBoneChain({nodeReg.nd_find(176),nodeReg.nd_find(105),nodeReg.nd_find(104),nodeReg.nd_find(103)/*,102*/})); // back c l
-	springBoneSystem.add(SpringBoneChain({nodeReg.nd_find(176),nodeReg.nd_find(120),nodeReg.nd_find(119),nodeReg.nd_find(118)})); // back e l
+	springBoneSystem.add(SpringBoneChain({{176,0},{113,0},{112,0},{111,0}/*,110*/})); // back d l
+	springBoneSystem.add(SpringBoneChain({{176,0},{105,0},{104,0},{103,0}/*,102*/})); // back c l
+	springBoneSystem.add(SpringBoneChain({{176,0},{120,0},{119,0},{118,0}})); // back e l
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {
