@@ -1,10 +1,7 @@
-#include <core/nodeManager.h>
+#include <core/nodeRegistry.h>
+#include <core/avatar.h>
 
-NodeManager::NodeManager() {
-    freeHead = INVALID;
-}
-
-NodeHandle NodeManager::create() {
+NodeHandle NodeRegistry::create() {
     ++aliveCount;
     NodeId id;
 
@@ -21,7 +18,7 @@ NodeHandle NodeManager::create() {
     return {id,records[id].gen};
 }
 
-void NodeManager::destroy(NodeHandle h) {
+void NodeRegistry::destroy(NodeHandle h) {
     --aliveCount;
 
     ++records[h.id].gen;
@@ -31,10 +28,19 @@ void NodeManager::destroy(NodeHandle h) {
     freeHead = h.id;
 }
 
-bool NodeManager::is_alive(NodeHandle h) const {
+bool NodeRegistry::is_alive(NodeHandle h) const {
     return records[h.id].gen == h.gen;
 }
 
-uint32_t NodeManager::size() const {
+uint32_t NodeRegistry::size() const {
     return aliveCount;
+}
+
+Node& NodeRegistry::get(NodeHandle h) const {
+	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::get(): is not allive");
+
+	Entry& entry = records[h.id];
+	Node& node = entry.avatar->model.nodes[entry.node];
+	
+	return node;
 }

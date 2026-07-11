@@ -10,6 +10,7 @@
 #include <def/str.h>
 
 #include <anim/format.h>
+#include <core/nodeRegistry.h>
 
 
 struct Node {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <deque>
 
 #include <model/model.h>
 #include <core/gctx.h>
@@ -9,7 +10,7 @@
 
 /// @brief avatar 全体管理&描画システム
 class AvatarSystem {
-	std::vector<Avatar> avatars;
+	std::deque<Avatar> avatars;
 	AvatarID playableAvatar = 0;
 
 public:

@@ -6,6 +6,7 @@
 #include <model/model.h>
 
 #include <physics/def.h>
+#include <core/nodeRegistry.h>
 
 
 struct SpringBoneNode {
@@ -14,7 +15,7 @@ struct SpringBoneNode {
 };
 
 class SpringBoneChain {
-	std::vector<NodeId> boneIndex; // 鎖の基点から末端まで順に並べる
+	std::vector<NodeHandle> boneIndex; // 鎖の基点から末端まで順に並べる
 	std::vector<SpringBoneNode> bones;
 	std::vector<float> restLengths; // bone間の長さ
 
@@ -23,14 +24,14 @@ class SpringBoneChain {
 
 public:
 
-	SpringBoneChain(const std::vector<NodeId>& boneIndex):
+	SpringBoneChain(const std::vector<NodeHandle>& boneIndex):
 	  boneIndex(boneIndex), bones(boneIndex.size()), restLengths(boneIndex.size()-1) {}
 
 	
-	void update(float dt, std::vector<Node>& nodes) {
+	void update(float dt, NodeRegistry& nodeReg) {
 		for (int i = 0; i <= boneIndex.size(); i++) {
 			auto& bone = bones[i];
-			const NodeId& id = boneIndex[i];
+			const NodeHandle& h = boneIndex[i];
 
 			vec3f vel = bone.currPos - bone.prevPos;
 			bone.prevPos = bone.currPos;
@@ -38,7 +39,7 @@ public:
 			bone.currPos += vel;
 			bone.currPos += def::gravity * dt * dt;
 			
-			
+			nodeReg.get(h).pos += bone.currPos;
 		}
 	}
 };
@@ -55,7 +56,7 @@ public:
 
 	void update(float dt, std::vector<Node> nodes) {
 		for (auto& chain: chains) {
-			chain.update(dt, nodes);
+			// chain.update(dt, nodes);
 		}
 	}
 

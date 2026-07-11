@@ -102,7 +102,7 @@ void Game::update() {
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
 	avatarSystem.update(gctx,dt);
-	springBoneSystem.update(dt,nodes);
+	// springBoneSystem.update(dt,nodes);
 
 	mStat.relPos = {0, 0};
 }
@@ -148,9 +148,9 @@ void Game::gameInit() {
 	delete logo;
 
 
-	springBoneSystem.add(SpringBoneChain({176, 113,112,111,110})); // back d l
-	springBoneSystem.add(SpringBoneChain({176, 105,104,103,102})); // back c l
-	springBoneSystem.add(SpringBoneChain({176, 120,119,118})); // back e l
+	// springBoneSystem.add(SpringBoneChain({176, 113,112,111,110})); // back d l
+	// springBoneSystem.add(SpringBoneChain({176, 105,104,103,102})); // back c l
+	// springBoneSystem.add(SpringBoneChain({176, 120,119,118})); // back e l
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {
