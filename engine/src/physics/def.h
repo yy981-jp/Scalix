@@ -2,5 +2,5 @@
 
 
 namespace def {
-	constexpr vec3f gravity{0,-9.8,0};
+	constexpr vec3f gravity{0,3,0};
 }

@@ -3,7 +3,7 @@
 
 NodeHandle NodeRegistry::create(Avatar* avatar, NodeId nodeid) {
     ++aliveCount;
-    NodeId id;
+    NodeEntryId id;
 
     if (freeHead != INVALID) {
         // フリースロットを再利用
@@ -13,7 +13,7 @@ NodeHandle NodeRegistry::create(Avatar* avatar, NodeId nodeid) {
 		records[id].node = nodeid;
     } else {
         // 新規スロット追加
-        id = (NodeId)records.size();
+        id = (NodeEntryId)records.size();
         records.push_back({ INVALID, 0, avatar, nodeid });
     }
 

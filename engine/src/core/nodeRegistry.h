@@ -9,11 +9,11 @@ struct Node;
 
 
 using NodeId = int32_t; // -1(root)のためにsigned
-// using NodeEntryId = uint32_t; // NodeRegistry内のentryを指すId
+using NodeEntryId = uint32_t; // NodeRegistry内のentryを指すId
 using NodeGen = uint16_t;
 
 struct NodeHandle {
-	NodeId id;
+	NodeEntryId id;
 	NodeGen gen;
 };
 
@@ -38,7 +38,7 @@ public:
     uint32_t size() const;
 
 	Node& get(NodeHandle h);
-/*	NodeHandle nd_find(NodeId id) const {
+	NodeHandle nd_find(NodeId id) const {
 		for (uint32_t i = 0; i < records.size(); ++i) {
 			NodeHandle h{i, records[i].gen};
 
@@ -47,7 +47,7 @@ public:
 			if (h.id == id) return h;
 		}
 		return {};
-	}*/
+	}
 };
 
 extern NodeRegistry nodeReg;
