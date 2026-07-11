@@ -17,6 +17,7 @@
 #include <ui/logo.h>
 
 #include <core/avatarSystem.h>
+#include <physics/springBone.h>
 
 
 enum class ShaderId {
@@ -44,6 +45,8 @@ class Game {
 	bgfx::UniformHandle u_bones;
 	int usingUni;
 	AvatarSystem avatarSystem;
+
+	SpringBoneSystem springBoneSystem;
 
 	LogoRenderer* logo;
 

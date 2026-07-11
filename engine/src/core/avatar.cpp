@@ -1,10 +1,12 @@
 #include <core/avatar.h>
+
 #include <anim/loader.h>
 #include <gltf/loader.h>
 #include <util/cache.h>
 #include <core/key.h>
 #include <core/gctx.h>
 #include <util/quatutil.h>
+#include <physics/springBone.h>
 
 #include <cstdio>
 

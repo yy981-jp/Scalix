@@ -6,10 +6,10 @@
 struct vec3f {
     float x, y, z;
 
-    vec3f() : x(0), y(0), z(0) {}
-    vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
-    vec3f(const bx::Vec3& v): x(v.x), y(v.y), z(v.z) {};
-    vec3f(const FormatDef::vec3f& v): x(v[0]), y(v[1]), z(v[2]) {};
+    constexpr vec3f() : x(0), y(0), z(0) {}
+    constexpr vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
+    constexpr vec3f(const bx::Vec3& v): x(v.x), y(v.y), z(v.z) {};
+    constexpr vec3f(const FormatDef::vec3f& v): x(v[0]), y(v[1]), z(v[2]) {};
 
     operator bx::Vec3() const;
     operator FormatDef::vec3f() const;
