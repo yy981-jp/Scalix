@@ -1,5 +1,5 @@
-#pragma ocne
+#pragma once
 
 struct Euler {
-    float yaw, pitch, roll;
+	float yaw, pitch, roll;
 };

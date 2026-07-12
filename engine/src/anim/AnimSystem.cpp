@@ -46,28 +46,28 @@ void AnimSystem::apply(Avatar& avatar) {
 		bool shouldRemove = false;
 
 		for (const auto& track : anim.fmt.tracks) {
-            // track単位
+			// track単位
 			if (track.target == -404) continue;
 			if (track.target == -1) continue; // TODO: これどうすんねん 全体動かすとか...
 
 			Node& target = avatar.model.nodes[track.target];
 
-            switch (track.proc) {
+			switch (track.proc) {
 				using enum FormatDef::Proc;
 
 				case active: {
 					target.visible = std::get<float>(blendBuffer[blendIdx]);
 				} break;
 
-                case position: {
-                    target.pos = std::get<vec3f>(blendBuffer[blendIdx]);
+				case position: {
+					target.pos = std::get<vec3f>(blendBuffer[blendIdx]);
 					target.hasTranslation = true;
-                } break;
+				} break;
 
-                case rotation: {
-                    target.rot = std::get<Quat>(blendBuffer[blendIdx]);
-                    target.hasRotation = true;
-                } break;
+				case rotation: {
+					target.rot = std::get<Quat>(blendBuffer[blendIdx]);
+					target.hasRotation = true;
+				} break;
 
 				case scale: {
 					target.scale = std::get<vec3f>(blendBuffer[blendIdx]);

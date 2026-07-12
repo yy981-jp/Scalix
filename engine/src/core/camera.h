@@ -5,32 +5,32 @@
 
 
 enum class CameraType {
-    _1, _2, _3,
-    DEBUG, // 固定位置
+	_1, _2, _3,
+	DEBUG, // 固定位置
 };
 
 
 class Camera {
-    int WIDTH, HEIGHT;
+	int WIDTH, HEIGHT;
 	float SceneAspect;
-    float proj[16];
+	float proj[16];
 
 public:
-    void init(int width, int height, float near_) {
-        WIDTH = width;
-        HEIGHT = height;
-        SceneAspect = (float)width / (float)height;
-        bx::mtxProj(proj, 60.0f, SceneAspect, near_, 100.0f, bgfx::getCaps()->homogeneousDepth);
-    }
+	void init(int width, int height, float near_) {
+		WIDTH = width;
+		HEIGHT = height;
+		SceneAspect = (float)width / (float)height;
+		bx::mtxProj(proj, 60.0f, SceneAspect, near_, 100.0f, bgfx::getCaps()->homogeneousDepth);
+	}
 
 
-    void update(const vec3f& pos, const vec3f& lookAt) {
-        float view[16];
-        bx::mtxLookAt(view,
-            pos,
-            lookAt
-        );
+	void update(const vec3f& pos, const vec3f& lookAt) {
+		float view[16];
+		bx::mtxLookAt(view,
+			pos,
+			lookAt
+		);
 
-        bgfx::setViewTransform(0, view, proj);
-    }
+		bgfx::setViewTransform(0, view, proj);
+	}
 };

@@ -6,7 +6,7 @@
 
 
 struct Pose {
-    vec3f pos;
-    Quat rot;
-    vec3f scale;
+	vec3f pos;
+	Quat rot;
+	vec3f scale;
 };

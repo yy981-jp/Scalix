@@ -21,9 +21,9 @@ struct Avatar {
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
 	Euler head;
-    const float sensitivity = 0.01f;
-    const float headPitchLimit = 1.2f;
-    const float headYawLimit = 0.5f; // 1.5も良かった
+	const float sensitivity = 0.01f;
+	const float headPitchLimit = 1.2f;
+	const float headYawLimit = 0.5f; // 1.5も良かった
 
 	AnimSystem anim;
 

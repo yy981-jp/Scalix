@@ -2,42 +2,42 @@
 #include <core/avatar.h>
 
 NodeHandle NodeRegistry::create(Avatar* avatar, NodeId nodeid) {
-    ++aliveCount;
-    NodeEntryId id;
+	++aliveCount;
+	NodeEntryId id;
 
-    if (freeHead != INVALID) {
-        // フリースロットを再利用
-        id = freeHead;
-        freeHead = records[id].nextFree;
+	if (freeHead != INVALID) {
+		// フリースロットを再利用
+		id = freeHead;
+		freeHead = records[id].nextFree;
 		records[id].avatar = avatar;
 		records[id].node = nodeid;
-    } else {
-        // 新規スロット追加
-        id = (NodeEntryId)records.size();
-        records.push_back({ INVALID, 0, avatar, nodeid });
-    }
+	} else {
+		// 新規スロット追加
+		id = (NodeEntryId)records.size();
+		records.push_back({ INVALID, 0, avatar, nodeid });
+	}
 
-    return {id,records[id].gen};
+	return {id,records[id].gen};
 }
 
 void NodeRegistry::destroy(NodeHandle h) {
-    --aliveCount;
+	--aliveCount;
 
-    ++records[h.id].gen;
+	++records[h.id].gen;
 	records[h.id].avatar = nullptr;
 	records[h.id].node = INT32_MAX;
 
-    // フリースロット linked list に追加
-    records[h.id].nextFree = freeHead;
-    freeHead = h.id;
+	// フリースロット linked list に追加
+	records[h.id].nextFree = freeHead;
+	freeHead = h.id;
 }
 
 bool NodeRegistry::is_alive(NodeHandle h) const {
-    return records[h.id].gen == h.gen;
+	return records[h.id].gen == h.gen;
 }
 
 uint32_t NodeRegistry::size() const {
-    return aliveCount;
+	return aliveCount;
 }
 
 Node& NodeRegistry::get(NodeHandle h) {

@@ -45,13 +45,13 @@ private:
 
 public:
 	PhysicsHandle add(const Physics& c) {
-	    PhysicsId id;
+		PhysicsId id;
 		if (freeHead != INVALID) {
 			id = freeHead;
-	        freeHead = records[id].nextFree;
+			freeHead = records[id].nextFree;
 		} else {
 			id = static_cast<PhysicsId>(records.size());
-	        records.push_back({ INVALID, 0 });
+			records.push_back({ INVALID, 0 });
 			data.push_back({});
 		}
 
@@ -64,7 +64,7 @@ public:
 
 		PhysicsGen gen = records[id].gen;
 
-	    return { id, gen };
+		return { id, gen };
 	}
 
 	bool isAlive(PhysicsHandle h) const {

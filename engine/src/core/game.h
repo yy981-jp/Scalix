@@ -37,7 +37,7 @@ class Game {
 	SDL_Window* window;
 
 	bool running = true;
-    KCodes keyStat = 0; // KCode
+	KCodes keyStat = 0; // KCode
 	bool mouseRelMode = true;
 	MouseState mStat;
 	ElapsedTime elap;
@@ -67,7 +67,7 @@ class Game {
 	void gameInit();
 
 	void onKeyDown(const SDL_KeyboardEvent& e);
-    void onKeyUp(const SDL_KeyboardEvent& e);
+	void onKeyUp(const SDL_KeyboardEvent& e);
 	void onMouseBtDown(const SDL_MouseButtonEvent& e);
 	void onMouseBtUp(const SDL_MouseButtonEvent& e);
 	void onWindowEve(const SDL_WindowEvent& e);

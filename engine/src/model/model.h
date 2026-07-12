@@ -23,7 +23,7 @@ struct Node {
 	int skinIndex = -1;
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
-	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
+	int meshCount = 0;		 // 複数primitiveに対応するメッシュ数
 	bool visible = true;
 
 	vec3f pos; // local座標 (多分)
