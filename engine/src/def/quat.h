@@ -26,6 +26,7 @@ struct Quat {
 	Quat operator-() const;
 	
 	Quat operator*(float scalar) const;
+	Quat operator*(const Quat& other) const;
 	Quat operator/(float scalar) const;
 
 	vec3f operator*(const vec3f& v) const;

@@ -62,6 +62,15 @@ Quat Quat::operator*(float scalar) const {
 	};
 }
 
+Quat Quat::operator*(const Quat& other) const {
+	return {
+		w * other.x + x * other.w + y * other.z - z * other.y,
+		w * other.y - x * other.z + y * other.w + z * other.x,
+		w * other.z + x * other.y - y * other.x + z * other.w,
+		w * other.w - x * other.x - y * other.y - z * other.z
+	};
+}
+
 Quat Quat::operator/(float scalar) const {
 	return {
 		x / scalar,

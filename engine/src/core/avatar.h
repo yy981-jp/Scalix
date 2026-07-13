@@ -4,19 +4,10 @@
 #include <anim/animSystem.h>
 #include <def/euler.h>
 #include <def/pose.h>
+#include <def/transform.h>
 
 
 using AvatarID = int;
-
-
-struct WorldTransform {
-	vec3f pos;
-	Quat rot;
-	vec3f scale;
-	std::array<float,16> mtx;
-
-	void rebuildMatrix();
-};
 
 
 /// @brief 状態を含む1つのアバター
@@ -26,7 +17,7 @@ struct Avatar {
 
 	// nodes mtx (global)
 	std::vector<std::array<float, 16>> globalMtxs;
-	std::vector<WorldTransform> globalTransforms;
+	std::vector<Transform> globalTransforms;
 	
 
 	vec3f pos   = {0.0f, 0.0f, 0.0f};
