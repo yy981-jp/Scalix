@@ -1,6 +1,6 @@
 #define SDL_MAIN_HANDLED
 
-#include "core/game.h"
+#include <core/game.h>
 
 
 int main() {
@@ -16,4 +16,4 @@ int main() {
 
 
 
-// #include "../../test/sd.h"
+// #include <test/sd.h>

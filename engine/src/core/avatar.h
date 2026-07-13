@@ -1,29 +1,42 @@
 #pragma once
 
-#include "../model/model.h"
-#include "../anim/animSystem.h"
-#include "euler.h"
-#include "pose.h"
+#include <model/model.h>
+#include <anim/animSystem.h>
+#include <def/euler.h>
+#include <def/pose.h>
 
 
 using AvatarID = int;
+
+
+struct WorldTransform {
+	vec3f pos;
+	Quat rot;
+	vec3f scale;
+	std::array<float,16> mtx;
+
+	void rebuildMatrix();
+};
+
 
 /// @brief 状態を含む1つのアバター
 struct Avatar {
 	Model model;
 	Humanoid humanoid;
 
-	// nodes mtx
+	// nodes mtx (global)
 	std::vector<std::array<float, 16>> globalMtxs;
+	std::vector<WorldTransform> globalTransforms;
+	
 
 	vec3f pos   = {0.0f, 0.0f, 0.0f};
 	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
 	Euler head;
-    const float sensitivity = 0.01f;
-    const float headPitchLimit = 1.2f;
-    const float headYawLimit = 0.5f; // 1.5も良かった
+	const float sensitivity = 0.01f;
+	const float headPitchLimit = 1.2f;
+	const float headYawLimit = 0.5f; // 1.5も良かった
 
 	AnimSystem anim;
 

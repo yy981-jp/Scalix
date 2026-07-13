@@ -1,4 +1,4 @@
-#include "shader.h"
+#include <gfx/shader.h>
 
 #include <filesystem>
 
@@ -14,7 +14,7 @@ bgfx::ShaderHandle loadShader(const char* path) {
 	size_t size = ftell(f);
 	fseek(f, 0, SEEK_SET);
 
-    if (size == 0) throw std::runtime_error("shader: size = 0");
+	if (size == 0) throw std::runtime_error("shader: size = 0");
 
 	const bgfx::Memory* mem = bgfx::alloc(size/* + 1*/);
 	fread(mem->data, 1, size, f);

@@ -4,9 +4,9 @@
 
 class ElapsedTime {
 public:
-    ElapsedTime() {}
+	ElapsedTime() {}
 	void init();
-    float get();
+	float get();
 	operator bool();
 private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> start;

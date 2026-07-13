@@ -1,15 +1,16 @@
 #pragma once
 
 #include <vector>
+#include <deque>
 
-#include "../model/model.h"
-#include "gctx.h"
-#include "avatar.h"
+#include <model/model.h>
+#include <core/gctx.h>
+#include <core/avatar.h>
 
 
 /// @brief avatar 全体管理&描画システム
 class AvatarSystem {
-	std::vector<Avatar> avatars;
+	std::deque<Avatar> avatars;
 	AvatarID playableAvatar = 0;
 
 public:

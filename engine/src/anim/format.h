@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../../../shared/format.h"
-#include "../core/str.h"
-#include "../core/json.h"
-#include "../core/def.h"
-#include "../core/vec2.h"
-#include "../core/vec3.h"
+#include <shared/format.h>
+#include <def/str.h>
+#include <def/json.h>
+#include <def/def.h>
+#include <def/vec2.h>
+#include <def/vec3.h>
 
 
 

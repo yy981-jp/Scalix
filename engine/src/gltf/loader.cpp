@@ -3,7 +3,8 @@
 #include <tinygltf/tiny_gltf.h>
 #include <bx/math.h>
 
-#include "loader.h"
+#include <gltf/loader.h>
+
 #include <set>
 #include <cassert>
 #include <iostream>

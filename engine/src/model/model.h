@@ -2,14 +2,15 @@
 
 #include <string>
 #include <array>
-#include "../gfx/mesh.h"
-#include "../gfx/texture.h"
-#include "../core/def.h"
-#include "../core/gctx.h"
-#include "../core/quat.h"
-#include "../core/str.h"
+#include <gfx/mesh.h>
+#include <gfx/texture.h>
+#include <core/gctx.h>
+#include <def/def.h>
+#include <def/quat.h>
+#include <def/str.h>
 
-#include "../anim/format.h"
+#include <anim/format.h>
+#include <core/nodeRegistry.h>
 
 
 struct Node {
@@ -22,7 +23,7 @@ struct Node {
 	int skinIndex = -1;
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
-	int meshCount = 0;         // 複数primitiveに対応するメッシュ数
+	int meshCount = 0;		 // 複数primitiveに対応するメッシュ数
 	bool visible = true;
 
 	vec3f pos; // local座標 (多分)
@@ -61,9 +62,9 @@ constexpr uint64_t HBTFlag(HBT bone) {
 struct Humanoid {
 	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
 
-	// node index
-	NodeId bones[static_cast<size_t>(HBT::Count)];
-	std::vector<NodeId> spines;
+	// node handle
+	NodeHandle bones[static_cast<size_t>(HBT::Count)];
+	std::vector<NodeHandle> spines;
 
 	uint64_t boneFlag = 0;
 	

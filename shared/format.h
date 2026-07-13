@@ -8,8 +8,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../engine/src/core/str.h"
-#include "../engine/src/core/def.h"
+#include <engine/src/def/str.h>
+#include <engine/src/core/nodeRegistry.h>
 
 using json = nlohmann::json;
 
