@@ -1,6 +1,7 @@
 build*/
 /docs/
 /runtime/
+external/
 *.pyc
 *.o
 *.exe
