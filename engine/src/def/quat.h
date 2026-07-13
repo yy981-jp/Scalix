@@ -4,6 +4,8 @@
 #include <bx/math.h>
 
 
+struct vec3f;
+
 struct Quat {
 	float x, y, z, w;
 
@@ -26,8 +28,9 @@ struct Quat {
 	Quat operator*(float scalar) const;
 	Quat operator/(float scalar) const;
 
-	
+	vec3f operator*(const vec3f& v) const;
+
 	static Quat lerp(const Quat& a, const Quat& b, float t);
 	
-	void rotateAxis(float i_x, float i_y, float i_z, float angle);
+	void setAxisAngle(const vec3f& axis, float angle);
 };

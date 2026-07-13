@@ -49,5 +49,13 @@ Node& NodeRegistry::get(NodeHandle h) {
 	return node;
 }
 
+NodeId NodeRegistry::getId(NodeHandle h) {
+	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is no allive");
+
+	Entry& entry = records[h.id];
+	return entry.node;
+}
+
+
 
 NodeRegistry nodeReg;

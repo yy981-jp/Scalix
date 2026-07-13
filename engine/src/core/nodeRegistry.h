@@ -38,6 +38,8 @@ public:
 	uint32_t size() const;
 
 	Node& get(NodeHandle h);
+	NodeId getId(NodeHandle h);
+
 	NodeHandle nd_find(NodeId id) const {
 		for (uint32_t i = 0; i < records.size(); ++i) {
 			NodeHandle h{i, records[i].gen};

@@ -67,6 +67,10 @@ vec3f vec3f::operator*(float scalar) const {
 	};
 }
 
+vec3f operator*(float s, const vec3f& v) {
+	return v * s;
+}
+
 vec3f vec3f::operator/(float scalar) const {
 	return {
 		x / scalar,
@@ -77,4 +81,8 @@ vec3f vec3f::operator/(float scalar) const {
 
 vec3f vec3f::lerp(const vec3f& a, const vec3f& b, float t) {
 	return bx::lerp(a,b,t);
+}
+
+vec3f vec3f::cross(const vec3f& a, const vec3f& b) {
+	return bx::cross(a,b);
 }

@@ -25,8 +25,11 @@ struct vec3f {
 	vec3f operator-() const;
 	
 	vec3f operator*(float scalar) const;
+	friend vec3f operator*(float s, const vec3f& v);
+	
 	vec3f operator/(float scalar) const;
 
 
 	static vec3f lerp(const vec3f& a, const vec3f& b, float t);
+	static vec3f cross(const vec3f& a, const vec3f& b);
 };

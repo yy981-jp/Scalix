@@ -1,6 +1,7 @@
 #include <def/quat.h>
 
 #include <util/cache.h>
+#include <def/vec3.h>
 
 
 Quat::operator bx::Quaternion() const {
@@ -70,18 +71,24 @@ Quat Quat::operator/(float scalar) const {
 	};
 }
 
+vec3f Quat::operator*(const vec3f& v) const {
+	vec3f u{x, y, z};
+
+	vec3f t = vec3f::cross(u, v) * 2.0f;
+	return v + w * t + vec3f::cross(u, t);
+}	
 
 
 Quat Quat::lerp(const Quat& a, const Quat& b, float t) {
 	return bx::lerp(a,b,t);
 }
 
-void Quat::rotateAxis(float i_x, float i_y, float i_z, float angle) {
+void Quat::setAxisAngle(const vec3f& axis, float angle) {
 	float half = angle * 0.5f;
 	float s = lutsv.getSin(half);
 
-	x = i_x * s;
-	y = i_y * s;
-	z = i_z * s;
+	x = axis.x * s;
+	y = axis.y * s;
+	z = axis.z * s;
 	w = lutsv.getCos(half);
 }

@@ -79,7 +79,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		neckNode.hasRotation = true;
 
 		float qPitch[4];
-		neckNode.rot.rotateAxis(1, 0, 0, head.pitch);
+		neckNode.rot.setAxisAngle({1,0,0}, head.pitch);
 	}
 
 	if (humanoid.has(HBT::head)) {
@@ -88,7 +88,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		auto& headNode = nodeReg.get(headHandle);
 		headNode.hasRotation = true;
 
-		headNode.rot.rotateAxis(0, 1, 0, head.yaw);
+		headNode.rot.setAxisAngle({0,1,0}, head.yaw);
 
 		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
@@ -101,40 +101,21 @@ void Avatar::draw(Camera& cam) {
 	NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
 	const Node& headNode = nodeReg.get(headHandle);
 
-		// Find the headNode in globalMtxs using the stored index
-		int headIdx = -1;
-		for (int i = 0; i < model.nodes.size(); i++) {
-			if (&model.nodes[i] == &headNode) {
-				headIdx = i;
-				break;
-			}
-		}
+	int headIdx = nodeReg.getId(headHandle);
+	if (headIdx < 0) return;
 
-		if (headIdx < 0) return;
+	float* m = globalMtxs[headIdx].data();
 
-		float* m = globalMtxs[headIdx].data();
+	const vec3f& headPos = globalTransforms[headIdx].pos;
 
-		vec3f headPos = {
-			m[12],
-			m[13],
-			m[14]
-		};
+	// headの向きから直接forward取得
+	// モデルによっては逆向きなので必要なら反転 (現状反転なし)
+	const vec3f& lookDir = globalTransforms[headIdx].rot * vec3f{0,0,1};
 
-		// headの向きから直接forward取得
-		vec3f lookDir = {
-			m[8],
-			m[9],
-			m[10]
-		};
 
-		lookDir = bx::normalize(lookDir);
-
-		// モデルによっては逆向きなので必要なら反転
-		// lookDir = -lookDir;
-
-		vec3f camPos = headPos
-			+ lookDir * 0.1f
-			+ vec3f{0, 0.05f, 0};
+	vec3f camPos = headPos
+		+ lookDir * 0.1f
+		+ vec3f{0, 0.05f, 0};
 
 	cam.update(camPos, camPos + lookDir);
 }
