@@ -80,6 +80,8 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 
 		avatar.globalMtxs.clear();
 		avatar.globalMtxs.resize(avatar.model.nodes.size());
+		avatar.globalTransforms.clear();
+		avatar.globalTransforms.resize(avatar.model.nodes.size());
 
 		// --- Entity行列 ---
 		float t[16], r[16], s[16], flip[16], tmp[16], tmp2[16], entityMtx[16];
