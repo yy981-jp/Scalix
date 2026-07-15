@@ -39,15 +39,16 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
 	}
 	if (calculated[idx]) return;
 
-	const auto& node = avatar.model.nodes[idx];
+	auto& node = avatar.model.nodes[idx];
+	node.trs.rebuildMatrix();
 
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent >= 0) {
 		calcGlobal(node.parent, calculated, avatar, entityTransform);
 		avatar.globalTransforms[idx] = avatar.globalTransforms[node.parent] * node.trs;
 	} else {
-		// ルートはEntityのTRSに対してローカルTRSを合成する。
-		avatar.globalTransforms[idx] = entityTransform * node.trs;
+		// bx::mtxMul の従来の積順と合わせ、ルートは local * entity。
+		avatar.globalTransforms[idx] = node.trs * entityTransform;
 	}
 
 	calculated[idx] = true;
