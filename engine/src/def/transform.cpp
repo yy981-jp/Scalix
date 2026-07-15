@@ -18,6 +18,7 @@ Transform Transform::operator*(const Transform& rhs) const {
 
 	// Position
 	out.pos = pos + rot * (scale * rhs.pos);
+	out.rebuildMatrix();
 
 	return out;
 }

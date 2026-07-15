@@ -28,15 +28,15 @@ public:
 	  boneIndex(boneIndex), bones(boneIndex.size()), restLengths(boneIndex.size()-1) {
 		// Initialize positions from nodes
 		for (int i = 0; i < bones.size(); i++) {
-			bones[i].currPos = nodeReg.get(boneIndex[i]).pos;
+			bones[i].currPos = nodeReg.get(boneIndex[i]).trs.pos;
 			bones[i].prevPos = bones[i].currPos;
 		}
 		
 		// Calculate rest lengths
 		for (int i = 0; i < (int)bones.size()-1; i++) {
 			restLengths[i] = bx::distance(
-				nodeReg.get(boneIndex[i]).pos,
-				nodeReg.get(boneIndex[i + 1]).pos
+				nodeReg.get(boneIndex[i]).trs.pos,
+				nodeReg.get(boneIndex[i + 1]).trs.pos
 			);
 		}
 	}
@@ -68,7 +68,7 @@ public:
 			}
 
 			child.currPos = parent.currPos + dir * restLengths[i - 1];
-			nodeReg.get(h).pos = child.currPos;
+			nodeReg.get(h).trs.pos = child.currPos;
 		}
 	}
 };

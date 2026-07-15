@@ -8,6 +8,7 @@
 #include <def/def.h>
 #include <def/quat.h>
 #include <def/str.h>
+#include <def/transform.h>
 
 #include <anim/format.h>
 #include <core/nodeRegistry.h>
@@ -26,13 +27,19 @@ struct Node {
 	int meshCount = 0;		 // 複数primitiveに対応するメッシュ数
 	bool visible = true;
 
-	vec3f pos; // local座標 (多分)
-	Quat rot;  // identity quaternion
-	vec3f scale = {1.0f, 1.0f, 1.0f};
+	// vec3f pos; // local座標 (多分)
+	// Quat rot;  // identity quaternion
+	// vec3f scale = {1.0f, 1.0f, 1.0f};
+
+	Transform trs;
 
 	bool hasTranslation = false;
 	bool hasRotation = false;
 	bool hasScale = false;
+
+	Node() {
+		trs.scale = {1,1,1};
+	}
 };
 
 struct Skin {

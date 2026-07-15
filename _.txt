@@ -109,6 +109,7 @@ auto tangent はunityeditorが計算して.animに保存するからそれを抽
 track単位でtarget==-404をはじいてqueueから削除する機構を入れるべき? blend()で入れた方が良いかも
 
 
+4db89f244244cc50e92cc3b4d426ab45f760915aから問題 視点を動かしてもheadnodeが動くが、cameraが動かない transformとmtxの連携ができていない可能性?
 
 // ==================================================
 // 対処済み
