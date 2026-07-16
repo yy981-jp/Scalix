@@ -7,16 +7,16 @@ void dev_checkPattern() {
 
 
 bool hasTwoOrMore(const std::string& str, const std::string& target) {
-    size_t pos = 0;
-    int count = 0;
+	size_t pos = 0;
+	int count = 0;
 
-    while ((pos = str.find(target, pos)) != std::string::npos) {
-        count++;
-        if (count >= 2) return true;
-        pos += target.length(); // 次の位置へ
-    }
+	while ((pos = str.find(target, pos)) != std::string::npos) {
+		count++;
+		if (count >= 2) return true;
+		pos += target.length(); // 次の位置へ
+	}
 
-    return false;
+	return false;
 }
 
 json yamlToJson(const Yaml& node) {

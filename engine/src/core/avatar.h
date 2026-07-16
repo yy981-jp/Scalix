@@ -1,29 +1,32 @@
 #pragma once
 
-#include "../model/model.h"
-#include "../anim/animSystem.h"
-#include "euler.h"
-#include "pose.h"
+#include <model/model.h>
+#include <anim/animSystem.h>
+#include <def/euler.h>
+#include <def/pose.h>
+#include <def/transform.h>
 
 
 using AvatarID = int;
+
 
 /// @brief 状態を含む1つのアバター
 struct Avatar {
 	Model model;
 	Humanoid humanoid;
 
-	// nodes mtx
-	std::vector<std::array<float, 16>> globalMtxs;
+	// Nodes' global transforms. `mtx` is the rendering cache of each TRS.
+	std::vector<Transform> globalTransforms;
+	
 
 	vec3f pos   = {0.0f, 0.0f, 0.0f};
 	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
 	Euler head;
-    const float sensitivity = 0.01f;
-    const float headPitchLimit = 1.2f;
-    const float headYawLimit = 0.5f; // 1.5も良かった
+	const float sensitivity = 0.01f;
+	const float headPitchLimit = 1.2f;
+	const float headYawLimit = 0.5f; // 1.5も良かった
 
 	AnimSystem anim;
 

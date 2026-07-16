@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include "key.h"
-#include "camera.h"
+#include <core/key.h>
+#include <core/camera.h>
 
 
 struct GameContext {

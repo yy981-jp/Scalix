@@ -3,25 +3,25 @@
   "duration": 2.0,
 
   "tracks": [
-    {
-      "target": "head",
-      "proc": "rotation",
-      "type": "quat",
-      "interpolation": "linear",
-      "keys": [
-        { "time": 0.0, "value": [0,0,0,1] },
-        { "time": 1.0, "value": [0.707,0,0,0.707] }
-      ]
-    },
-    {
-      "target": "weapon",
-      "proc": "visible",
-      "type": "bool",
-      "interpolation": "step",
-      "keys": [
-        { "time": 0.0, "value": true },
-        { "time": 1.2, "value": false }
-      ]
-    }
+	{
+	  "target": "head",
+	  "proc": "rotation",
+	  "type": "quat",
+	  "interpolation": "linear",
+	  "keys": [
+		{ "time": 0.0, "value": [0,0,0,1] },
+		{ "time": 1.0, "value": [0.707,0,0,0.707] }
+	  ]
+	},
+	{
+	  "target": "weapon",
+	  "proc": "visible",
+	  "type": "bool",
+	  "interpolation": "step",
+	  "keys": [
+		{ "time": 0.0, "value": true },
+		{ "time": 1.2, "value": false }
+	  ]
+	}
   ]
 }

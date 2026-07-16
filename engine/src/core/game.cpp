@@ -1,6 +1,6 @@
-#include "game.h"
+#include <core/game.h>
 
-#include "../gfx/shader.h"
+#include <gfx/shader.h>
 
 #include <iostream>
 
@@ -73,8 +73,8 @@ void Game::tick() {
 	while (SDL_PollEvent(&event)) {
 		switch(event.type) {
 			case SDL_QUIT: running = false; break;
-            case SDL_KEYDOWN: onKeyDown(event.key); break;
-            case SDL_KEYUP: onKeyUp(event.key); break;
+			case SDL_KEYDOWN: onKeyDown(event.key); break;
+			case SDL_KEYUP: onKeyUp(event.key); break;
 			case SDL_MOUSEBUTTONDOWN: onMouseBtDown(event.button); break;
 			case SDL_MOUSEBUTTONUP: onMouseBtUp(event.button); break;
 			case SDL_WINDOWEVENT: onWindowEve(event.window); break;
@@ -87,8 +87,8 @@ void Game::tick() {
 	draw();
 	
 	// TODO: 何故動かない...?
-	// bgfx::dbgTextClear();
-	// bgfx::dbgTextPrintf(0, 25, 0x4f, "y9test: debug hello");
+	bgfx::dbgTextClear();
+	bgfx::dbgTextPrintf(10, 25, 0x4f, "y9test: debug hello");
 
 
 	bgfx::frame();
@@ -97,11 +97,12 @@ void Game::tick() {
 
 void Game::update() {
 	if (has(keyStat,KCode::Esc)) running = false;
-    float dt = elap.get();
+	float dt = elap.get();
 
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
 	avatarSystem.update(gctx,dt);
+	springBoneSystem.update(dt);
 
 	mStat.relPos = {0, 0};
 }
@@ -129,15 +130,16 @@ void Game::gameInit() {
 
 	// ===== load glTF ====
 	avatarSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
 
-	const bgfx::Caps* caps = bgfx::getCaps();
-	int maxMat4 = caps->limits.maxUniforms / 4;
-	usingUni = maxMat4 * 0.8;
-	std::cout << "using uniform: " << usingUni << "\n";
+	// const bgfx::Caps* caps = bgfx::getCaps();
+	// int maxMat4 = caps->limits.maxUniforms / 4;
+	// usingUni = maxMat4 * 0.8;
+	// std::cout << "using uniform: " << usingUni << "\n";
 
 	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
 
@@ -145,6 +147,12 @@ void Game::gameInit() {
 
 	delete logo;
 
+
+	springBoneSystem.add(SpringBoneChain({{176,0},{113,0},{112,0},{111,0}/*,110*/})); // back d l
+	springBoneSystem.add(SpringBoneChain({{176,0},{105,0},{104,0},{103,0}/*,102*/})); // back c l
+	springBoneSystem.add(SpringBoneChain({{176,0},{120,0},{119,0},{118,0}})); // back e l
+
+	springBoneSystem.add(SpringBoneChain({{199,0},{198,0},{197,0},{196,0},{195,0},{194,0},{193,0},{192,0},{191,0},{190,0}})); // back e l
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {

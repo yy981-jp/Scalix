@@ -1,8 +1,8 @@
 @echo off
 
 if "%1" == "" (
-    echo %%1 is empty
-    exit /b 1
+	echo %%1 is empty
+	exit /b 1
 )
 
 set name=%1

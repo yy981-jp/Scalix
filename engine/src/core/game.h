@@ -7,16 +7,18 @@
 #include <bx/math.h>
 #include <stdexcept>
 
-#include "../gfx/shader.h"
-#include "../gltf/loader.h"
-#include "key.h"
-#include "camera.h"
-#include "gctx.h"
-#include "grid.h"
-#include "time.h"
-#include "../ui/logo.h"
+#include <gfx/shader.h>
+#include <gltf/loader.h>
+#include <core/key.h>
+#include <core/camera.h>
+#include <core/gctx.h>
+#include <core/grid.h>
+#include <util/time.h>
+#include <ui/logo.h>
 
-#include "avatarSystem.h"
+#include <core/avatarSystem.h>
+#include <core/nodeRegistry.h>
+#include <physics/springBone.h>
 
 
 enum class ShaderId {
@@ -35,7 +37,7 @@ class Game {
 	SDL_Window* window;
 
 	bool running = true;
-    KCodes keyStat = 0; // KCode
+	KCodes keyStat = 0; // KCode
 	bool mouseRelMode = true;
 	MouseState mStat;
 	ElapsedTime elap;
@@ -44,6 +46,9 @@ class Game {
 	bgfx::UniformHandle u_bones;
 	int usingUni;
 	AvatarSystem avatarSystem;
+
+	SpringBoneSystem springBoneSystem;
+	NodeRegistry nodeReg;
 
 	LogoRenderer* logo;
 
@@ -62,7 +67,7 @@ class Game {
 	void gameInit();
 
 	void onKeyDown(const SDL_KeyboardEvent& e);
-    void onKeyUp(const SDL_KeyboardEvent& e);
+	void onKeyUp(const SDL_KeyboardEvent& e);
 	void onMouseBtDown(const SDL_MouseButtonEvent& e);
 	void onMouseBtUp(const SDL_MouseButtonEvent& e);
 	void onWindowEve(const SDL_WindowEvent& e);

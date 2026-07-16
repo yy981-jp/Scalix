@@ -1,21 +1,23 @@
 #pragma once
-#include "../gfx/mesh.h"
-#include "../gfx/texture.h"
-// #include "../model/model.h"
-#include "../core/avatar.h"
-#include "../core/str.h"
+#include <gfx/mesh.h>
+#include <gfx/texture.h>
+#include <core/avatar.h>
+#include <def/str.h>
 #include <tinygltf/tiny_gltf.h>
 #include <utility>
 
+
+struct AccessorView {
+	uint8_t* data;
+	size_t stride;
+	size_t count;
+};
 
 class GltfLoaderImpl {
 	const std::string& path;
 
 	// in processing data
 	tinygltf::Model model;
-	tinygltf::Accessor posAcc;
-	tinygltf::BufferView posView;
-	tinygltf::Buffer posBuf;
 
 	Model scalixModel;
 

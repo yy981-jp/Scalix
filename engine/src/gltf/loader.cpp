@@ -3,17 +3,143 @@
 #include <tinygltf/tiny_gltf.h>
 #include <bx/math.h>
 
-#include "loader.h"
+#include <gltf/loader.h>
+
 #include <set>
 #include <cassert>
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 
-void dumpJson(const json& j) {
-	std::ofstream ofs("debug.json");
-	ofs << j.dump(4);
+namespace {
+
+struct AccessorBytes {
+	const tinygltf::Accessor* accessor = nullptr;
+	const uint8_t* data = nullptr;
+	size_t stride = 0;
+	size_t count = 0;
+	int componentType = 0;
+	int type = 0;
+};
+
+size_t componentSize(int componentType) {
+	switch (componentType) {
+	case TINYGLTF_COMPONENT_TYPE_BYTE:
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+		return 1;
+	case TINYGLTF_COMPONENT_TYPE_SHORT:
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+		return 2;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+	case TINYGLTF_COMPONENT_TYPE_FLOAT:
+		return 4;
+	default:
+		throw std::runtime_error("unsupported accessor component type");
+	}
 }
+
+size_t componentCount(int type) {
+	switch (type) {
+	case TINYGLTF_TYPE_SCALAR: return 1;
+	case TINYGLTF_TYPE_VEC2:   return 2;
+	case TINYGLTF_TYPE_VEC3:   return 3;
+	case TINYGLTF_TYPE_VEC4:   return 4;
+	case TINYGLTF_TYPE_MAT4:   return 16;
+	default:
+		throw std::runtime_error("unsupported accessor type");
+	}
+}
+
+AccessorBytes getAccessorBytes(const tinygltf::Model& model, int accessorIndex) {
+	if (accessorIndex < 0 || accessorIndex >= static_cast<int>(model.accessors.size()))
+		throw std::runtime_error("invalid accessor index");
+
+	const auto& acc = model.accessors[accessorIndex];
+	if (acc.bufferView < 0 || acc.bufferView >= static_cast<int>(model.bufferViews.size()))
+		throw std::runtime_error("invalid accessor bufferView");
+
+	const auto& view = model.bufferViews[acc.bufferView];
+	if (view.buffer < 0 || view.buffer >= static_cast<int>(model.buffers.size()))
+		throw std::runtime_error("invalid accessor buffer");
+
+	const auto& buf = model.buffers[view.buffer];
+
+	AccessorBytes out;
+	out.accessor = &acc;
+	out.data = buf.data.data() + view.byteOffset + acc.byteOffset;
+	out.stride = acc.ByteStride(view);
+	if (out.stride == 0)
+		out.stride = componentSize(acc.componentType) * componentCount(acc.type);
+	out.count = acc.count;
+	out.componentType = acc.componentType;
+	out.type = acc.type;
+	return out;
+}
+
+const uint8_t* accessorElement(const AccessorBytes& view, size_t index) {
+	return view.data + view.stride * index;
+}
+
+const float* accessorFloatElement(const AccessorBytes& view, size_t index) {
+	if (view.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT)
+		throw std::runtime_error("expected float accessor");
+	return reinterpret_cast<const float*>(accessorElement(view, index));
+}
+
+uint16_t readIndex(const AccessorBytes& view, size_t index) {
+	const uint8_t* ptr = accessorElement(view, index);
+
+	switch (view.componentType) {
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+		throw std::runtime_error("8bit index is unsupported now");
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+		return *reinterpret_cast<const uint16_t*>(ptr);
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+		throw std::runtime_error("32bit index is unsupported now");
+	default:
+		throw std::runtime_error("unsupported index type");
+	}
+}
+
+void readJoints(Vertex& vert, const uint8_t* ptr, int componentType) {
+	switch (componentType) {
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+		for (int k = 0; k < 4; k++)
+			vert.joints[k] = ptr[k];
+		break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
+		const uint16_t* joints = reinterpret_cast<const uint16_t*>(ptr);
+		for (int k = 0; k < 4; k++)
+			vert.joints[k] = joints[k];
+	} break;
+	default:
+		throw std::runtime_error("unsupported joint type");
+	}
+}
+
+void readWeights(Vertex& vert, const uint8_t* ptr, int componentType) {
+	switch (componentType) {
+	case TINYGLTF_COMPONENT_TYPE_FLOAT: {
+		const float* weights = reinterpret_cast<const float*>(ptr);
+		for (int k = 0; k < 4; k++)
+			vert.weights[k] = weights[k];
+	} break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+		for (int k = 0; k < 4; k++)
+			vert.weights[k] = ptr[k] / 255.0f;
+		break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
+		const uint16_t* weights = reinterpret_cast<const uint16_t*>(ptr);
+		for (int k = 0; k < 4; k++)
+			vert.weights[k] = weights[k] / 65535.0f;
+	} break;
+	default:
+		throw std::runtime_error("unsupported weight type");
+	}
+}
+
+} // namespace
 
 
 void GltfLoaderImpl::parseMesh(NodeId nodeId) {
@@ -35,122 +161,66 @@ void GltfLoaderImpl::parseMesh(NodeId nodeId) {
 		if (!attrs.count("POSITION"))
 			throw std::runtime_error("no POSITION");
 
-		posAcc = model.accessors[attrs.at("POSITION")];
-		posView = model.bufferViews[posAcc.bufferView];
-		posBuf = model.buffers[posView.buffer];
+		const AccessorBytes pos = getAccessorBytes(model, attrs.at("POSITION"));
 
-		size_t posStride = posAcc.ByteStride(posView);
-		if (posStride == 0) posStride = sizeof(float) * 3;
 
-		const uint8_t* posPtr = posBuf.data.data() + posView.byteOffset + posAcc.byteOffset;
 
 		// ===== Normal/UV クリア =====
-		const float* norPtr = nullptr;
-		size_t norStride = 0;
-		const float* uvPtr = nullptr;
-		size_t uvStride = 0;
+		AccessorBytes nor{};
+		AccessorBytes uv{};
+		bool hasNormal = false;
+		bool hasUv = false;
 
 		// ===== NORMAL（任意）=====
-		if (attrs.count("NORMAL")) {
-			const auto& norAcc = model.accessors[attrs.at("NORMAL")];
-			const auto& norView = model.bufferViews[norAcc.bufferView];
-			const auto& norBuf = model.buffers[norView.buffer];
+		if (attrs.contains("NORMAL")) {
+			nor = getAccessorBytes(model, attrs.at("NORMAL"));
 
-			norStride = norAcc.ByteStride(norView);
-			if (norStride == 0) norStride = sizeof(float) * 3;
 
-			norPtr = reinterpret_cast<const float*>(
-				norBuf.data.data() + norView.byteOffset + norAcc.byteOffset
-			);
+			hasNormal = true;
 		}
 
 		// ===== UV（任意）=====
-		if (attrs.count("TEXCOORD_0")) {
-			const auto& uvAcc = model.accessors[attrs.at("TEXCOORD_0")];
-			const auto& uvView = model.bufferViews[uvAcc.bufferView];
-			const auto& uvBuf = model.buffers[uvView.buffer];
+		if (attrs.contains("TEXCOORD_0")) {
+			uv = getAccessorBytes(model, attrs.at("TEXCOORD_0"));
 
-			uvStride = uvAcc.ByteStride(uvView);
-			if (uvStride == 0) uvStride = sizeof(float) * 2;
 
-			uvPtr = reinterpret_cast<const float*>(
-				uvBuf.data.data() + uvView.byteOffset + uvAcc.byteOffset
-			);
+			hasUv = true;
 		}
 
 		// ===== index =====
 		std::vector<uint16_t> idx;
 
 		if (prim.indices >= 0) {
-			const auto& ia = model.accessors[prim.indices];
-			const auto& iv = model.bufferViews[ia.bufferView];
-			const auto& ib = model.buffers[iv.buffer];
-
-			const uint8_t* data = ib.data.data() + iv.byteOffset + ia.byteOffset;
-
-			size_t stride = ia.ByteStride(iv);
-			if (stride == 0) {
-				switch (ia.componentType) {
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:  stride = 1; break;
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: stride = 2; break;
-					case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:   stride = 4; break;
-				}
+			const auto& indexAcc = getAccessorBytes(model, prim.indices);
+			for (size_t i = 0; i < indexAcc.count; i++) {
+				idx.push_back(readIndex(indexAcc, i));
 			}
-
-			for (size_t i = 0; i < ia.count; i++) {
-				const uint8_t* ptr = data + stride * i;
-
-				uint16_t index = 0;
-
-				switch (ia.componentType) {
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-					throw std::runtime_error("8bit index is unsupported now");
-					index = *reinterpret_cast<const uint8_t*>(ptr);
-					break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-					index = *reinterpret_cast<const uint16_t*>(ptr);
-					break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-					throw std::runtime_error("32bit index is unsupported now");
-					index = *reinterpret_cast<const uint16_t*>(ptr);
-					break;
-				default:
-					throw std::runtime_error("unsupported index type");
-				}
-
-				idx.push_back(index);
-			}
-
 		} else {
 			// indexなし → 連番
-			for (uint16_t i = 0; i < posAcc.count; i++)
+			for (uint16_t i = 0; i < pos.count; i++)
 				idx.push_back(i);
 		}
 
 		// ===== 頂点生成 =====
-		verts.reserve(posAcc.count);
+		verts.reserve(pos.count);
 
-		for (size_t i = 0; i < posAcc.count; i++) {
-			const float* p = reinterpret_cast<const float*>(posPtr + posStride * i);
+		for (size_t i = 0; i < pos.count; i++) {
+			const float* p = accessorFloatElement(pos, i);
 
 			Vertex vert{};
 			vert.x = p[0];
 			vert.y = p[1];
 			vert.z = p[2];
 
-			if (norPtr) {
-				const float* n = reinterpret_cast<const float*>(
-					reinterpret_cast<const uint8_t*>(norPtr) + norStride * i
-				);
+			if (hasNormal) {
+				const float* n = accessorFloatElement(nor, i);
 				vert.nx = n[0];
 				vert.ny = n[1];
 				vert.nz = n[2];
 			}
 
-			if (uvPtr) {
-				const float* u = reinterpret_cast<const float*>(
-					reinterpret_cast<const uint8_t*>(uvPtr) + uvStride * i
-				);
+			if (hasUv) {
+				const float* u = accessorFloatElement(uv, i);
 				vert.u = u[0];
 				vert.v = u[1];
 			}
@@ -168,86 +238,18 @@ void GltfLoaderImpl::parseMesh(NodeId nodeId) {
 
 
 		// ===== JOINTS =====
-		if (attrs.count("JOINTS_0")) {
-			const auto& acc = model.accessors[attrs.at("JOINTS_0")];
-			const auto& view = model.bufferViews[acc.bufferView];
-			const auto& buf = model.buffers[view.buffer];
-
-			const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
-
-			size_t stride = acc.ByteStride(view);
-			if (stride == 0) {
-				if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
-					stride = 4;
-				else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
-					stride = 8;
-			}
-
-			for (size_t i = 0; i < acc.count; i++) {
-				auto& vert = verts[i];
-				const uint8_t* ptr = data + stride * i;
-
-				if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
-					for (int k = 0; k < 4; k++)
-						vert.joints[k] = ptr[k];
-
-				} else if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-					const uint16_t* j = reinterpret_cast<const uint16_t*>(ptr);
-					for (int k = 0; k < 4; k++)
-						vert.joints[k] = j[k];
-				}
-
-				// if (i == 0) {
-				// 	printf("joint: %d %d %d %d\n",
-				// 		vert.joints[0],
-				// 		vert.joints[1],
-				// 		vert.joints[2],
-				// 		vert.joints[3]);
-				// }
+		if (attrs.contains("JOINTS_0")) {
+			const auto& jointAcc = getAccessorBytes(model, attrs.at("JOINTS_0"));
+			for (size_t i = 0; i < jointAcc.count; i++) {
+				readJoints(verts[i], accessorElement(jointAcc, i), jointAcc.componentType);
 			}
 		}
 
 		// ===== WEIGHTS =====
-		const auto& acc = model.accessors[attrs.at("WEIGHTS_0")];
-		const auto& view = model.bufferViews[acc.bufferView];
-		const auto& buf = model.buffers[view.buffer];
-
-		const uint8_t* data = buf.data.data() + view.byteOffset + acc.byteOffset;
-
-		size_t stride = acc.ByteStride(view);
-
-		// printf("componentType: %d normalized: %d stride: %zu\n",
-		// 	acc.componentType,
-		// 	acc.normalized,
-		// 	stride
-		// );
-
-		if (stride == 0) {
-			switch (acc.componentType) {
-				case TINYGLTF_COMPONENT_TYPE_FLOAT: stride = sizeof(float)*4; break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: stride = 4; break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: stride = 8; break;
-			}
-		}
-
-		for (size_t i = 0; i < acc.count; i++) {
-			auto& vert = verts[i];
-			const uint8_t* ptr = data + stride * i;
-			// printf("raw: %d %d %d %d\n", ptr[0], ptr[1], ptr[2], ptr[3]);
-
-			switch (acc.componentType) {
-				case TINYGLTF_COMPONENT_TYPE_FLOAT: {
-					const float* w = reinterpret_cast<const float*>(ptr);
-					for (int k = 0; k < 4; k++) vert.weights[k] = w[k];
-				} break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: {
-					const uint8_t* w = ptr;
-					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 255.0f;
-				} break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
-					const uint16_t* w = reinterpret_cast<const uint16_t*>(ptr);
-					for (int k = 0; k < 4; k++) vert.weights[k] = w[k] / 65535.0f;
-				} break;
+		if (attrs.contains("WEIGHTS_0")) {
+			const auto& weightAcc = getAccessorBytes(model, attrs.at("WEIGHTS_0"));
+			for (size_t i = 0; i < weightAcc.count; i++) {
+				readWeights(verts[i], accessorElement(weightAcc, i), weightAcc.componentType);
 			}
 		}
 
@@ -274,16 +276,16 @@ void GltfLoaderImpl::parse() {
 		// translation
 		if (!tn.translation.empty()) {
 			node.hasTranslation = true;
-			node.pos.x = (float)tn.translation[0];
-			node.pos.y = (float)tn.translation[1];
-			node.pos.z = (float)tn.translation[2];
+			node.trs.pos.x = (float)tn.translation[0];
+			node.trs.pos.y = (float)tn.translation[1];
+			node.trs.pos.z = (float)tn.translation[2];
 		}
 
 		// rotation
 		if (!tn.rotation.empty()) {
 			node.hasRotation = true;
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
-			node.rot = {
+			node.trs.rot = {
 				-(float)tn.rotation[0],
 				-(float)tn.rotation[1],
 				-(float)tn.rotation[2],
@@ -294,7 +296,7 @@ void GltfLoaderImpl::parse() {
 		// scale
 		if (!tn.scale.empty()) {
 			node.hasScale = true;
-			node.scale = {
+			node.trs.scale = {
 				(float)tn.scale[0],
 				(float)tn.scale[1],
 				(float)tn.scale[2]
@@ -339,22 +341,13 @@ void GltfLoaderImpl::parse() {
 		// skin
 		if (model_skin.inverseBindMatrices >= 0) {
 			// glTFからskin::invBindを読み込み
-			const auto& accessor = model.accessors[model_skin.inverseBindMatrices];
-			const auto& bv = model.bufferViews[accessor.bufferView];
-			const auto& buf = model.buffers[bv.buffer];
-
-			const float* data = reinterpret_cast<const float*>(
-				buf.data.data() + bv.byteOffset + accessor.byteOffset
-			);
-
-			skin.invBind.resize(accessor.count);
-
-			for (size_t i = 0; i < accessor.count; i++) {
-				const float* src = data + i * 16;
-
+			const auto& invAcc = getAccessorBytes(model, model_skin.inverseBindMatrices);
+			
+			skin.invBind.resize(invAcc.count);
+			for (size_t i = 0; i < invAcc.count; i++) {
+				const float* src = accessorFloatElement(invAcc, i);
 				memcpy(skin.invBind[i].data(), src, sizeof(float) * 16);
 			}
-
 		} else {
 			// glTFにデータが無い場合はidentityで初期化
 			for (size_t i = 0; i < skin.joints.size(); i++) {

@@ -30,28 +30,30 @@ pkg_check_modules(SDL2 REQUIRED sdl2)
 pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external
-    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/nlohmann/include
-    SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/yaml/include
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2_IMAGE_INCLUDE_DIRS}
+	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external
+	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/nlohmann/include
+	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/yaml/include
+	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/engine/src
+	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}
+	${SDL2_INCLUDE_DIRS}
+	${SDL2_IMAGE_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    bgfx
-    bx
-    bimg
-    ${SDL2_LIBRARIES}
-    ${SDL2_IMAGE_LIBRARIES}
+	bgfx
+	bx
+	bimg
+	${SDL2_LIBRARIES}
+	${SDL2_IMAGE_LIBRARIES}
 )
 
 # mode
 target_compile_options(${PROJECT_NAME} PRIVATE
-    $<$<CONFIG:Release>:-O3>
-    $<$<CONFIG:RelWithDebInfo>:-O3 -g>
+	$<$<CONFIG:Release>:-O3>
+	$<$<CONFIG:RelWithDebInfo>:-O3 -g>
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-    $<$<CONFIG:Debug>:BX_CONFIG_DEBUG=1 BGFX_CONFIG_DEBUG=1>
-    $<$<CONFIG:Release>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
-    $<$<CONFIG:RelWithDebInfo>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
+	$<$<CONFIG:Debug>:BX_CONFIG_DEBUG=1 BGFX_CONFIG_DEBUG=1>
+	$<$<CONFIG:Release>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
+	$<$<CONFIG:RelWithDebInfo>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
 )

@@ -13,8 +13,8 @@ struct Texture {
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 
-    Texture(Texture&& other) noexcept;
-    Texture& operator=(Texture&& other) noexcept;
+	Texture(Texture&& other) noexcept;
+	Texture& operator=(Texture&& other) noexcept;
 
 	Texture() = default;
 	// ~Texture() = default;

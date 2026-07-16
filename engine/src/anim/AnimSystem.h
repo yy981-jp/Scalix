@@ -1,7 +1,7 @@
 #pragma once
 
-#include "loader.h"
-#include "../core/pose.h"
+#include <anim/loader.h>
+#include <def/pose.h>
 
 #include <unordered_map>
 
@@ -22,19 +22,19 @@ struct PlayingAnim {
 };
 
 class AnimSystem {
-    std::unordered_map<StrHs, AnimRtFmt> anims;
-    std::vector<PlayingAnim> playing;
+	std::unordered_map<StrHs, AnimRtFmt> anims;
+	std::vector<PlayingAnim> playing;
 
-    std::vector<Value> blendBuffer;
-    std::vector<bool> blendBufferSR;
-    void blend(float dt);
-    void apply(Avatar& avatar);
-    
+	std::vector<Value> blendBuffer;
+	std::vector<bool> blendBufferSR;
+	void blend(float dt);
+	void apply(Avatar& avatar);
+	
 public:
-    void init(const std::string& path, const Avatar& avatar);
+	void init(const std::string& path, const Avatar& avatar);
 
-    void run(StrHs animName);
-    void stop(StrHs animName);
+	void run(StrHs animName);
+	void stop(StrHs animName);
 
-    void tick(Avatar& avatar, float dt);
+	void tick(Avatar& avatar, float dt);
 };

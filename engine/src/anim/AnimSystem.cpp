@@ -1,6 +1,6 @@
-#include "AnimSystem.h"
+#include <anim/AnimSystem.h>
 
-#include "../core/avatar.h"
+#include <core/avatar.h>
 
 #include <iostream>
 
@@ -46,28 +46,31 @@ void AnimSystem::apply(Avatar& avatar) {
 		bool shouldRemove = false;
 
 		for (const auto& track : anim.fmt.tracks) {
-            // track単位
-            Node& target = avatar.model.nodes[track.target];
+			// track単位
+			if (track.target == -404) continue;
+			if (track.target == -1) continue; // TODO: これどうすんねん 全体動かすとか...
 
-            switch (track.proc) {
+			Node& target = avatar.model.nodes[track.target];
+
+			switch (track.proc) {
 				using enum FormatDef::Proc;
 
 				case active: {
 					target.visible = std::get<float>(blendBuffer[blendIdx]);
 				} break;
 
-                case position: {
-                    target.pos = std::get<vec3f>(blendBuffer[blendIdx]);
+				case position: {
+					target.trs.pos = std::get<vec3f>(blendBuffer[blendIdx]);
 					target.hasTranslation = true;
-                } break;
+				} break;
 
-                case rotation: {
-                    target.rot = std::get<Quat>(blendBuffer[blendIdx]);
-                    target.hasRotation = true;
-                } break;
+				case rotation: {
+					target.trs.rot = std::get<Quat>(blendBuffer[blendIdx]);
+					target.hasRotation = true;
+				} break;
 
 				case scale: {
-					target.scale = std::get<vec3f>(blendBuffer[blendIdx]);
+					target.trs.scale = std::get<vec3f>(blendBuffer[blendIdx]);
 					target.hasScale = true;
 				} break;
 
@@ -105,6 +108,9 @@ void AnimSystem::blend(float dt) {
 		int trackNumber = 0;
 
 		for (const auto& track : anim.fmt.tracks) {
+			if (track.target == -404) continue;
+			if (track.target == -1) continue; // TODO: これどうすんねん 全体動かすとか...
+
 			auto& crtKeyIdx = anim_p.crtKeyIdxs[trackNumber];
 
 			while (
@@ -147,13 +153,12 @@ void AnimSystem::blend(float dt) {
 					n.value
 				);
 
-			}/* else {
-				value = track.keys.back().value;
-			}*/
+			} else {
+				// TODO: valueに無効値を代入すべきか?
+			}
 
 			blendBuffer.push_back(std::move(value));
 			blendBufferSR.push_back(shouldRemove);
-
 			trackNumber++;
 		}
 	}
