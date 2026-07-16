@@ -15,8 +15,7 @@ struct Avatar {
 	Model model;
 	Humanoid humanoid;
 
-	// nodes mtx (global)
-	std::vector<std::array<float, 16>> globalMtxs;
+	// Nodes' global transforms. `mtx` is the rendering cache of each TRS.
 	std::vector<Transform> globalTransforms;
 	
 

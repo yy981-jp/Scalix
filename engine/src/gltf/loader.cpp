@@ -276,16 +276,16 @@ void GltfLoaderImpl::parse() {
 		// translation
 		if (!tn.translation.empty()) {
 			node.hasTranslation = true;
-			node.pos.x = (float)tn.translation[0];
-			node.pos.y = (float)tn.translation[1];
-			node.pos.z = (float)tn.translation[2];
+			node.trs.pos.x = (float)tn.translation[0];
+			node.trs.pos.y = (float)tn.translation[1];
+			node.trs.pos.z = (float)tn.translation[2];
 		}
 
 		// rotation
 		if (!tn.rotation.empty()) {
 			node.hasRotation = true;
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
-			node.rot = {
+			node.trs.rot = {
 				-(float)tn.rotation[0],
 				-(float)tn.rotation[1],
 				-(float)tn.rotation[2],
@@ -296,7 +296,7 @@ void GltfLoaderImpl::parse() {
 		// scale
 		if (!tn.scale.empty()) {
 			node.hasScale = true;
-			node.scale = {
+			node.trs.scale = {
 				(float)tn.scale[0],
 				(float)tn.scale[1],
 				(float)tn.scale[2]
