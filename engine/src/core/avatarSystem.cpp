@@ -32,36 +32,23 @@ void AvatarSystem::loadData(const std::vector<std::string> path) {
 }
 
 void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
-				std::vector<std::array<float,16>>& localMtxs, float* entityMtx) {
-	if (calculated[idx]) return;
+				const Transform& entityTransform) {
 	if (idx < 0 || idx >= avatar.model.nodes.size()) {
 		printf("invalid idx: %d\n", idx);
 		return;
 	}
+	if (calculated[idx]) return;
 
-	const auto& node = avatar.model.nodes[idx];
+	auto& node = avatar.model.nodes[idx];
+	node.trs.rebuildMatrix();
 
-
-	// 親が先
+	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent >= 0) {
-		calcGlobal(node.parent, calculated, avatar, localMtxs, entityMtx);
-
-		// 順序検証済み
-		bx::mtxMul(
-			avatar.globalMtxs[idx].data(),
-			localMtxs[idx].data(),
-			avatar.globalMtxs[node.parent].data()
-		);
-	
+		calcGlobal(node.parent, calculated, avatar, entityTransform);
+		avatar.globalTransforms[idx] = avatar.globalTransforms[node.parent] * node.trs;
 	} else {
-		// ルートはentityから
-		// calcGlobal(node.parent, calculated, avatar, localMtxs, entityMtx);
-
-		bx::mtxMul(
-			avatar.globalMtxs[idx].data(),
-			entityMtx,
-			localMtxs[idx].data()
-		);
+		// bx::mtxMul の従来の積順と合わせ、ルートは local * entity。
+		avatar.globalTransforms[idx] = node.trs * entityTransform;
 	}
 
 	calculated[idx] = true;
@@ -78,47 +65,20 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		// avatar update
 		avatar.update(ctx,dt);
 
-		avatar.globalMtxs.clear();
-		avatar.globalMtxs.resize(avatar.model.nodes.size());
-		avatar.globalTransforms.clear();
 		avatar.globalTransforms.resize(avatar.model.nodes.size());
 
-		// --- Entity行列 ---
-		float t[16], r[16], s[16], flip[16], tmp[16], tmp2[16], entityMtx[16];
-
-		bx::mtxTranslate(t, avatar.pos.x, avatar.pos.y, avatar.pos.z);
-		bx::mtxRotateY(r, avatar.yaw);
-		bx::mtxScale(flip, -1, 1, 1);
-
-		bx::mtxIdentity(s);
-		s[0] = avatar.scale[0];  s[5] = avatar.scale[1];  s[10] = avatar.scale[2];
-
-		bx::mtxMul(tmp, s, flip);
-		bx::mtxMul(tmp2, tmp, r);
-		bx::mtxMul(entityMtx, tmp2, t);
-
-
-		// local mtx
-		std::vector<std::array<float, 16>> localMtxs;
-		localMtxs.resize(avatar.model.nodes.size());
-
-		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			const auto& node = avatar.model.nodes[i];
-
-			buildTRS(
-				localMtxs[i].data(),
-				node.pos,
-				node.rot,
-				node.scale,
-				node.hasRotation
-			);
-		}
+		Transform entityTransform;
+		entityTransform.pos = avatar.pos;
+		entityTransform.rot.setAxisAngle({0, 1, 0}, avatar.yaw);
+		// glTF座標系からのX軸反転もEntityのTRSとして扱う。
+		entityTransform.scale = {-avatar.scale[0], avatar.scale[1], avatar.scale[2]};
+		entityTransform.rebuildMatrix();
 
 		std::vector<bool> calculated;
 		calculated.resize(avatar.model.nodes.size(), false);
 
 		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i,calculated,avatar,localMtxs,entityMtx);
+			calcGlobal(i, calculated, avatar, entityTransform);
 		}
 
 		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
@@ -150,7 +110,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				bx::mtxMul(
 					jointMtx[i].data(),
 					skin.invBind[i].data(),
-					avatar.globalMtxs[nodeIdx].data()
+					avatar.globalTransforms[nodeIdx].mtx.data()
 				);
 			}
 		}

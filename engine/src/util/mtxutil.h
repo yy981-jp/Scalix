@@ -5,7 +5,7 @@
 #include <def/quat.h>
 
 // TRS行列を組み立てるヘルパー
-void buildTRS(float* out, const vec3f& pos, const Quat& rot,
+inline void buildTRS(float* out, const vec3f& pos, const Quat& rot,
 			  const vec3f& scale, bool hasRot = true) {
 	float t[16], r[16], s[16], tmp[16];
 

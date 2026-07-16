@@ -25,6 +25,7 @@ struct vec3f {
 	vec3f operator-() const;
 	
 	vec3f operator*(float scalar) const;
+	vec3f operator*(const vec3f& other) const;
 	friend vec3f operator*(float s, const vec3f& v);
 	
 	vec3f operator/(float scalar) const;

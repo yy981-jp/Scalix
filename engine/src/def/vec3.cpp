@@ -67,6 +67,14 @@ vec3f vec3f::operator*(float scalar) const {
 	};
 }
 
+vec3f vec3f::operator*(const vec3f& other) const {
+	return {
+		x * other.x,
+		y * other.y,
+		z * other.z
+	};
+}
+
 vec3f operator*(float s, const vec3f& v) {
 	return v * s;
 }

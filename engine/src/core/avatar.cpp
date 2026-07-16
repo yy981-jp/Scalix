@@ -79,7 +79,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		neckNode.hasRotation = true;
 
 		float qPitch[4];
-		neckNode.rot.setAxisAngle({1,0,0}, head.pitch);
+		neckNode.trs.rot.setAxisAngle({1,0,0}, head.pitch);
 	}
 
 	if (humanoid.has(HBT::head)) {
@@ -88,7 +88,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		auto& headNode = nodeReg.get(headHandle);
 		headNode.hasRotation = true;
 
-		headNode.rot.setAxisAngle({0,1,0}, head.yaw);
+		headNode.trs.rot.setAxisAngle({0,1,0}, head.yaw);
 
 		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
@@ -103,8 +103,6 @@ void Avatar::draw(Camera& cam) {
 
 	int headIdx = nodeReg.getId(headHandle);
 	if (headIdx < 0) return;
-
-	float* m = globalMtxs[headIdx].data();
 
 	const vec3f& headPos = globalTransforms[headIdx].pos;
 
