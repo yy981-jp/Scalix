@@ -5,6 +5,7 @@
 #include <limits>
 
 struct Avatar;
+using AvatarId = int;
 struct Node;
 
 
@@ -15,6 +16,8 @@ using NodeGen = uint16_t;
 struct NodeHandle {
 	NodeEntryId id;
 	NodeGen gen;
+
+	auto operator<=>(const NodeHandle&) const = default; 
 };
 
 class NodeRegistry {
@@ -23,6 +26,7 @@ class NodeRegistry {
 		NodeGen gen = 0; // 世代
 
 		Avatar* avatar = nullptr;
+		AvatarId avatarId;
 		NodeId node = INT32_MAX;
 	};
 	uint32_t aliveCount = 0;
@@ -39,17 +43,12 @@ public:
 
 	Node& get(NodeHandle h);
 	NodeId getId(NodeHandle h);
+	Avatar* getAvatar(NodeHandle h);
+	
+	const Entry& getEntry(NodeHandle h) const;
+	NodeHandle nd_find(NodeId id) const;
+	NodeHandle find(AvatarId avatarId, NodeId nodeId) const;
 
-	NodeHandle nd_find(NodeId id) const {
-		for (uint32_t i = 0; i < records.size(); ++i) {
-			NodeHandle h{i, records[i].gen};
-
-			if (!is_alive(h)) continue;
-
-			if (h.id == id) return h;
-		}
-		return {};
-	}
 };
 
 extern NodeRegistry nodeReg;

@@ -148,11 +148,18 @@ void Game::gameInit() {
 	delete logo;
 
 
-	springBoneSystem.add(SpringBoneChain({{176,0},{113,0},{112,0},{111,0}/*,110*/})); // back d l
-	springBoneSystem.add(SpringBoneChain({{176,0},{105,0},{104,0},{103,0}/*,102*/})); // back c l
-	springBoneSystem.add(SpringBoneChain({{176,0},{120,0},{119,0},{118,0}})); // back e l
+	update();
 
-	springBoneSystem.add(SpringBoneChain({{199,0},{198,0},{197,0},{196,0},{195,0},{194,0},{193,0},{192,0},{191,0},{190,0}})); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,113),nodeReg.find(0,110)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,117),nodeReg.find(0,114)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,105),nodeReg.find(0,102)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,109),nodeReg.find(0,106)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,120),nodeReg.find(0,118)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,123),nodeReg.find(0,121)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,98),nodeReg.find(0,95)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,101),nodeReg.find(0,99)) )); // back b
+
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,199),nodeReg.find(0,190)) )); // 
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {
