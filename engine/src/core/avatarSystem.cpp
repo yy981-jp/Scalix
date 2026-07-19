@@ -12,7 +12,7 @@
 
 
 void AvatarSystem::loadData(const std::vector<std::string> path) {
-	AvatarID id = 0;
+	AvatarId id = 0;
 	for (const auto& file: path) {
 		Avatar avatar(file);
 		avatar.id = id++;

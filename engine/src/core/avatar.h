@@ -7,7 +7,7 @@
 #include <def/transform.h>
 
 
-using AvatarID = int;
+using AvatarId = int;
 
 
 /// @brief 状態を含む1つのアバター
@@ -33,7 +33,7 @@ struct Avatar {
 	Status status = Status::stay;
 	float speed = 7;
 
-	AvatarID id;
+	AvatarId id;
 
 	void update(GameContext& keyStat, float dt);
 	void draw(Camera& cam);
