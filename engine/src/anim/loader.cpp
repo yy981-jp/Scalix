@@ -26,14 +26,14 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 	std::unordered_map<StrHs,NodeId> map;
 	map.reserve(avatar.model.nodes.size());
 	std::ofstream dbg("test.txt");
-	dbg << "===== node names =====";
+	dbg << "===== node names =====\n";
 	for (const Node& node: avatar.model.nodes) {
 		map[node.name] = node.id;
 		dbg << node.name.hash << "\t\t\t" << strsv().get(node.name) << "\t=\t" << node.id << "\n";
 	}
 
 	for (size_t i = 0; i < 10; i++) dbg << "\n";
-	dbg << "===== node names =====";
+	dbg << "===== node names =====\n";
 
 
 

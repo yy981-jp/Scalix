@@ -1,5 +1,10 @@
 # exec
 file(GLOB_RECURSE SOURCES src/*.cpp ../shared/*.cpp)
+# Windows icon
+if(WIN32)
+    list(APPEND SOURCES ${CMAKE_SOURCE_DIR}/cmake/icon.rc)
+endif()
+
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # bgfx

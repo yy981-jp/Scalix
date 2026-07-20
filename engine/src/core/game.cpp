@@ -2,6 +2,8 @@
 
 #include <gfx/shader.h>
 
+#include <physics/detect.h>
+
 #include <iostream>
 
 Game::Game() {
@@ -150,16 +152,21 @@ void Game::gameInit() {
 
 	update();
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,113),nodeReg.find(0,110)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,117),nodeReg.find(0,114)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,105),nodeReg.find(0,102)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,109),nodeReg.find(0,106)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,120),nodeReg.find(0,118)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,123),nodeReg.find(0,121)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,98),nodeReg.find(0,95)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,101),nodeReg.find(0,99)) )); // back b
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,199),nodeReg.find(0,190)) )); // 
+	// for ( (nodeReg.find(0,176)).child ) {
+
+	// }
+
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,101)) )); // back b
+
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,199)) )); // 
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {

@@ -11,49 +11,6 @@
 #include <core/nodeRegistry.h>
 
 
-inline std::vector<NodeHandle> detectBonePath(NodeHandle begin, NodeHandle end) {
-	std::vector<NodeHandle> path;
-
-	if (!nodeReg.is_alive(begin) || !nodeReg.is_alive(end))
-		return path;
-
-	Avatar* avatar = nodeReg.getAvatar(begin);
-	if (avatar != nodeReg.getAvatar(end))
-		return path;
-
-	const std::vector<Node>& nodes = avatar->model.nodes;
-	const NodeId beginId = nodeReg.getId(begin);
-	NodeId cur = nodeReg.getId(end);
-	std::vector<bool> visited(nodes.size(), false);
-	bool foundBegin = false;
-
-	while (cur != -1) {
-		if (cur < 0 || static_cast<size_t>(cur) >= nodes.size() || visited[cur])
-			return {};
-		visited[cur] = true;
-
-		NodeHandle handle = nodeReg.find(avatar->id, cur);
-		if (!nodeReg.is_alive(handle))
-			return {};
-		path.push_back(handle);
-
-		if (cur == beginId) {
-			foundBegin = true;
-			break;
-		}
-
-		cur = nodes[cur].parent;
-	}
-
-	if (!foundBegin)
-		return {};
-
-	std::reverse(path.begin(), path.end());
-
-	return path;
-}
-
-
 struct SpringBoneNode {
 	vec3f prevPos;
 	vec3f currPos; // 直前の位置
