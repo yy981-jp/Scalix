@@ -17,25 +17,21 @@
 struct Node {
 	StrHs name;
 
-	NodeId parent = -1;
+	NodeHandle parent;
 	NodeId id = -1;
-	std::vector<NodeId> children;
+	std::vector<NodeHandle> children;
 
 	int skinIndex = -1;
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;		 // 複数primitiveに対応するメッシュ数
+
 	bool visible = true;
 
-	// vec3f pos; // local座標 (多分)
-	// Quat rot;  // identity quaternion
-	// vec3f scale = {1.0f, 1.0f, 1.0f};
-
+	// pos: vec3f -- local座標
+	// rot: Quat  -- identity quaternion
+	// scale: vec3f
 	Transform trs;
-
-	bool hasTranslation = false;
-	bool hasRotation = false;
-	bool hasScale = false;
 
 	Node() {
 		trs.scale = {1,1,1};
@@ -85,6 +81,7 @@ struct Model {
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
 	std::vector<Node> nodes;
+	std::vector<NodeHandle> nodeHandles; // NodeId to NodeHandle
 	std::vector<Skin> skins;
 	std::vector<int> materialToImage; // map
 };

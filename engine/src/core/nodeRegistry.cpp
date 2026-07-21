@@ -51,14 +51,14 @@ Node& NodeRegistry::get(NodeHandle h) {
 }
 
 NodeId NodeRegistry::getId(NodeHandle h) {
-	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is no allive");
+	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
 
 	Entry& entry = records[h.id];
 	return entry.node;
 }
 
 Avatar* NodeRegistry::getAvatar(NodeHandle h) {
-	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is no allive");
+	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
 
 	Entry& entry = records[h.id];
 	return entry.avatar;

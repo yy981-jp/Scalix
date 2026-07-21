@@ -1,5 +1,7 @@
 #pragma once
 
+#include <def/node.h>
+
 #include <vector>
 #include <cstdint>
 #include <limits>
@@ -8,17 +10,6 @@ struct Avatar;
 using AvatarId = int;
 struct Node;
 
-
-using NodeId = int32_t; // -1(root)のためにsigned (avatar内一意)
-using NodeEntryId = uint32_t; // NodeRegistry内のentryを指すId
-using NodeGen = uint16_t;
-
-struct NodeHandle {
-	NodeEntryId id;
-	NodeGen gen;
-
-	auto operator<=>(const NodeHandle&) const = default; 
-};
 
 class NodeRegistry {
 	struct Entry {

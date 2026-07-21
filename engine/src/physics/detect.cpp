@@ -2,6 +2,8 @@
 
 #include <core/avatar.h>
 
+#include <unordered_set>
+
 
 std::vector<NodeHandle> detectBonePath(NodeHandle begin, NodeHandle end) {
 	std::vector<NodeHandle> path;
@@ -9,42 +11,29 @@ std::vector<NodeHandle> detectBonePath(NodeHandle begin, NodeHandle end) {
 	if (!nodeReg.is_alive(begin) || !nodeReg.is_alive(end))
 		return path;
 
-	Avatar* avatar = nodeReg.getAvatar(begin);
-	if (avatar != nodeReg.getAvatar(end))
+	if (nodeReg.getAvatar(begin) != nodeReg.getAvatar(end))
 		return path;
 
-	const std::vector<Node>& nodes = avatar->model.nodes;
-	const NodeId beginId = nodeReg.getId(begin);
-	NodeId cur = nodeReg.getId(end);
-	std::vector<bool> visited(nodes.size(), false);
-	bool foundBegin = false;
+	std::unordered_set<NodeHandle> visited;
 
-	while (cur != -1) {
-		if (cur < 0 || static_cast<size_t>(cur) >= nodes.size() || visited[cur])
+	for (NodeHandle cur = end; nodeReg.is_alive(cur); ) {
+		if (!visited.insert(cur).second)
 			return {};
-		visited[cur] = true;
 
-		NodeHandle handle = nodeReg.find(avatar->id, cur);
-		if (!nodeReg.is_alive(handle))
-			return {};
-		path.push_back(handle);
+		path.push_back(cur);
 
-		if (cur == beginId) {
-			foundBegin = true;
+		if (cur == begin)
 			break;
-		}
 
-		cur = nodes[cur].parent;
+		cur = nodeReg.get(cur).parent;
 	}
 
-	if (!foundBegin)
+	if (path.empty() || path.back() != begin)
 		return {};
 
 	std::reverse(path.begin(), path.end());
-
 	return path;
 }
-
 
 std::vector<NodeHandle> detectBonePath(NodeHandle begin) {
 	std::vector<NodeHandle> path;
@@ -65,7 +54,7 @@ std::vector<NodeHandle> detectBonePath(NodeHandle begin) {
 		if (node.children.size() != 1)
 			break;
 
-		cur = nodeReg.find(avatarId, node.children[0]);
+		cur = node.children[0];
 	}
 
 	return path;

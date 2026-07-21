@@ -61,17 +61,14 @@ void AnimSystem::apply(Avatar& avatar) {
 
 				case position: {
 					target.trs.pos = std::get<vec3f>(blendBuffer[blendIdx]);
-					target.hasTranslation = true;
 				} break;
 
 				case rotation: {
 					target.trs.rot = std::get<Quat>(blendBuffer[blendIdx]);
-					target.hasRotation = true;
 				} break;
 
 				case scale: {
 					target.trs.scale = std::get<vec3f>(blendBuffer[blendIdx]);
-					target.hasScale = true;
 				} break;
 
 				case morph: {
