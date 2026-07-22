@@ -157,16 +157,16 @@ void Game::gameInit() {
 
 	// }
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,101)) )); // back b
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,101)) )); // back b
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.find(0,199)) )); // 
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {

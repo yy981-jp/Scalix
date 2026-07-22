@@ -61,9 +61,19 @@ constexpr uint64_t HBTFlag(HBT bone) {
 	return 1u << static_cast<uint64_t>(bone);
 }
 
+/// @brief 構造そのもの
+struct Model {
+	std::vector<Mesh> meshes;
+	std::vector<Texture> textures;
+	std::vector<Node> nodes;
+	std::vector<NodeHandle> nodeHandles; // NodeId to NodeHandle
+	std::vector<Skin> skins;
+	std::vector<int> materialToImage; // map
+};
+
 /// @brief 骨格
 struct Humanoid {
-	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
+	void init(const Model& model);
 
 	// node handle
 	NodeHandle bones[static_cast<size_t>(HBT::Count)];
@@ -75,14 +85,3 @@ struct Humanoid {
 		return boneFlag & HBTFlag(bone);
 	}
 };
-
-/// @brief 構造そのもの
-struct Model {
-	std::vector<Mesh> meshes;
-	std::vector<Texture> textures;
-	std::vector<Node> nodes;
-	std::vector<NodeHandle> nodeHandles; // NodeId to NodeHandle
-	std::vector<Skin> skins;
-	std::vector<int> materialToImage; // map
-};
-

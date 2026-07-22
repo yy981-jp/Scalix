@@ -14,20 +14,10 @@
 void AvatarSystem::loadData(const std::vector<std::string> path) {
 	AvatarId id = 0;
 	for (const auto& file: path) {
-		Avatar avatar(file);
-		avatar.id = id++;
-		avatars.push_back(std::move(avatar));
-		
-		// Get a reference to the newly added avatar
-		Avatar& addedAvatar = avatars.back();
-		
-		// Register all nodes in the registry
-		for (NodeId nodeId = 0; nodeId < (NodeId)addedAvatar.model.nodes.size(); nodeId++) {
-			nodeReg.create(&addedAvatar, nodeId);
-		}
-		
-		// Now initialize humanoid with the registered nodes
-		addedAvatar.humanoid.init(addedAvatar.model.nodes, addedAvatar.model.skins);
+		// NodeRegistry stores the Avatar* passed during Avatar construction.
+		// Construct the Avatar in its final container so that this address does
+		// not become stale after moving a local Avatar into `avatars`.
+		avatars.emplace_back(file, id++);
 	}
 }
 
@@ -43,8 +33,8 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
 	node.trs.rebuildMatrix();
 
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
-	NodeId parent = nodeReg.getId(node.parent);
-	if (parent >= 0) {
+	if (node.parent.isValid()) {
+		NodeId parent = nodeReg.getId(node.parent);
 		calcGlobal(parent, calculated, avatar, entityTransform);
 		avatar.globalTransforms[idx] = avatar.globalTransforms[parent] * node.trs;
 	} else {

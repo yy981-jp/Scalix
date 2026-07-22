@@ -3,6 +3,7 @@
 #include <gfx/texture.h>
 #include <core/avatar.h>
 #include <def/str.h>
+#include <def/node.h>
 #include <tinygltf/tiny_gltf.h>
 #include <utility>
 

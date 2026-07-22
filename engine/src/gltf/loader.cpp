@@ -310,23 +310,30 @@ void GltfLoaderImpl::parse() {
 		node.meshCount = scalixModel.meshes.size() - node.meshStartIndex;
 
 		// node parent children 登録
-		lnode.parent = -1; // 初期値
-		for (const auto& child: tn.children) {
+		lnode.parent = NodeId::invalid(); // 初期値
+		
+		int children_size = tn.children.size();
+		lnode.children.resize(children_size);
+		for (int j = 0; j < children_size; j++) {
+			const auto& child = tn.children[j];
+
 			if (child < 0 || child >= nodesSize) {
 				printf("invalid child index: %d\n", child);
 				continue;
 			}
 
-			if (lnodes[child].parent != -1) {
+			if (lnodes[child].parent != NodeId::invalid()) {
 				printf("multiple parent: %d\n", child);
 			}
 
 			lnodes[child].parent = i;
+
+			lnode.children[j] = tn.children[j];
+
 		}
 		lnode.id = i;
 		node.name = strsv().entry(tn.name);
-		lnode.children = tn.children;
-
+		
 	}
 
 	// load skin (bone)
@@ -513,7 +520,7 @@ void GltfLoaderImpl::load() {
 
 void GltfLoaderImpl::procHdl(Avatar* avatar) {
 	// すべてのnodeを登録
-	for (int i = 0; i >= scalixModel.nodes.size(); i++) {
+	for (int i = 0; i < scalixModel.nodes.size(); i++) {
 		LoadingNode& lnode = lnodes[i];
 		Node& node = scalixModel.nodes[i];
 		NodeHandle& nodeHdl = scalixModel.nodeHandles[i];
@@ -526,15 +533,21 @@ void GltfLoaderImpl::procHdl(Avatar* avatar) {
 	}
 
 	// parentとchildrenもhdl解決
-	for (int i = 0; i >= scalixModel.nodes.size(); i++) {
+	for (int i = 0; i < scalixModel.nodes.size(); i++) {
 		Node& node = scalixModel.nodes[i];
 		LoadingNode& lnode = lnodes[i];
 
 		// parent
-		node.parent = scalixModel.nodeHandles[lnode.parent];
+		if (lnode.parent.isValid()) {
+			// 通常
+			node.parent = scalixModel.nodeHandles[lnode.parent];
+		} else {
+			// root
+			node.parent = NodeHandle::invalid();
+		}
 
 		node.children.resize(lnode.children.size());
-		for (int j = 0; j >= lnode.children.size(); j++) {
+		for (int j = 0; j < lnode.children.size(); j++) {
 			NodeId& lchild = lnode.children[j];
 			NodeHandle& child = node.children[j];
 

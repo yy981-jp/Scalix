@@ -41,15 +41,19 @@ enum class Level: uint8_t {
 	lower,
 };
 
-// 属性をidに付与
 struct NodeInfo {
-	NodeId nodeId = -404;
+	NodeHandle handle = NodeHandle{
+		NodeEntryId(UINT32_MAX),
+		NodeGen(0),
+	};
+
 	BoneType type = BoneType::unknown;
 	Side side = Side::unknown;
 	Level level = Level::unknown;
 
 	int score = 0;
 };
+
 
 static const std::unordered_map<std::string, BoneType> wordMap = {
 	{"head", BoneType::head},
@@ -83,25 +87,31 @@ static const std::unordered_map<std::string, Level> levelMap = {
 
 /// @brief 最適なnodeを選択
 /// @param vec 
-/// @return nodeId
-inline NodeId select(const std::vector<NodeInfo> vec) {
-	if (vec.empty()) return static_cast<NodeId>(-404);
-	return std::ranges::max_element(vec, {}, &NodeInfo::score) ->nodeId;
+/// @return nodeHandle
+inline NodeHandle select(std::span<const NodeInfo> vec) {
+	if (vec.empty())
+		return NodeHandle::invalid();
+
+	return std::ranges::max_element(vec, {}, &NodeInfo::score)->handle;
 }
 
-static inline void selectHelper(std::span<NodeHandle> to, std::span<const std::vector<NodeInfo>> from, HBT target) {
-	NodeId nodeId = select( from[static_cast<size_t>(target)] );
-	to[static_cast<size_t>(target)] = nodeReg.nd_find(nodeId);
+static inline void selectHelper(std::span<NodeHandle> to,
+  std::span<const std::vector<NodeInfo>> from, HBT target) {
+	to[static_cast<size_t>(target)] = select(from[static_cast<size_t>(target)]);
 }
 
-void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skins) {
+void Humanoid::init(const Model& model) {
+	const auto& nodes = model.nodes;
+	const auto& skins = model.skins;
+	NodeHandle sampleHdl = model.nodeHandles[0];
+	
 	std::vector<NodeInfo> cands;
 	// 属性をつける
 	for (const auto& skin: skins) { // skins.size() == 1 であることも多い
 		for (const NodeId& nodeId: skin.joints) {
 			const std::vector<std::string> words = tokenizer(strsv().get( nodes[nodeId].name ));
 			NodeInfo cand;
-			cand.nodeId = nodeId;
+			cand.handle = nodeReg.find(sampleHdl,nodeId);
 			for (auto& w : words) {
 				if (auto it = wordMap.find(w); it != wordMap.end())
 					cand.type = it->second;
@@ -162,13 +172,13 @@ void Humanoid::init(const std::vector<Node> nodes, const std::vector<Skin>& skin
 	}
 	
 	// 最適解を選択
-	for (const auto& spine: spines_) this->spines.push_back(nodeReg.nd_find(spine.nodeId)); // spineはすべて使用
+	for (const auto& spine: spines_) this->spines.push_back(spine.handle); // spineはすべて使用
 
 	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
 		
 		// TODO: fix: boneFlagに反映
-		if (bones[i].id != UINT32_MAX) {
+		if (bones[i].isValid()) {
 			boneFlag |= HBTFlag(static_cast<HBT>(i));
 		}
 	}

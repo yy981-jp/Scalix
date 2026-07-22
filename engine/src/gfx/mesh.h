@@ -35,11 +35,11 @@ struct Mesh {
 		boneRemap = {
 			0, // Hip -> 0
 			1, // Spine -> 1
-			-1,// Chest 未使用
-			-1,// Neck 未使用
-			-1,// Head 未使用
+			Node::invalid(),// Chest 未使用
+			Node::invalid(),// Neck 未使用
+			Node::invalid(),// Head 未使用
 			2, // Arm_L -> 2
-			-1 // Arm_R 未使用
+			Node::invalid() // Arm_R 未使用
 		};
 	*/
 	std::vector<int> boneRemap;

@@ -47,8 +47,7 @@ void AnimSystem::apply(Avatar& avatar) {
 
 		for (const auto& track : anim.fmt.tracks) {
 			// track単位
-			if (track.target == -404) continue;
-			if (track.target == -1) continue; // TODO: これどうすんねん 全体動かすとか...
+			if (!track.target.isValid()) continue; // TODO: これどうすんねん 全体動かすとか...
 
 			Node& target = avatar.model.nodes[track.target];
 
@@ -105,8 +104,8 @@ void AnimSystem::blend(float dt) {
 		int trackNumber = 0;
 
 		for (const auto& track : anim.fmt.tracks) {
-			if (track.target == -404) continue;
-			if (track.target == -1) continue; // TODO: これどうすんねん 全体動かすとか...
+			// if (track.target == -404) continue;
+			if (!track.target.isValid()) continue; // TODO: これどうすんねん 全体動かすとか...
 
 			auto& crtKeyIdx = anim_p.crtKeyIdxs[trackNumber];
 

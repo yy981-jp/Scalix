@@ -116,13 +116,14 @@ void Avatar::draw(Camera& cam) {
 	cam.update(camPos, camPos + lookDir);
 }
 
-Avatar::Avatar(const std::string& glTFPath) {
+Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
 	GltfLoaderImpl loader(glTFPath);
 	loader.load();
 	loader.procHdl(this);
 	model = loader.get();
 
 
+	humanoid.init(model);
 	anim.init("test.sxa",*this);
 
 	// anim.run("Sweater_OFF"_hs);

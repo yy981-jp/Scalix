@@ -9,7 +9,6 @@
 
 using AvatarId = int;
 
-
 /// @brief 状態を含む1つのアバター
 struct Avatar {
 	Model model;
@@ -38,7 +37,7 @@ struct Avatar {
 	void update(GameContext& keyStat, float dt);
 	void draw(Camera& cam);
 	
-	Avatar(const std::string& glTFPath);
+	Avatar(const std::string& glTFPath, AvatarId id);
 	~Avatar();
 
 	Avatar(const Avatar&) = delete;

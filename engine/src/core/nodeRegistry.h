@@ -18,13 +18,16 @@ class NodeRegistry {
 
 		Avatar* avatar = nullptr;
 		AvatarId avatarId;
-		NodeId node = INT32_MAX;
+		NodeId node = UINT32_MAX;
 	};
 	uint32_t aliveCount = 0;
 	std::vector<Entry> records;
 
 	uint32_t freeHead = UINT32_MAX; // フリーリストの先頭
 	static constexpr uint32_t INVALID = std::numeric_limits<uint32_t>::max();
+
+
+	NodeHandle find(Entry entry, NodeId nodeId) const;
 
 public:
 	NodeHandle create(Avatar* avatar, NodeId id);
@@ -37,8 +40,11 @@ public:
 	Avatar* getAvatar(NodeHandle h);
 	
 	const Entry& getEntry(NodeHandle h) const;
-	NodeHandle nd_find(NodeId id) const;
-	NodeHandle find(AvatarId avatarId, NodeId nodeId) const;
+	NodeHandle find(NodeHandle avaRefHandle, NodeId nodeId) const;
+
+	// ほぼデバッグ用
+	// 計算コスト的に過度な呼び出しは注意
+	NodeHandle findFromAvaId(AvatarId avatarId, NodeId nodeId) const;
 
 };
 

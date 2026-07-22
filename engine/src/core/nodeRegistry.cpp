@@ -9,13 +9,19 @@ NodeHandle NodeRegistry::create(Avatar* avatar, NodeId nodeid) {
 		// フリースロットを再利用
 		id = freeHead;
 		freeHead = records[id].nextFree;
-		records[id].avatarId = avatar->id;
 		records[id].avatar = avatar;
+		records[id].avatarId = avatar->id;
 		records[id].node = nodeid;
 	} else {
 		// 新規スロット追加
 		id = (NodeEntryId)records.size();
-		records.push_back({ INVALID, 0, avatar, avatar->id, nodeid });
+		records.push_back({
+			.nextFree = INVALID,
+			.gen = 0,
+			.avatar = avatar,
+			.avatarId = avatar->id,
+			.node = nodeid
+		});
 	}
 
 	return {id,records[id].gen};
@@ -26,7 +32,8 @@ void NodeRegistry::destroy(NodeHandle h) {
 
 	++records[h.id].gen;
 	records[h.id].avatar = nullptr;
-	records[h.id].node = INT32_MAX;
+	records[h.id].avatarId = -1;
+	records[h.id].node = NodeId::invalid();
 
 	// フリースロット linked list に追加
 	records[h.id].nextFree = freeHead;
@@ -69,19 +76,16 @@ const NodeRegistry::Entry& NodeRegistry::getEntry(NodeHandle h) const {
 	return records[h.id];
 }
 
-
-NodeHandle NodeRegistry::nd_find(NodeId id) const {
-	for (uint32_t i = 0; i < records.size(); ++i) {
-		NodeHandle h{i, records[i].gen};
-
-		if (!is_alive(h)) continue;
-
-		if (h.id == id) return h;
-	}
-	return {};
+NodeHandle NodeRegistry::find(NodeRegistry::Entry entry, NodeId nodeId) const {
+	return entry.avatar->model.nodeHandles[nodeId];
 }
 
-NodeHandle NodeRegistry::find(AvatarId avatarId, NodeId nodeId) const {
+NodeHandle NodeRegistry::find(NodeHandle avaRefHandle, NodeId nodeId) const {
+	return find(getEntry(avaRefHandle), nodeId);
+}
+
+
+NodeHandle NodeRegistry::findFromAvaId(AvatarId avatarId, NodeId nodeId) const {
 	for (uint32_t i = 0; i < records.size(); ++i) {
 		NodeHandle h{i, records[i].gen};
 
