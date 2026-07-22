@@ -1,21 +1,15 @@
 #pragma once
 
+#include <def/node.h>
+
 #include <vector>
 #include <cstdint>
 #include <limits>
 
 struct Avatar;
+using AvatarId = int;
 struct Node;
 
-
-using NodeId = int32_t; // -1(root)のためにsigned (avatar内一意)
-using NodeEntryId = uint32_t; // NodeRegistry内のentryを指すId
-using NodeGen = uint16_t;
-
-struct NodeHandle {
-	NodeEntryId id;
-	NodeGen gen;
-};
 
 class NodeRegistry {
 	struct Entry {
@@ -23,13 +17,17 @@ class NodeRegistry {
 		NodeGen gen = 0; // 世代
 
 		Avatar* avatar = nullptr;
-		NodeId node = INT32_MAX;
+		AvatarId avatarId;
+		NodeId node = UINT32_MAX;
 	};
 	uint32_t aliveCount = 0;
 	std::vector<Entry> records;
 
 	uint32_t freeHead = UINT32_MAX; // フリーリストの先頭
 	static constexpr uint32_t INVALID = std::numeric_limits<uint32_t>::max();
+
+
+	NodeHandle find(Entry entry, NodeId nodeId) const;
 
 public:
 	NodeHandle create(Avatar* avatar, NodeId id);
@@ -39,17 +37,15 @@ public:
 
 	Node& get(NodeHandle h);
 	NodeId getId(NodeHandle h);
+	Avatar* getAvatar(NodeHandle h);
+	
+	const Entry& getEntry(NodeHandle h) const;
+	NodeHandle find(NodeHandle avaRefHandle, NodeId nodeId) const;
 
-	NodeHandle nd_find(NodeId id) const {
-		for (uint32_t i = 0; i < records.size(); ++i) {
-			NodeHandle h{i, records[i].gen};
+	// ほぼデバッグ用
+	// 計算コスト的に過度な呼び出しは注意
+	NodeHandle findFromAvaId(AvatarId avatarId, NodeId nodeId) const;
 
-			if (!is_alive(h)) continue;
-
-			if (h.id == id) return h;
-		}
-		return {};
-	}
 };
 
 extern NodeRegistry nodeReg;

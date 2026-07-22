@@ -7,8 +7,7 @@
 #include <def/transform.h>
 
 
-using AvatarID = int;
-
+using AvatarId = int;
 
 /// @brief 状態を含む1つのアバター
 struct Avatar {
@@ -33,10 +32,17 @@ struct Avatar {
 	Status status = Status::stay;
 	float speed = 7;
 
-	AvatarID id;
+	AvatarId id;
 
 	void update(GameContext& keyStat, float dt);
 	void draw(Camera& cam);
 	
-	Avatar(const std::string& glTFPath);
+	Avatar(const std::string& glTFPath, AvatarId id);
+	~Avatar();
+
+	Avatar(const Avatar&) = delete;
+	Avatar& operator=(const Avatar&) = delete;
+
+	Avatar(Avatar&&) noexcept = default;
+	Avatar& operator=(Avatar&&) noexcept = default;
 };

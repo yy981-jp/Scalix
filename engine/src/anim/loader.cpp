@@ -26,14 +26,14 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 	std::unordered_map<StrHs,NodeId> map;
 	map.reserve(avatar.model.nodes.size());
 	std::ofstream dbg("test.txt");
-	dbg << "===== node names =====";
+	dbg << "===== node names =====\n";
 	for (const Node& node: avatar.model.nodes) {
 		map[node.name] = node.id;
 		dbg << node.name.hash << "\t\t\t" << strsv().get(node.name) << "\t=\t" << node.id << "\n";
 	}
 
 	for (size_t i = 0; i < 10; i++) dbg << "\n";
-	dbg << "===== node names =====";
+	dbg << "===== node names =====\n";
 
 
 
@@ -89,9 +89,9 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 				// dbg << "D: found: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
 			} else {
 				if (track_i.target.empty()) {
-					track_r.target = -1; // アバター全体
+					track_r.target = NodeId::invalid(); // アバター全体
 				} else {
-					track_r.target = -404; // エラー
+					track_r.target = NodeId::invalid(); // エラー
 				}
 				// dbg << "D: notfound: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
 				// TODO: track_i.tarket.empty の場合の処理を考える必要があるかもしれない

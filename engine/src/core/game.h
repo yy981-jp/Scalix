@@ -48,7 +48,6 @@ class Game {
 	AvatarSystem avatarSystem;
 
 	SpringBoneSystem springBoneSystem;
-	NodeRegistry nodeReg;
 
 	LogoRenderer* logo;
 

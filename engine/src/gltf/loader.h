@@ -3,8 +3,16 @@
 #include <gfx/texture.h>
 #include <core/avatar.h>
 #include <def/str.h>
+#include <def/node.h>
 #include <tinygltf/tiny_gltf.h>
 #include <utility>
+
+
+struct LoadingNode {
+	NodeId id;
+	NodeId parent;
+	std::vector<NodeId> children;
+};
 
 
 struct AccessorView {
@@ -21,18 +29,20 @@ class GltfLoaderImpl {
 
 	Model scalixModel;
 
+	std::vector<LoadingNode> lnodes;
+
 	void parse();
 	void parseMesh(NodeId nodeId);
 	void buildPalletCompress();
 
+	bool handleSolved = false;
+
 public:
 	GltfLoaderImpl(const std::string& path);
 	void load();
-	inline Model get() { return std::move(scalixModel); }
+	void procHdl(Avatar* avatar);
+	inline Model get() {
+		if (!handleSolved) throw std::runtime_error("Do not get data before solving handle");
+		return std::move(scalixModel);
+	}
 };
-
-inline Model loadGltf(const std::string& path) {
-	GltfLoaderImpl loader(path);
-	loader.load();
-	return loader.get();
-}

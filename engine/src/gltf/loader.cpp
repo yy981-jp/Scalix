@@ -266,16 +266,18 @@ void GltfLoaderImpl::parseMesh(NodeId nodeId) {
 void GltfLoaderImpl::parse() {
 	int nodesSize = model.nodes.size();
 	scalixModel.nodes.resize(nodesSize);
+	scalixModel.nodeHandles.resize(nodesSize);
+	lnodes.resize(nodesSize);
 	for (int i = 0; i < nodesSize; i++) {
 		// ===== NODE =====
 		const auto& tn = model.nodes[i];
 		Node& node = scalixModel.nodes[i];
+		LoadingNode& lnode = lnodes[i];
 		node.skinIndex = tn.skin;
 		node.meshStartIndex = scalixModel.meshes.size();  // 現在のメッシュ数を開始インデックスとして記録
 
 		// translation
 		if (!tn.translation.empty()) {
-			node.hasTranslation = true;
 			node.trs.pos.x = (float)tn.translation[0];
 			node.trs.pos.y = (float)tn.translation[1];
 			node.trs.pos.z = (float)tn.translation[2];
@@ -283,7 +285,6 @@ void GltfLoaderImpl::parse() {
 
 		// rotation
 		if (!tn.rotation.empty()) {
-			node.hasRotation = true;
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
 			node.trs.rot = {
 				-(float)tn.rotation[0],
@@ -295,7 +296,6 @@ void GltfLoaderImpl::parse() {
 
 		// scale
 		if (!tn.scale.empty()) {
-			node.hasScale = true;
 			node.trs.scale = {
 				(float)tn.scale[0],
 				(float)tn.scale[1],
@@ -310,23 +310,30 @@ void GltfLoaderImpl::parse() {
 		node.meshCount = scalixModel.meshes.size() - node.meshStartIndex;
 
 		// node parent children 登録
-		node.parent = -1; // 初期値
-		for (const auto& child: tn.children) {
+		lnode.parent = NodeId::invalid(); // 初期値
+		
+		int children_size = tn.children.size();
+		lnode.children.resize(children_size);
+		for (int j = 0; j < children_size; j++) {
+			const auto& child = tn.children[j];
+
 			if (child < 0 || child >= nodesSize) {
 				printf("invalid child index: %d\n", child);
 				continue;
 			}
 
-			if (scalixModel.nodes[child].parent != -1) {
+			if (lnodes[child].parent != NodeId::invalid()) {
 				printf("multiple parent: %d\n", child);
 			}
 
-			scalixModel.nodes[child].parent = i;
-		}
-		node.id = i;
-		node.name = strsv().entry(tn.name);
-		node.children = tn.children;
+			lnodes[child].parent = i;
 
+			lnode.children[j] = tn.children[j];
+
+		}
+		lnode.id = i;
+		node.name = strsv().entry(tn.name);
+		
 	}
 
 	// load skin (bone)
@@ -509,4 +516,46 @@ void GltfLoaderImpl::load() {
 	for (auto& mesh : scalixModel.meshes) {
 		mesh.create(mesh.verts, mesh.indices);
 	}
+}
+
+void GltfLoaderImpl::procHdl(Avatar* avatar) {
+	// すべてのnodeを登録
+	for (int i = 0; i < scalixModel.nodes.size(); i++) {
+		LoadingNode& lnode = lnodes[i];
+		Node& node = scalixModel.nodes[i];
+		NodeHandle& nodeHdl = scalixModel.nodeHandles[i];
+		
+		// ハンドル取得
+		const NodeHandle& handle = nodeReg.create(avatar,lnode.id);
+
+		nodeHdl = handle;
+		node.id = lnode.id;
+	}
+
+	// parentとchildrenもhdl解決
+	for (int i = 0; i < scalixModel.nodes.size(); i++) {
+		Node& node = scalixModel.nodes[i];
+		LoadingNode& lnode = lnodes[i];
+
+		// parent
+		if (lnode.parent.isValid()) {
+			// 通常
+			node.parent = scalixModel.nodeHandles[lnode.parent];
+		} else {
+			// root
+			node.parent = NodeHandle::invalid();
+		}
+
+		node.children.resize(lnode.children.size());
+		for (int j = 0; j < lnode.children.size(); j++) {
+			NodeId& lchild = lnode.children[j];
+			NodeHandle& child = node.children[j];
+
+			// child
+			child = scalixModel.nodeHandles[lchild];
+		}
+
+	}
+
+	handleSolved = true;
 }

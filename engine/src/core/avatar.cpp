@@ -76,7 +76,6 @@ void Avatar::update(GameContext& ctx, float dt) {
 	if (humanoid.has(HBT::neck)) {
 		NodeHandle neckHandle = humanoid.bones[(size_t)HBT::neck];
 		auto& neckNode = nodeReg.get(neckHandle);
-		neckNode.hasRotation = true;
 
 		float qPitch[4];
 		neckNode.trs.rot.setAxisAngle({1,0,0}, head.pitch);
@@ -86,7 +85,6 @@ void Avatar::update(GameContext& ctx, float dt) {
 		// --- head (yaw) ---
 		NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
 		auto& headNode = nodeReg.get(headHandle);
-		headNode.hasRotation = true;
 
 		headNode.trs.rot.setAxisAngle({0,1,0}, head.yaw);
 
@@ -118,9 +116,21 @@ void Avatar::draw(Camera& cam) {
 	cam.update(camPos, camPos + lookDir);
 }
 
-Avatar::Avatar(const std::string& glTFPath) {
-	model = loadGltf(glTFPath);
+Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
+	GltfLoaderImpl loader(glTFPath);
+	loader.load();
+	loader.procHdl(this);
+	model = loader.get();
+
+
+	humanoid.init(model);
 	anim.init("test.sxa",*this);
 
 	// anim.run("Sweater_OFF"_hs);
+}
+
+Avatar::~Avatar() {
+	for (const NodeHandle& hdl: model.nodeHandles) {
+		nodeReg.destroy(hdl);
+	}
 }

@@ -9,7 +9,7 @@
 #include <nlohmann/json.hpp>
 
 #include <engine/src/def/str.h>
-#include <engine/src/core/nodeRegistry.h>
+#include <engine/src/def/node.h>
 
 using json = nlohmann::json;
 

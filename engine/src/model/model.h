@@ -17,25 +17,21 @@
 struct Node {
 	StrHs name;
 
-	NodeId parent = -1;
+	NodeHandle parent;
 	NodeId id = -1;
-	std::vector<NodeId> children;
+	std::vector<NodeHandle> children;
 
 	int skinIndex = -1;
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;		 // 複数primitiveに対応するメッシュ数
+
 	bool visible = true;
 
-	// vec3f pos; // local座標 (多分)
-	// Quat rot;  // identity quaternion
-	// vec3f scale = {1.0f, 1.0f, 1.0f};
-
+	// pos: vec3f -- local座標
+	// rot: Quat  -- identity quaternion
+	// scale: vec3f
 	Transform trs;
-
-	bool hasTranslation = false;
-	bool hasRotation = false;
-	bool hasScale = false;
 
 	Node() {
 		trs.scale = {1,1,1};
@@ -65,9 +61,19 @@ constexpr uint64_t HBTFlag(HBT bone) {
 	return 1u << static_cast<uint64_t>(bone);
 }
 
+/// @brief 構造そのもの
+struct Model {
+	std::vector<Mesh> meshes;
+	std::vector<Texture> textures;
+	std::vector<Node> nodes;
+	std::vector<NodeHandle> nodeHandles; // NodeId to NodeHandle
+	std::vector<Skin> skins;
+	std::vector<int> materialToImage; // map
+};
+
 /// @brief 骨格
 struct Humanoid {
-	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
+	void init(const Model& model);
 
 	// node handle
 	NodeHandle bones[static_cast<size_t>(HBT::Count)];
@@ -79,13 +85,3 @@ struct Humanoid {
 		return boneFlag & HBTFlag(bone);
 	}
 };
-
-/// @brief 構造そのもの
-struct Model {
-	std::vector<Mesh> meshes;
-	std::vector<Texture> textures;
-	std::vector<Node> nodes;
-	std::vector<Skin> skins;
-	std::vector<int> materialToImage; // map
-};
-

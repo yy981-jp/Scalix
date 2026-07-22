@@ -2,6 +2,8 @@
 
 #include <gfx/shader.h>
 
+#include <physics/detect.h>
+
 #include <iostream>
 
 Game::Game() {
@@ -148,11 +150,23 @@ void Game::gameInit() {
 	delete logo;
 
 
-	springBoneSystem.add(SpringBoneChain({{176,0},{113,0},{112,0},{111,0}/*,110*/})); // back d l
-	springBoneSystem.add(SpringBoneChain({{176,0},{105,0},{104,0},{103,0}/*,102*/})); // back c l
-	springBoneSystem.add(SpringBoneChain({{176,0},{120,0},{119,0},{118,0}})); // back e l
+	update();
 
-	springBoneSystem.add(SpringBoneChain({{199,0},{198,0},{197,0},{196,0},{195,0},{194,0},{193,0},{192,0},{191,0},{190,0}})); // back e l
+
+	// for ( (nodeReg.find(0,176)).child ) {
+
+	// }
+
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,101)) )); // back b
+
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
 }
 
 void Game::onKeyDown(const SDL_KeyboardEvent& e) {
