@@ -1,5 +1,11 @@
 # exec
 file(GLOB_RECURSE SOURCES src/*.cpp ../shared/*.cpp)
+list(APPEND SOURCES
+	${CMAKE_SOURCE_DIR}/external/dear-imgui/imgui.cpp
+	${CMAKE_SOURCE_DIR}/external/dear-imgui/imgui_draw.cpp
+	${CMAKE_SOURCE_DIR}/external/dear-imgui/imgui_tables.cpp
+	${CMAKE_SOURCE_DIR}/external/dear-imgui/imgui_widgets.cpp
+)
 # Windows icon
 if(WIN32)
     list(APPEND SOURCES ${CMAKE_SOURCE_DIR}/cmake/icon.rc)

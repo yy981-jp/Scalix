@@ -3,6 +3,7 @@
 #include <gfx/shader.h>
 
 #include <physics/detect.h>
+#include <ui/imgui.h>
 
 #include <iostream>
 
@@ -44,7 +45,7 @@ Game::Game() {
 	bgfx::setPlatformData(pd);
 
 	bgfx::Init init{};
-	init.type = bgfx::RendererType::Direct3D11;
+	init.type = bgfx::RendererType::Count;
 
 	init.platformData.nwh = pd.nwh;
 
@@ -54,6 +55,7 @@ Game::Game() {
 
 	
 	if (!bgfx::init(init)) throw std::runtime_error("bgfx init failed");
+	if (!ui.init(window)) throw std::runtime_error("ImGui bgfx init failed");
 	
 	bgfx::setDebug(BGFX_DEBUG_STATS | BGFX_DEBUG_TEXT);
 
@@ -73,6 +75,7 @@ Game::~Game() {
 void Game::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
+		ui.processEvent(event);
 		switch(event.type) {
 			case SDL_QUIT: running = false; break;
 			case SDL_KEYDOWN: onKeyDown(event.key); break;
@@ -84,9 +87,16 @@ void Game::tick() {
 		}
 	}
 
-	update();
+	const float dt = elap.get();
+	update(dt);
 	
 	draw();
+	ui.beginFrame(dt);
+	ImGui::Begin("Scalix");
+	ImGui::Text("bgfx + Dear ImGui is ready");
+	ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+	ImGui::End();
+	ui.endFrame();
 	
 	// TODO: 何故動かない...?
 	bgfx::dbgTextClear();
@@ -97,9 +107,8 @@ void Game::tick() {
 }
 
 
-void Game::update() {
+void Game::update(float dt) {
 	if (has(keyStat,KCode::Esc)) running = false;
-	float dt = elap.get();
 
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
@@ -150,7 +159,7 @@ void Game::gameInit() {
 	delete logo;
 
 
-	update();
+	update(elap.get());
 
 
 	// for ( (nodeReg.find(0,176)).child ) {

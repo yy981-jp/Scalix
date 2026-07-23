@@ -19,3 +19,12 @@
 [submodule "external/nlohmann"]
 	path = external/nlohmann
 	url = git@github.com:nlohmann/json.git
+[submodule "external/dear-imgui"]
+	path = external/dear-imgui
+	url = git@github.com:ocornut/imgui.git
+[submodule "external/stb"]
+	path = external/stb
+	url = git@github.com:nothings/stb.git
+[submodule "external/tinystl"]
+	path = external/tinystl
+	url = git@github.com:mendsley/tinystl.git

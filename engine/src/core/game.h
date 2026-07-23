@@ -15,6 +15,7 @@
 #include <core/grid.h>
 #include <util/time.h>
 #include <ui/logo.h>
+#include <ui/imgui.h>
 
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
@@ -50,6 +51,7 @@ class Game {
 	SpringBoneSystem springBoneSystem;
 
 	LogoRenderer* logo;
+	ImGuiBgfx ui;
 
 	Camera cam0;
 	CameraType camId;
@@ -72,7 +74,7 @@ class Game {
 	void onWindowEve(const SDL_WindowEvent& e);
 	void onMouseMt(const SDL_MouseMotionEvent& e);
 
-	void update();
+	void update(float dt);
 	void draw();
 
 public:
