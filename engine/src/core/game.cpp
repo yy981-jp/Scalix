@@ -3,7 +3,6 @@
 #include <gfx/shader.h>
 
 #include <physics/detect.h>
-#include <ui/imgui.h>
 
 #include <iostream>
 
@@ -55,7 +54,6 @@ Game::Game() {
 
 	
 	if (!bgfx::init(init)) throw std::runtime_error("bgfx init failed");
-	if (!ui.init(window)) throw std::runtime_error("ImGui bgfx init failed");
 	
 	bgfx::setDebug(BGFX_DEBUG_STATS | BGFX_DEBUG_TEXT);
 
@@ -75,7 +73,6 @@ Game::~Game() {
 void Game::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		ui.processEvent(event);
 		switch(event.type) {
 			case SDL_QUIT: running = false; break;
 			case SDL_KEYDOWN: onKeyDown(event.key); break;
@@ -91,14 +88,7 @@ void Game::tick() {
 	update(dt);
 	
 	draw();
-	ui.beginFrame(dt);
-	ImGui::Begin("Scalix");
-	ImGui::Text("bgfx + Dear ImGui is ready");
-	ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
-	ImGui::End();
-	ui.endFrame();
-	
-	// TODO: 何故動かない...?
+
 	bgfx::dbgTextClear();
 	bgfx::dbgTextPrintf(10, 25, 0x4f, "y9test: debug hello");
 
