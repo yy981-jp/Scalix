@@ -6,6 +6,10 @@ add_compile_options(-fdiagnostics-color=always)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
+include_directories(
+	${CMAKE_SOURCE_DIR}
+)
+
 # Scalix
 add_subdirectory(engine)
 add_subdirectory(importer)

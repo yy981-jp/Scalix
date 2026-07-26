@@ -1,10 +1,9 @@
-#include <stdexcept>
+#include <gltf/loader.h>
 
 #include <tinygltf/tiny_gltf.h>
 #include <bx/math.h>
 
-#include <gltf/loader.h>
-
+#include <stdexcept>
 #include <set>
 #include <cassert>
 #include <iostream>
