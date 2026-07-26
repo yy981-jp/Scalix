@@ -1,0 +1,1 @@
+pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task

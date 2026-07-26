@@ -7,3 +7,6 @@ install/
 *.exe
 *.zip
 *.bin
+
+.venv/
+models/
