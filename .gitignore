@@ -12,5 +12,5 @@ install/
 models/
 
 # protoc 自動生成
-/engine/src/proto/
-/tracker/proto/
+/engine/generated/proto/
+/tracker/generated/proto/

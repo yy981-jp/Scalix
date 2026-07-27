@@ -7,4 +7,4 @@ if "%1" == "" (
 
 set name=%1
 
-call protoc --cpp_out=../engine/src/ --python_out=../tracker/ --pyi_out=../tracker/ ./proto/%name%.proto
+call protoc --cpp_out=../engine/generated/ --python_out=../tracker/generated/ --pyi_out=../tracker/generated/ ./proto/%name%.proto

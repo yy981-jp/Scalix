@@ -1,3 +1,4 @@
+/*
 #define SDL_MAIN_HANDLED
 
 #include <core/game.h>
@@ -15,5 +16,4 @@ int main() {
 }
 
 
-
-// #include <test/sd.h>
+*/

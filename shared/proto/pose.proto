@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package SCTR.landmark.pose;
+package sxtr.landmark.pose;
 
 message Landmark {
 	float x = 1;

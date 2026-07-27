@@ -76,13 +76,18 @@ tinygltf(glTF)やOpenXR(VR)など
 
 // ===== カメラトラッキング =====
 pyで独立したプロセスとして動かす
-scalix-tracker: sctr
-protobufを利用
+scalix-tracker: sxtr
+protobufを利用 udp
 
 // ===== その他 =====
 avatarに対する操作をavatarデータ側ではなくsystem側で腕を動かせたりするような機能を充実させる
 worldのデータについては課題が残るが、機能についての実装も検討する必要がある ただ、現段階では現実的ではない
 worldはsystem内部では分割しつつも、連続した世界を作りたい そっちの方が現実味あるじゃん?
+
+port(プロジェクト固有番号) = 518**
+						(9+8+1=18, 5は利用可能なポート領域に合わせて適当につけた)
+
+port(sctr) = 51801
 
 
 
