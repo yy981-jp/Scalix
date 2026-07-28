@@ -89,6 +89,8 @@ port(プロジェクト固有番号) = 518**
 
 port(sctr) = 51801
 
+AvatarIdはserver分離する場合にserverが基本連番(+世代を入れるか)でserver側管理
+
 
 
 

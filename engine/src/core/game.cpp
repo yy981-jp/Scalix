@@ -105,6 +105,11 @@ void Game::update(float dt) {
 	avatarSystem.update(gctx,dt);
 	springBoneSystem.update(dt);
 
+	PoseFrame frame;
+	if (receiver.tick(frame)) {
+		poseSolver->solve(frame);
+	}
+
 	mStat.relPos = {0, 0};
 }
 
@@ -149,12 +154,14 @@ void Game::gameInit() {
 	delete logo;
 
 
-	update(elap.get());
+	avatarSystem.update(gctx,elap.get());
 
 
 	// for ( (nodeReg.find(0,176)).child ) {
 
 	// }
+
+	poseSolver = new PoseSolver{avatarSystem.player()};
 
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r

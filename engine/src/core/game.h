@@ -19,6 +19,8 @@
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
 #include <physics/springBone.h>
+#include <tracker/recv.h>
+#include <tracker/poseSolver.h>
 
 
 enum class ShaderId {
@@ -55,6 +57,9 @@ class Game {
 	CameraType camId;
 
 	Grid grid;
+
+	Recv receiver;
+	PoseSolver* poseSolver;
 
 	static constexpr int
 		T_WIDTH = 1200,
