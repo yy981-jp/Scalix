@@ -1,8 +1,10 @@
 import socket
 import time
+import sys
+
 
 PORT = 51801
-OUTPUT = "pose.bin"
+OUTPUT = "./records/" + sys.argv[1] + ".bin"
 
 print("Waiting 10 seconds...")
 time.sleep(10)

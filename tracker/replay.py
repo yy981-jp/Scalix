@@ -1,8 +1,9 @@
 import socket
 import time
+import sys
 from generated.proto import pose_pb2
 
-INPUT = "pose.bin"
+INPUT = "./records/" + sys.argv[1] + ".bin"
 HOST = "127.0.0.1"
 PORT = 51801
 
