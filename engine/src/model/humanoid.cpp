@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <ranges>
 
+#include <y9inc/string.h>
+
 
 template <typename... Targets>
 bool has(const std::vector<std::string>& w, const Targets&... targets_arg) {
@@ -121,7 +123,7 @@ void Humanoid::init(const Model& model) {
 					cand.level = it->second;
 
 				// blacklist
-				if (w == "support" || w == "ik")
+				if (is_or(w,"support","ik","twist","roll"))
 					cand.score -= 100;
 			}
 			cands.push_back(cand);
@@ -141,7 +143,7 @@ void Humanoid::init(const Model& model) {
 
 			case BoneType::neck: {
 				bones_init[static_cast<size_t>(HBT::neck)].push_back(node);
-			}
+			} break;
 
 			case BoneType::arm: {
 				if (node.side == Side::left) {

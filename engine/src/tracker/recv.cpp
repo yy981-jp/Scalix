@@ -34,9 +34,7 @@ bool Recv::tick(PoseFrame& out) {
 
 	for (size_t i = 0; i < landmarkCount; ++i) {
 		const auto& landmark = frame.landmarks(static_cast<int>(i));
-		// MediaPipeの画像座標系はY軸が下向き（上端0, 下端1）だが、
-		// このエンジンはY軸が上向きのため、Yを反転して変換する。
-		// これをしないと脚などの「下向き」方向が「上向き」に反転してしまう。
+		// mediapipe -> scalix 座標系 変換
 		out.landmarks[i] = {
 			.pos = {-landmark.x(), -landmark.y(), landmark.z()},
 			.visibility = landmark.visibility(),
