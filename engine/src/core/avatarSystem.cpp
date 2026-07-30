@@ -181,5 +181,5 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 }
 
 Avatar& AvatarSystem::player() {
-	return avatars[playableAvatar];
+	return avatars[playableAvatar]; // TODO: 仮
 }
