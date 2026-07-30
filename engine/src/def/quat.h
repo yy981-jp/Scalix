@@ -33,5 +33,5 @@ struct Quat {
 
 	static Quat lerp(const Quat& a, const Quat& b, float t);
 	
-	void setAxisAngle(const vec3f& axis, float angle);
+	void setAxisAngle(const vec3f& axis, float rad);
 };

@@ -92,8 +92,8 @@ Quat Quat::lerp(const Quat& a, const Quat& b, float t) {
 	return bx::lerp(a,b,t);
 }
 
-void Quat::setAxisAngle(const vec3f& axis, float angle) {
-	float half = angle * 0.5f;
+void Quat::setAxisAngle(const vec3f& axis, float rad) {
+	float half = rad * 0.5f;
 	float s = lutsv.getSin(half);
 
 	x = axis.x * s;
