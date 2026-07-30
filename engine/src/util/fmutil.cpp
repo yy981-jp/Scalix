@@ -27,6 +27,14 @@ std::vector<std::string> tokenizer(const std::string_view& input) {
 			push();
 		}
 
+		// 数字と文字の境界で区切る（例: "support1" -> "support", "1"）
+		if (!current.empty() && std::isdigit(c) != 0 && std::isdigit(current.back()) == 0) {
+			push();
+		}
+		if (!current.empty() && std::isdigit(c) == 0 && std::isdigit(current.back()) != 0) {
+			push();
+		}
+
 		current += std::tolower(c);
 	}
 

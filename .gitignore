@@ -10,6 +10,7 @@ install/
 
 .venv/
 models/
+__pycache__/
 
 # protoc 自動生成
 /engine/generated/proto/

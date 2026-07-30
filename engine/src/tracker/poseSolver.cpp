@@ -4,6 +4,8 @@
 
 #include <core/nodeRegistry.h>
 #include <util/quatutil.h>
+#include <util/fmutil.h>
+#include <def/str.h>
 
 
 namespace {
@@ -46,9 +48,27 @@ vec3f directionInParentSpace(const Avatar& avatar, NodeHandle node, const vec3f&
 	return vec3f{bx::mulXyz0(direction, inverse)};
 }
 
+bool containsSupport(std::string_view name) {
+	for (const auto& w : tokenizer(name)) {
+		if (w == "support") return true;
+	}
+	return false;
+}
+
 NodeHandle firstChild(NodeHandle node) {
 	const Node& source = nodeReg.get(node);
-	return source.children.empty() ? NodeHandle::invalid() : source.children.front();
+	if (source.children.empty()) return NodeHandle::invalid();
+
+	// "support"を含む名前の子（衣装/腕などの補正ボーン）は関節チェーンの本流ではないため、
+	// 他に候補があればスキップして次の実関節ボーンを優先する。
+	// 例: Upper_arm.L の children = [Costume_support1.L, Costume_support3.L, Lower_arm.L, Upper_arm_support.L]
+	//     -> Lower_arm.L を選びたい
+	for (const NodeHandle& child : source.children) {
+		std::string_view name = strsv().get(nodeReg.get(child).name);
+		if (!containsSupport(name)) return child;
+	}
+
+	return source.children.front();
 }
 
 }
