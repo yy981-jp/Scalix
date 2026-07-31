@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <tracker/poseSolver.h>
 
 #include <algorithm>
@@ -18,16 +19,32 @@ struct HumanoidConnection {
 	LandmarkId child;
 };
 
-constexpr std::array humanoidConnections {
+enum class HMCnsId {
+	upperBody,
+	lowerBody,
+
+	Count
+};
+
+constexpr std::array upperBody_list = {
 	HumanoidConnection{HBT::arm_left_up, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
 	HumanoidConnection{HBT::arm_left_low, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
 	HumanoidConnection{HBT::arm_right_up, LandmarkId::RightShoulder, LandmarkId::RightElbow},
 	HumanoidConnection{HBT::arm_right_low, LandmarkId::RightElbow, LandmarkId::RightWrist},
+};
+
+constexpr std::array lowerBody_list = {
 	HumanoidConnection{HBT::leg_left_up, LandmarkId::LeftHip, LandmarkId::LeftKnee},
 	HumanoidConnection{HBT::leg_left_low, LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
 	HumanoidConnection{HBT::leg_right_up, LandmarkId::RightHip, LandmarkId::RightKnee},
 	HumanoidConnection{HBT::leg_right_low, LandmarkId::RightKnee, LandmarkId::RightAnkle},
 };
+
+constexpr std::array humanoidConnections = {
+	upperBody_list,
+	lowerBody_list,
+};
+
 
 bool hasDirection(const vec3f& direction) {
 	return bx::length(direction) > directionEpsilon;
@@ -75,7 +92,7 @@ NodeHandle firstChild(NodeHandle node) {
 
 
 PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
-	createBones();
+	setMode();
 }
 
 void PoseSolver::setSmoothing(float value) {
@@ -86,28 +103,35 @@ void PoseSolver::setMinimumVisibility(float value) {
 	minimumVisibility = std::clamp(value, 0.0f, 1.0f);
 }
 
-void PoseSolver::createBones() {
-	for (const HumanoidConnection& connection : humanoidConnections) {
-		if (!avatar.humanoid.has(connection.bone)) continue;
+void PoseSolver::setMode(uint8_t mode) {
+	bones.clear();
 
-		NodeHandle node = avatar.humanoid.bones[static_cast<size_t>(connection.bone)];
-		NodeHandle childNode = firstChild(node);
-		if (!childNode.isValid()) continue;
+	for (int targetMode = 0; targetMode < static_cast<int>(HMCnsId::Count); targetMode++) {
+		if ( !(mode & (1 << targetMode)) ) continue; // 指定されていないフラグは無視
 
-		vec3f direction = position(avatar, childNode) - position(avatar, node);
-		direction = directionInParentSpace(avatar, node, direction);
-		float length = bx::length(direction);
-		if (length <= directionEpsilon) continue;
+		// flagで指定されたものだけ処理
+		for (const HumanoidConnection& connection: humanoidConnections[targetMode]) {
+			if (!avatar.humanoid.has(connection.bone)) continue;
 
-		bones.push_back({
-			.humanoidBone = connection.bone,
-			.landmarks = {connection.parent, connection.child},
-			.node = node,
-			.childNode = childNode,
-			.restLength = length,
-			.restDirection = direction / length,
-			.restRotation = nodeReg.get(node).trs.rot,
-		});
+			NodeHandle node = avatar.humanoid.bones[static_cast<size_t>(connection.bone)];
+			NodeHandle childNode = firstChild(node);
+			if (!childNode.isValid()) continue;
+
+			vec3f direction = position(avatar, childNode) - position(avatar, node);
+			direction = directionInParentSpace(avatar, node, direction);
+			float length = bx::length(direction);
+			if (length <= directionEpsilon) continue;
+
+			bones.push_back( {
+				.humanoidBone = connection.bone,
+				.landmarks = {connection.parent, connection.child},
+				.node = node,
+				.childNode = childNode,
+				.restLength = length,
+				.restDirection = direction / length,
+				.restRotation = nodeReg.get(node).trs.rot,
+			} );
+		}
 	}
 }
 

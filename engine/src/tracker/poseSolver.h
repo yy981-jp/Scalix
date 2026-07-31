@@ -18,6 +18,11 @@ struct PoseBone {
 	Quat restRotation;
 };
 
+namespace PoseSolverMode {
+	constexpr uint8_t upperBody = 1 << 0,
+					  lowerBody = 1 << 1;
+}
+
 class PoseSolver {
 	Avatar& avatar;
 	std::vector<PoseBone> bones;
@@ -26,13 +31,13 @@ class PoseSolver {
 	float smoothing = 0.35f;
 	float minimumVisibility = 0.35f;
 
-	void createBones();
 	void smoothAndRepair(PoseFrame& frame);
 	void constrainBoneLengths(PoseFrame& frame);
-
+	
 public:
 	explicit PoseSolver(Avatar& avatar);
-
+	
+	void setMode(uint8_t mode = PoseSolverMode::upperBody);
 	void setSmoothing(float value);
 	void setMinimumVisibility(float value);
 	void solve(const PoseFrame& frame);
