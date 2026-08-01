@@ -18,14 +18,14 @@ struct Avatar {
 	std::vector<Transform> globalTransforms;
 	
 
-	vec3f pos;
-	float yaw;
+	vec3f pos = {0.0f, 0.0f, 0.0f};
+	float yaw = 0.0f;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 
-	Euler head;
-	const float sensitivity = 0.01f;
-	const float headPitchLimit = 1.2f;
-	const float headYawLimit = 0.5f; // 1.5も良かった
+	Euler head{};
+	static constexpr float sensitivity = 0.01f;
+	static constexpr float headPitchLimit = 1.2f;
+	static constexpr float headYawLimit = 0.5f; // 1.5も良かった
 
 	AnimSystem anim;
 

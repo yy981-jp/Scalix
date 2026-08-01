@@ -61,20 +61,24 @@ void Avatar::update(GameContext& ctx, float dt) {
 	if (has(ctx.keyStat, KCode::n0)) ctx.cam_type = CameraType::DEBUG;
 	else if (has(ctx.keyStat, KCode::n1)) ctx.cam_type = CameraType::_1;
 
-	head.yaw   += ctx.mStat.relPos.x * sensitivity;
+	const float yawDelta = ctx.mStat.relPos.x * sensitivity;
+	head.yaw   += yawDelta;
 	head.pitch -= ctx.mStat.relPos.y * sensitivity;
 
 	// 制限
 	if (head.pitch >  headPitchLimit) head.pitch =  headPitchLimit;
 	if (head.pitch < -headPitchLimit) head.pitch = -headPitchLimit;
 
-	if (head.yaw >  headYawLimit) {
-		yaw -= head.yaw - headYawLimit; // 体を視点に追従
-		head.yaw =  headYawLimit;
+	float clampedHeadYaw = head.yaw;
+	if (clampedHeadYaw > headYawLimit) {
+		clampedHeadYaw = headYawLimit;
 	}
-	if (head.yaw < -headYawLimit) {
-		yaw += -headYawLimit - head.yaw;
-		head.yaw = -headYawLimit;
+	if (clampedHeadYaw < -headYawLimit) {
+		clampedHeadYaw = -headYawLimit;
+	}
+	if (head.yaw != clampedHeadYaw) {
+		yaw -= head.yaw - clampedHeadYaw;
+		head.yaw = clampedHeadYaw;
 	}
 
 	// --- neck (pitch) ---
@@ -123,6 +127,8 @@ void Avatar::draw(Camera& cam) {
 
 Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
 	pos = {0, 0, 0};
+	yaw = 0.0f;
+	head = {};
 
 	GltfLoaderImpl loader(glTFPath);
 	loader.load();
