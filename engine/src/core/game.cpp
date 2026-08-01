@@ -4,7 +4,6 @@
 
 #include <physics/detect.h>
 
-#include <iostream>
 
 Game::Game() {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -61,7 +60,10 @@ Game::Game() {
 
 	SDL_SetRelativeMouseMode(static_cast<SDL_bool>(mouseRelMode));
 
+	
 	gameInit();
+
+	gctx.poseSolver = poseSolver;
 }
 
 Game::~Game() {
@@ -102,13 +104,14 @@ void Game::update(float dt) {
 
 	// ===== Entityごと =====
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
-	avatarSystem.update(gctx,dt);
 	springBoneSystem.update(dt);
 
 	PoseFrame frame;
 	if (receiver.tick(frame)) {
 		poseSolver->solve(frame);
 	}
+
+	avatarSystem.update(gctx,dt);
 
 	mStat.relPos = {0, 0};
 }
@@ -156,10 +159,6 @@ void Game::gameInit() {
 
 	avatarSystem.update(gctx,elap.get());
 
-
-	// for ( (nodeReg.find(0,176)).child ) {
-
-	// }
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
 

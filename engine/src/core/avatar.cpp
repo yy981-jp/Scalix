@@ -1,3 +1,4 @@
+#include "tracker/poseSolver.h"
 #include <core/avatar.h>
 
 #include <anim/loader.h>
@@ -46,6 +47,9 @@ void Avatar::update(GameContext& ctx, float dt) {
 		pos.x += rx * aplSpeed * rlMove;
 		pos.z += rz * aplSpeed * rlMove;
 	}
+
+	if (has(ctx.keyStat, KCode::T))
+		ctx.poseSolver->requestCalibration();
 
 	status = (walking? Status::walk : Status::stay);
 
@@ -118,6 +122,8 @@ void Avatar::draw(Camera& cam) {
 }
 
 Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
+	pos = {0, 0, 0};
+
 	GltfLoaderImpl loader(glTFPath);
 	loader.load();
 	loader.procHdl(this);
@@ -126,8 +132,8 @@ Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
 
 	humanoid.init(model);
 
-	nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_left_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65)); // deg=65
-	nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_right_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65));
+	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_left_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65)); // deg=65
+	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_right_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65));
 
 	anim.init("test.sxa",*this);
 

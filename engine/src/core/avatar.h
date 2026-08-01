@@ -18,7 +18,7 @@ struct Avatar {
 	std::vector<Transform> globalTransforms;
 	
 
-	vec3f pos   = {0.0f, 0.0f, 0.0f};
+	vec3f pos;
 	float yaw;
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 

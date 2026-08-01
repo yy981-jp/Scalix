@@ -130,9 +130,12 @@ void PoseSolver::setMode(uint8_t mode) {
 				.restLength = length,
 				.restDirection = direction / length,
 				.restRotation = nodeReg.get(node).trs.rot,
+				.calibratedDirection = direction / length, // キャリブレーションされるまではrestDirectionにフォールバック
 			} );
 		}
 	}
+
+	needsCalibration = true;
 }
 
 void PoseSolver::smoothAndRepair(PoseFrame& frame) {
@@ -175,9 +178,37 @@ void PoseSolver::constrainBoneLengths(PoseFrame& frame) {
 	}
 }
 
+void PoseSolver::calibrate(const PoseFrame& frame) {
+	bool allOk = true;
+
+	for (PoseBone& bone : bones) {
+		const PoseLandmark& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)];
+		const PoseLandmark& child = frame.landmarks[landmarkIndex(bone.landmarks.child)];
+
+		if (parent.visibility < minimumVisibility || child.visibility < minimumVisibility) {
+			allOk = false;
+			continue;
+		}
+
+		vec3f direction = child.pos - parent.pos;
+		if (!hasDirection(direction)) { allOk = false; continue; }
+
+		direction = directionInParentSpace(avatar, bone.node, direction);
+		if (!hasDirection(direction)) { allOk = false; continue; }
+
+		bone.calibratedDirection = bx::normalize(direction);
+	}
+
+	// 全ボーンぶんキャリブレーションできた時だけ完了扱いにする。
+	// 一部失敗した場合は次のフレームで再試行する（その間はrestDirection/前回値のまま）。
+	if (allOk) needsCalibration = false;
+}
+
 void PoseSolver::solve(const PoseFrame& input) {
 	PoseFrame frame = input;
 	smoothAndRepair(frame);
+
+	if (needsCalibration) calibrate(frame);
 
 	for (const PoseBone& bone : bones) {
 		const vec3f& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)].pos;
@@ -188,7 +219,11 @@ void PoseSolver::solve(const PoseFrame& input) {
 		if (!hasDirection(currentDirection)) continue;
 
 		float rotation[4];
-		quatFromTo(rotation, bone.restDirection, bx::normalize(currentDirection));
+		// モデルの基準ポーズ(restDirection)ではなく、トラッキング開始時に実際に
+		// 観測された姿勢(calibratedDirection)からの相対回転を使う。
+		// これによりモデルがTポーズ/Aポーズいずれの基準ポーズであっても、
+		// トラッキング対象の人が普段どんな姿勢で立っていても正しく追従する。
+		quatFromTo(rotation, bone.calibratedDirection, bx::normalize(currentDirection));
 		Quat poseRotation{rotation[0], rotation[1], rotation[2], rotation[3]};
 		nodeReg.get(bone.node).trs.rot = poseRotation * bone.restRotation;
 	}

@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include <tracker/recv.h>
 
 #include <engine/generated/proto/pose.pb.h>
@@ -36,7 +34,11 @@ bool Recv::tick(PoseFrame& out) {
 		const auto& landmark = frame.landmarks(static_cast<int>(i));
 		// mediapipe -> scalix 座標系 変換
 		out.landmarks[i] = {
-			.pos = {-landmark.x(), -landmark.y(), landmark.z()},
+			.pos = {
+				landmark.x(),
+				-landmark.y(),
+				landmark.z()
+			},
 			.visibility = landmark.visibility(),
 		};
 	}

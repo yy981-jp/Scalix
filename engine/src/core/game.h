@@ -5,7 +5,7 @@
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 #include <bx/math.h>
-#include <stdexcept>
+// #include <stdexcept>
 
 #include <gfx/shader.h>
 #include <gltf/loader.h>
@@ -33,7 +33,8 @@ class Game {
 		.keyStat = keyStat,
 		.mStat = mStat,
 		.cam = cam0,
-		.cam_type = camId
+		.cam_type = camId,
+		.poseSolver = nullptr,
 	};
 
 	SDL_Window* window;
