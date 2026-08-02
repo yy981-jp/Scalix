@@ -1,4 +1,4 @@
-#include "tracker/poseSolver.h"
+#include <tracker/poseSolver.h>
 #include <core/avatar.h>
 
 #include <anim/loader.h>

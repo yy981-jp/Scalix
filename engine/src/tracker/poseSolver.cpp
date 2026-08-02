@@ -51,7 +51,10 @@ bool hasDirection(const vec3f& direction) {
 }
 
 vec3f position(const Avatar& avatar, NodeHandle node) {
-	const auto& mtx = avatar.globalTransforms[nodeReg.getId(node)].mtx;
+	// トラッキングの基準はavatar.yaw/posに依存しないtrackingTransformsを使う。
+	// globalTransformsを使うと、アバターが振り向くたびにこの後の
+	// directionInParentSpace()の基準もずれてしまう。
+	const auto& mtx = avatar.trackingTransforms[nodeReg.getId(node)].mtx;
 	return {mtx[12], mtx[13], mtx[14]};
 }
 
@@ -59,7 +62,13 @@ vec3f directionInParentSpace(const Avatar& avatar, NodeHandle node, const vec3f&
 	NodeHandle parent = nodeReg.get(node).parent;
 	if (!parent.isValid()) return direction;
 
-	const auto& parentMtx = avatar.globalTransforms[nodeReg.getId(parent)].mtx;
+	// モーションキャプチャ入力(カメラ空間の相対ベクトル)はアバターの
+	// ワールド上の向き(yaw)や位置(pos)とは無関係なため、その成分を含まない
+	// trackingTransformsの逆行列で親ボーン空間へ変換する。ここで
+	// globalTransforms(yaw込み)を使うと、キャリブレーション後にアバターが
+	// 振り向いた分だけ基準がずれ、ローカルなはずの動きがワールド軸に
+	// 引きずられてしまう(=global化してしまう)。
+	const auto& parentMtx = avatar.trackingTransforms[nodeReg.getId(parent)].mtx;
 	float inverse[16];
 	bx::mtxInverse(inverse, parentMtx.data());
 	return vec3f{bx::mulXyz0(direction, inverse)};

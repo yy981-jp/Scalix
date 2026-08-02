@@ -16,6 +16,13 @@ struct Avatar {
 
 	// Nodes' global transforms. `mtx` is the rendering cache of each TRS.
 	std::vector<Transform> globalTransforms;
+
+	// globalTransformsと同じ階層構造だが、entityTransformのyaw/posを除いて計算したもの。
+	// モーションキャプチャの入力(カメラ空間、アバターのワールド上の向きとは無関係)を
+	// 親ボーン空間に変換する際はこちらを使う。globalTransformsを使うと、アバターが
+	// 振り向く(yawが変わる)たびにトラッキングの基準がずれ、本来ローカルなはずの
+	// 動きがワールド軸に引きずられてしまう(PoseSolver参照)。
+	std::vector<Transform> trackingTransforms;
 	
 
 	vec3f pos = {0.0f, 0.0f, 0.0f};

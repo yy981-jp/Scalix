@@ -21,8 +21,8 @@ void AvatarSystem::loadData(const std::vector<std::string> path) {
 	}
 }
 
-void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
-				const Transform& entityTransform) {
+void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Transform>& out,
+				Avatar& avatar, const Transform& entityTransform) {
 	if (idx < 0 || idx >= avatar.model.nodes.size()) {
 		printf("invalid idx: %d\n", idx);
 		return;
@@ -35,11 +35,11 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent.isValid()) {
 		NodeId parent = nodeReg.getId(node.parent);
-		calcGlobal(parent, calculated, avatar, entityTransform);
-		avatar.globalTransforms[idx] = avatar.globalTransforms[parent] * node.trs;
+		calcGlobal(parent, calculated, out, avatar, entityTransform);
+		out[idx] = out[parent] * node.trs;
 	} else {
 		// bx::mtxMul の従来の積順と合わせ、ルートは local * entity。
-		avatar.globalTransforms[idx] = node.trs * entityTransform;
+		out[idx] = node.trs * entityTransform;
 	}
 
 	calculated[idx] = true;
@@ -57,6 +57,7 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		avatar.update(ctx,dt);
 
 		avatar.globalTransforms.resize(avatar.model.nodes.size());
+		avatar.trackingTransforms.resize(avatar.model.nodes.size());
 
 		Transform entityTransform;
 		entityTransform.pos = avatar.pos;
@@ -65,11 +66,27 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		entityTransform.scale = {-avatar.scale[0], avatar.scale[1], avatar.scale[2]};
 		entityTransform.rebuildMatrix();
 
+		// トラッキング(PoseSolver)用のentityTransform。
+		// モーションキャプチャの入力はカメラ空間の相対ベクトルであり、
+		// アバターがワールド上でどこを向いている(yaw)か・どこにいる(pos)かとは
+		// 無関係なため、そのぶんは含めない。glTFのX軸反転(scale)は座標系の
+		// 補正であって向きではないので、そのまま維持する。
+		Transform trackingEntityTransform;
+		trackingEntityTransform.scale = entityTransform.scale;
+		trackingEntityTransform.rebuildMatrix();
+
 		std::vector<bool> calculated;
 		calculated.resize(avatar.model.nodes.size(), false);
 
 		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, calculated, avatar, entityTransform);
+			calcGlobal(i, calculated, avatar.globalTransforms, avatar, entityTransform);
+		}
+
+		std::vector<bool> trackingCalculated;
+		trackingCalculated.resize(avatar.model.nodes.size(), false);
+
+		for (int i = 0; i < avatar.model.nodes.size(); i++) {
+			calcGlobal(i, trackingCalculated, avatar.trackingTransforms, avatar, trackingEntityTransform);
 		}
 
 		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
