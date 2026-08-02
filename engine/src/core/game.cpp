@@ -54,7 +54,8 @@ Game::Game() {
 	
 	if (!bgfx::init(init)) throw std::runtime_error("bgfx init failed");
 	
-	bgfx::setDebug(BGFX_DEBUG_STATS | BGFX_DEBUG_TEXT);
+	bgfx::setDebug(BGFX_DEBUG_STATS);
+	// bgfx::setDebug(BGFX_DEBUG_TEXT);
 
 	// set mouse mode
 
@@ -92,7 +93,7 @@ void Game::tick() {
 	draw();
 
 	bgfx::dbgTextClear();
-	bgfx::dbgTextPrintf(10, 25, 0x4f, "y9test: debug hello");
+	bgfx::dbgTextPrintf(5, 50, 0x4f, "fps: %f", 1/dt);
 
 
 	bgfx::frame();

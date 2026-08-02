@@ -8,7 +8,6 @@
 #include <util/quatutil.h>
 
 #include <bx/math.h>
-#include <iostream>
 
 
 void AvatarSystem::loadData(const std::vector<std::string> path) {
