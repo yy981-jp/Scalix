@@ -1,14 +1,9 @@
 #include <cstdint>
 #include <tracker/poseSolver.h>
 
-#include <algorithm>
-#include <cmath>
-
-
 #include <debug/debugDraw.h>
 
 #include <core/nodeRegistry.h>
-#include <util/quatutil.h>
 #include <util/fmutil.h>
 #include <def/str.h>
 
@@ -63,4 +58,7 @@ void PoseSolver::solve(const PoseFrame& input) {
 			input.landmarks[c.b].pos + vec3f{0,2,0}
 		);
 	}
+
+
+	
 }

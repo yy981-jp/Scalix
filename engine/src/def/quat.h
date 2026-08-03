@@ -31,7 +31,10 @@ struct Quat {
 
 	vec3f operator*(const vec3f& v) const;
 
+	void normalize();
+	float* data();
+
 	static Quat lerp(const Quat& a, const Quat& b, float t);
-	
-	void setAxisAngle(const vec3f& axis, float rad);
+	static Quat fromAxisAngle(const vec3f& axis, float rad);
+	static Quat fromTo(vec3f from, vec3f to);
 };

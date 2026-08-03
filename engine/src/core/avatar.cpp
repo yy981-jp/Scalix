@@ -7,7 +7,6 @@
 #include <util/math.h>
 #include <core/key.h>
 #include <core/gctx.h>
-#include <util/quatutil.h>
 #include <physics/springBone.h>
 #include <core/nodeRegistry.h>
 
@@ -87,7 +86,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		auto& neckNode = nodeReg.get(neckHandle);
 
 		float qPitch[4];
-		neckNode.trs.rot.setAxisAngle({1,0,0}, head.pitch);
+		neckNode.trs.rot = Quat::fromAxisAngle({1,0,0}, head.pitch);
 	}
 
 	if (humanoid.has(HBT::head)) {
@@ -95,7 +94,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
 		auto& headNode = nodeReg.get(headHandle);
 
-		headNode.trs.rot.setAxisAngle({0,1,0}, head.yaw);
+		headNode.trs.rot = Quat::fromAxisAngle({0,1,0}, head.yaw);
 
 		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
@@ -138,8 +137,8 @@ Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
 
 	humanoid.init(model);
 
-	nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_left_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65)); // deg=65
-	nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_right_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65));
+	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_left_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65)); // deg=65
+	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_right_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65));
 
 	anim.init("test.sxa",*this);
 

@@ -31,6 +31,9 @@ struct vec3f {
 	vec3f operator/(float scalar) const;
 
 
+	void normalize();
+
+
 	static vec3f lerp(const vec3f& a, const vec3f& b, float t);
 	static vec3f cross(const vec3f& a, const vec3f& b);
 };
