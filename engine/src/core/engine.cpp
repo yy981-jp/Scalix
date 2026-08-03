@@ -1,4 +1,4 @@
-#include <core/game.h>
+#include <core/engine.h>
 
 #include <gfx/shader.h>
 #include <debug/debugDraw.h>
@@ -6,7 +6,7 @@
 #include <physics/detect.h>
 
 
-Game::Game() {
+Engine::Engine() {
 	SDL_Init(SDL_INIT_VIDEO);
 	if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
 
@@ -68,13 +68,13 @@ Game::Game() {
 	gctx.poseSolver = poseSolver;
 }
 
-Game::~Game() {
+Engine::~Engine() {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	IMG_Quit();
 }
 
-void Game::tick() {
+void Engine::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch(event.type) {
@@ -101,7 +101,7 @@ void Game::tick() {
 }
 
 
-void Game::update(float dt) {
+void Engine::update(float dt) {
 	if (has(keyStat,KCode::Esc)) running = false;
 
 	// ===== Entityごと =====
@@ -119,13 +119,13 @@ void Game::update(float dt) {
 }
 
 
-void Game::draw() {
+void Engine::draw() {
 	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)], u_bones);
 	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
 	debug.render(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
-void Game::gameInit() {
+void Engine::gameInit() {
 	mStat.relMode = mouseRelMode;
 
 	// set camera
@@ -179,32 +179,32 @@ void Game::gameInit() {
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
 }
 
-void Game::onKeyDown(const SDL_KeyboardEvent& e) {
+void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
 	if (e.repeat) return;
 	auto it = keyMap.find(e.keysym.sym);
 	if (it != keyMap.end())
 		keyStat |= static_cast<KCodes>(it->second);
 }
 
-void Game::onKeyUp(const SDL_KeyboardEvent& e) {
+void Engine::onKeyUp(const SDL_KeyboardEvent& e) {
 	auto it = keyMap.find(e.keysym.sym);
 	if (it != keyMap.end())
 		keyStat &= ~static_cast<KCodes>(it->second);
 }
 
-void Game::onMouseBtDown(const SDL_MouseButtonEvent& e) {
+void Engine::onMouseBtDown(const SDL_MouseButtonEvent& e) {
 	auto it = mMap.find(e.button);
 	if (it != mMap.end())
 		mStat.codes |= static_cast<MCodes>(it->second);
 }
 
-void Game::onMouseBtUp(const SDL_MouseButtonEvent& e) {
+void Engine::onMouseBtUp(const SDL_MouseButtonEvent& e) {
 	auto it = mMap.find(e.button);
 	if (it != mMap.end())
 		mStat.codes &= ~static_cast<MCodes>(it->second);
 }
 
-void Game::onWindowEve(const SDL_WindowEvent& e) {
+void Engine::onWindowEve(const SDL_WindowEvent& e) {
 /*
 	if (e.event == SDL_WINDOWEVENT_FOCUS_LOST) {
 		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
@@ -212,7 +212,7 @@ void Game::onWindowEve(const SDL_WindowEvent& e) {
 */
 }
 
-void Game::onMouseMt(const SDL_MouseMotionEvent& e) {
+void Engine::onMouseMt(const SDL_MouseMotionEvent& e) {
 	mStat.absPos.x = e.x;
 	mStat.absPos.y = e.y;
 	mStat.relPos.x = e.xrel;

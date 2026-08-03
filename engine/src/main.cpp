@@ -1,11 +1,11 @@
 #define SDL_MAIN_HANDLED
 
-#include <core/game.h>
+#include <core/engine.h>
 
 
 int main() {
 	{
-		Game game;
+		Engine game;
 
 		while (game.isRunning()) {
 			game.tick();

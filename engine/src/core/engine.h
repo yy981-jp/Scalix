@@ -28,7 +28,7 @@ enum class ShaderId {
 	Count
 };
 
-class Game {
+class Engine {
 	GameContext gctx = {
 		.keyStat = keyStat,
 		.mStat = mStat,
@@ -82,8 +82,8 @@ class Game {
 	void draw();
 
 public:
-	Game();
-	~Game();
+	Engine();
+	~Engine();
 
 	void tick();
 	inline bool isRunning() { return running; }

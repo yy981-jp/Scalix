@@ -12,7 +12,7 @@
 
 - `tracker/replay.py` が `records/a.bin` を読み込み、UDP 51801 へ 30Hz で送信する。
 - `engine/src/tracker/recv.cpp` で protobuf `PoseFrame` を受信し、MediaPipe 座標系から `scalix` 座標系へ変換して `PoseFrame` に詰める。
-- `engine/src/core/game.cpp` の `Game::update()` で `receiver.tick(frame)` が true を返した場合、`poseSolver->solve(frame)` を呼ぶ。
+- `engine/src/core/engine.cpp` の `Game::update()` で `receiver.tick(frame)` が true を返した場合、`poseSolver->solve(frame)` を呼ぶ。
 
 ### 2.2 `PoseSolver` の設計
 
@@ -87,7 +87,7 @@
 - `engine/src/tracker/pose.h`
 - `engine/src/tracker/recv.cpp`
 - `engine/src/tracker/poseSolver.cpp`
-- `engine/src/core/game.cpp`
+- `engine/src/core/engine.cpp`
 - `engine/src/core/avatar.cpp`
 - `engine/src/core/avatarSystem.cpp`
 

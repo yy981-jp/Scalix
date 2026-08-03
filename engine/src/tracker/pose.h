@@ -45,10 +45,6 @@ enum class LandmarkId : size_t {
 
 constexpr size_t landmarkCount = static_cast<size_t>(LandmarkId::Count);
 
-constexpr size_t landmarkIndex(LandmarkId id) {
-	return static_cast<size_t>(id);
-}
-
 struct PoseLandmark {
 	vec3f pos;
 	float visibility = 0.0f;
