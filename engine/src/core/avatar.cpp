@@ -138,8 +138,8 @@ Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
 
 	humanoid.init(model);
 
-	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_left_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65)); // deg=65
-	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_right_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65));
+	nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_left_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65)); // deg=65
+	nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_right_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65));
 
 	anim.init("test.sxa",*this);
 

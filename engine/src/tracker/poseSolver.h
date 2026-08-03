@@ -22,6 +22,15 @@ struct PoseBone {
 	// quatFromToの基準にはrestDirectionではなくこちらを使う。
 	// キャリブレーション未実施の間はrestDirectionと同じ値にしておく。
 	vec3f calibratedDirection;
+
+	// ひねり(twist/roll)補正用。quatFromToはswing(向きを合わせる回転)しか
+	// 計算できず、ボーン自身の軸まわりの回転(ひねり)は不定になる
+	// (例: 前腕の回内・回外で掌の向きが決まらず、不自然な向きになる)。
+	// 手のIndexランドマーク等、ボーン軸に対してほぼ垂直な方向を持つ
+	// 参照ランドマークを使い、その垂直成分の回転からひねり角を別途求めて補う。
+	LandmarkId twistLandmark = LandmarkId::Count; // Count = 補正なし(swingのみ)
+	bool twistCalibrated = false;
+	vec3f calibratedTwistRef; // calibratedDirectionに垂直な単位ベクトル、親空間
 };
 
 namespace PoseSolverMode {

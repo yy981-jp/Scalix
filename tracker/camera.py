@@ -3,7 +3,7 @@ import mediapipe as mp
 import socket
 from generated.proto import pose_pb2
 
-MODEL_PATH = "models/pose_landmarker_full.task"
+MODEL_PATH = "models/pose_landmarker_heavy.task"
 
 POSE_CONNECTIONS = [
 	(0, 1), (1, 2), (2, 3),
@@ -76,16 +76,19 @@ while True:
 
 	h, w = image.shape[:2]
 
-	for pose in result.pose_landmarks:
+	for pose, world_pose in zip(
+		result.pose_landmarks,
+		result.pose_world_landmarks
+	):
 
-		# UDP送信
-		for lm in pose:
+		# UDP送信（World Landmarks）
+		for lm in world_pose:
 			item = packet.landmarks.add()
 			item.x = lm.x
 			item.y = lm.y
 			item.z = lm.z
 			item.visibility = lm.visibility
-
+			
 		# 骨線
 		for a, b in POSE_CONNECTIONS:
 			la = pose[a]

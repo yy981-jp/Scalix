@@ -11,6 +11,7 @@ CSV_FILE = "./records/" + sys.argv[1] + ".csv"
 PLAY_TIME = float(sys.argv[2])
 
 frames = []
+frames_name = []
 
 with open(CSV_FILE, newline="", encoding="utf-8") as f:
 	for row in csv.reader(f):
@@ -20,6 +21,8 @@ with open(CSV_FILE, newline="", encoding="utf-8") as f:
 		name = row[0].strip()
 		if not name:
 			continue
+
+		frames_name.append(name)
 
 		if not name.endswith(".bin"):
 			name += ".bin"
@@ -39,7 +42,9 @@ interval = PLAY_TIME / len(frames)
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 while True:
-	for frame in frames:
+	for i, frame in enumerate(frames):
+		print(f"frame: {frames_name[i]}")
+
 		end_time = time.monotonic() + PLAY_TIME
 
 		while time.monotonic() < end_time:

@@ -2,6 +2,7 @@
 #include <tracker/poseSolver.h>
 
 #include <algorithm>
+#include <cmath>
 
 #include <core/nodeRegistry.h>
 #include <util/quatutil.h>
@@ -17,6 +18,14 @@ struct HumanoidConnection {
 	HBT bone;
 	LandmarkId parent;
 	LandmarkId child;
+	// ひねり(twist/roll)補正用の参照ランドマーク2点。指定しない場合はtwist=LandmarkId::Countの
+	// ままにし、swing(向きを合わせる回転)のみで済ませる(quatFromToは軸まわりのひねりを
+	// 一切決定できない)。
+	// twist(index)とtwistSecondary(pinky)を結ぶベクトル(=手の甲を横切る「幅」方向)を使う。
+	// 「手首→Index」のような指先方向のベクトルは、指をまっすぐ伸ばしていると前腕の軸と
+	// ほぼ平行になってしまい、垂直成分がノイズだけになって不安定なため採用しない。
+	LandmarkId twist = LandmarkId::Count;
+	LandmarkId twistSecondary = LandmarkId::Count;
 };
 
 enum class HMCnsId {
@@ -28,9 +37,9 @@ enum class HMCnsId {
 
 constexpr std::array upperBody_list = {
 	HumanoidConnection{HBT::arm_left_up, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
-	HumanoidConnection{HBT::arm_left_low, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
+	HumanoidConnection{HBT::arm_left_low, LandmarkId::LeftElbow, LandmarkId::LeftWrist, LandmarkId::LeftIndex},
 	HumanoidConnection{HBT::arm_right_up, LandmarkId::RightShoulder, LandmarkId::RightElbow},
-	HumanoidConnection{HBT::arm_right_low, LandmarkId::RightElbow, LandmarkId::RightWrist},
+	HumanoidConnection{HBT::arm_right_low, LandmarkId::RightElbow, LandmarkId::RightWrist, LandmarkId::RightIndex},
 };
 
 constexpr std::array lowerBody_list = {
@@ -48,6 +57,13 @@ constexpr std::array humanoidConnections = {
 
 bool hasDirection(const vec3f& direction) {
 	return bx::length(direction) > directionEpsilon;
+}
+
+// vをaxis(正規化済み)に垂直な成分だけにする。
+// ひねり(twist)角の計算では、ボーン軸まわりの回転で参照ベクトルの
+// 「軸に垂直な成分」がどれだけ回っているかを見る必要がある。
+vec3f perpendicularComponent(const vec3f& v, const vec3f& axis) {
+	return v - axis * bx::dot(v, axis);
 }
 
 vec3f position(const Avatar& avatar, NodeHandle node) {
@@ -140,6 +156,8 @@ void PoseSolver::setMode(uint8_t mode) {
 				.restDirection = direction / length,
 				.restRotation = nodeReg.get(node).trs.rot,
 				.calibratedDirection = direction / length, // キャリブレーションされるまではrestDirectionにフォールバック
+				.twistLandmark = connection.twist,
+				.twistCalibrated = false,
 			} );
 		}
 	}
@@ -206,6 +224,27 @@ void PoseSolver::calibrate(const PoseFrame& frame) {
 		if (!hasDirection(direction)) { allOk = false; continue; }
 
 		bone.calibratedDirection = bx::normalize(direction);
+
+		// ひねり基準の記録。手のIndexなどのvisibilityが低い/軸とほぼ平行などで
+		// うまく取れない場合は、そのボーンだけswing-onlyにフォールバックする
+		// (allOkには影響させない。指のトラッキングが不安定なだけで全体の
+		// キャリブレーションをやり直させるのは過剰なため)。
+		if (bone.twistLandmark != LandmarkId::Count) {
+			const PoseLandmark& twistLm = frame.landmarks[landmarkIndex(bone.twistLandmark)];
+			if (twistLm.visibility >= minimumVisibility) {
+				vec3f twistVec = twistLm.pos - child.pos;
+				twistVec = directionInParentSpace(avatar, bone.node, twistVec);
+				vec3f perp = perpendicularComponent(twistVec, bone.calibratedDirection);
+				if (hasDirection(perp)) {
+					bone.calibratedTwistRef = bx::normalize(perp);
+					bone.twistCalibrated = true;
+				} else {
+					bone.twistCalibrated = false;
+				}
+			} else {
+				bone.twistCalibrated = false;
+			}
+		}
 	}
 
 	// 全ボーンぶんキャリブレーションできた時だけ完了扱いにする。
@@ -232,8 +271,45 @@ void PoseSolver::solve(const PoseFrame& input) {
 		// 観測された姿勢(calibratedDirection)からの相対回転を使う。
 		// これによりモデルがTポーズ/Aポーズいずれの基準ポーズであっても、
 		// トラッキング対象の人が普段どんな姿勢で立っていても正しく追従する。
-		quatFromTo(rotation, bone.calibratedDirection, bx::normalize(currentDirection));
+		vec3f normalizedCurrent = bx::normalize(currentDirection);
+		quatFromTo(rotation, bone.calibratedDirection, normalizedCurrent);
 		Quat poseRotation{rotation[0], rotation[1], rotation[2], rotation[3]};
+
+		// ひねり(twist)補正。quatFromToで求めたswing回転は、ボーン自身の軸
+		// まわりの回転(ひねり)を一切決めない(手首を返しても腕の向きベクトルだけ
+		// 見れば同じに見えるため)。手のIndexランドマークなど、軸に対してほぼ
+		// 垂直な参照ベクトルを使い、その垂直成分がキャリブレーション時から
+		// どれだけ回転したかを求めて追加で合成する。
+		if (bone.twistCalibrated) {
+			const PoseLandmark& twistLm = frame.landmarks[landmarkIndex(bone.twistLandmark)];
+			if (twistLm.visibility >= minimumVisibility) {
+				vec3f twistVec = twistLm.pos - child;
+				twistVec = directionInParentSpace(avatar, bone.node, twistVec);
+				vec3f currentPerp = perpendicularComponent(twistVec, normalizedCurrent);
+
+				// キャリブレーション時のひねり参照ベクトルを、いま求めたswing回転で
+				// 現在のボーン軸まわりの平面へ運び、現在の参照ベクトルとの差分角度を
+				// そのままひねり角として使う。
+				vec3f calibratedPerpRotated = poseRotation * bone.calibratedTwistRef;
+				calibratedPerpRotated = perpendicularComponent(calibratedPerpRotated, normalizedCurrent);
+
+				if (hasDirection(currentPerp) && hasDirection(calibratedPerpRotated)) {
+					currentPerp = bx::normalize(currentPerp);
+					calibratedPerpRotated = bx::normalize(calibratedPerpRotated);
+
+					float cosAngle = std::clamp(bx::dot(calibratedPerpRotated, currentPerp), -1.0f, 1.0f);
+					vec3f axisCross = vec3f::cross(calibratedPerpRotated, currentPerp);
+					float sinAngle = bx::dot(axisCross, normalizedCurrent);
+					float twistAngle = atan2f(sinAngle, cosAngle);
+
+					float twistRotation[4];
+					quatRotateAxis(twistRotation, normalizedCurrent.x, normalizedCurrent.y, normalizedCurrent.z, twistAngle);
+					Quat twist{twistRotation[0], twistRotation[1], twistRotation[2], twistRotation[3]};
+					poseRotation = twist * poseRotation;
+				}
+			}
+		}
+
 		nodeReg.get(bone.node).trs.rot = poseRotation * bone.restRotation;
 	}
 }
