@@ -1,8 +1,8 @@
-#include <debugdraw/debugdraw.h>
+#include <debug/debugDraw.h>
 #include <bgfx/bgfx.h>
 #include <cstring>
 
-DebugDraw debugDraw;
+DebugDraw debug;
 
 DebugDraw::DebugDraw() {
 }

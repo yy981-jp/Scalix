@@ -1,7 +1,7 @@
 #include <core/game.h>
 
 #include <gfx/shader.h>
-#include <debugdraw/debugdraw.h>
+#include <debug/debugDraw.h>
 
 #include <physics/detect.h>
 
@@ -122,7 +122,7 @@ void Game::update(float dt) {
 void Game::draw() {
 	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)], u_bones);
 	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
-	debugDraw.render(shaders[static_cast<size_t>(ShaderId::grid)]);
+	debug.render(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
 void Game::gameInit() {
@@ -148,7 +148,7 @@ void Game::gameInit() {
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
 
-	debugDraw.init();
+	debug.init();
 
 	// const bgfx::Caps* caps = bgfx::getCaps();
 	// int maxMat4 = caps->limits.maxUniforms / 4;

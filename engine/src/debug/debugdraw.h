@@ -22,4 +22,4 @@ private:
 	std::vector<uint32_t> colors;
 };
 
-extern DebugDraw debugDraw;
+extern DebugDraw debug;
