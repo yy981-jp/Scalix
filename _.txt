@@ -149,3 +149,5 @@ AnimRtFmt::endは一体どうなってる unityから抽出するんじゃない
 cameraから見て手前がZ-
 水平面に垂直に(minecraftと同じように)上向きがY+
 カメラから見て右がX+, 水平面上でZ軸を90度回転させたとも表現できる
+
+pose_world_landmark使用

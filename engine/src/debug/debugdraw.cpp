@@ -1,6 +1,5 @@
 #include <debug/debugDraw.h>
 #include <bgfx/bgfx.h>
-#include <cstring>
 
 DebugDraw debug;
 
