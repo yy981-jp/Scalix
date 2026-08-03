@@ -12,6 +12,8 @@ install/
 models/
 __pycache__/
 
+!/tracker/records/*.bin
+
 # protoc 自動生成
 /engine/generated/proto/
 /tracker/generated/proto/
