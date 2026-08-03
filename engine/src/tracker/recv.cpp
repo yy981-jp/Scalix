@@ -37,7 +37,7 @@ bool Recv::tick(PoseFrame& out) {
 			.pos = {
 				landmark.x(),
 				-landmark.y(),
-				-landmark.z()
+				landmark.z()
 			},
 			.visibility = landmark.visibility(),
 		};
