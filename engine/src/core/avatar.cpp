@@ -1,5 +1,6 @@
 #include <tracker/poseSolver.h>
 #include <core/avatar.h>
+#include <model/humanoid.h>
 
 #include <anim/loader.h>
 #include <gltf/loader.h>

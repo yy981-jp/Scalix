@@ -1,3 +1,4 @@
+#include "def/node.h"
 #include <tracker/pose.h>
 #include <tracker/poseSolver.h>
 
@@ -27,21 +28,21 @@ enum class HMCnsId {
 	Count
 };
 
-constexpr std::array upperBody_list = {
-	HumanoidConnection{HBT::arm_left_up, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
-	HumanoidConnection{HBT::arm_left_low, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
-	HumanoidConnection{HBT::arm_right_up, LandmarkId::RightShoulder, LandmarkId::RightElbow},
-	HumanoidConnection{HBT::arm_right_low, LandmarkId::RightElbow, LandmarkId::RightWrist},
+const std::vector<HumanoidConnection> upperBody_list = {
+	HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
+	// HumanoidConnection{HBT::leftLowerArm, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
+	// HumanoidConnection{HBT::rightUpperArm, LandmarkId::RightShoulder, LandmarkId::RightElbow},
+	// HumanoidConnection{HBT::rightLowerArm, LandmarkId::RightElbow, LandmarkId::RightWrist},
 };
 
-constexpr std::array lowerBody_list = {
-	HumanoidConnection{HBT::leg_left_up, LandmarkId::LeftHip, LandmarkId::LeftKnee},
-	HumanoidConnection{HBT::leg_left_low, LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
-	HumanoidConnection{HBT::leg_right_up, LandmarkId::RightHip, LandmarkId::RightKnee},
-	HumanoidConnection{HBT::leg_right_low, LandmarkId::RightKnee, LandmarkId::RightAnkle},
+const std::vector<HumanoidConnection> lowerBody_list = {
+	HumanoidConnection{HBT::leftUpperLeg, LandmarkId::LeftHip, LandmarkId::LeftKnee},
+	HumanoidConnection{HBT::leftLowerLeg, LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
+	HumanoidConnection{HBT::rightUpperLeg, LandmarkId::RightHip, LandmarkId::RightKnee},
+	HumanoidConnection{HBT::rightLowerLeg, LandmarkId::RightKnee, LandmarkId::RightAnkle},
 };
 
-constexpr std::array humanoidConnections = {
+const std::vector<std::vector<HumanoidConnection>> humanoidConnections = {
 	upperBody_list,
 	lowerBody_list,
 };
@@ -104,7 +105,7 @@ constexpr LandmarkConnection poseConnections[] = {
 PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 	for (const auto& cnct : upperBody_list) {
 		NodeHandle& nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
-		NodeHandle& parentHdl = nodeReg.get(nodeHdl).parent;
+		NodeHandle& parentHdl = avatar.humanoid.bones[ static_cast<size_t>(Humanoid::parentTable[(size_t)cnct.bone]) ];
 
 		bones[(size_t)cnct.bone].restDir =
 			( avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
@@ -117,94 +118,59 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 void PoseSolver::solve(const PoseFrame& frame) {
     debug_(frame);
 
-    const auto& cnct = upperBody_list[0];
 
-    const vec3f& parent =
-        frame.landmarks[(size_t)cnct.parent].pos;
-    const vec3f& child =
-        frame.landmarks[(size_t)cnct.child].pos;
+	for (const auto& cnct: upperBody_list) {
+		// const auto& cnct = upperBody_list[0];
 
-    const vec3f& currentDir = (child - parent).normalized();
-    const vec3f& restDir = bones[(size_t)cnct.bone].restDir;
+		const vec3f& parent =
+			frame.landmarks[(size_t)cnct.parent].pos;
+		const vec3f& child =
+			frame.landmarks[(size_t)cnct.child].pos;
 
-    Node& node =
-        nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
+		const vec3f& currentDir = (child - parent).normalized();
+		const vec3f& restDir = bones[(size_t)cnct.bone].restDir;
 
-    // printf("node   : %s\n", strsv().get(node.name).data());
-    // printf("parent : %s\n",
-    //     strsv().get(nodeReg.get(node.parent).name).data());
+		Node& node =
+			nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
 
-    // printf(
-    //     "rest   = (%.3f %.3f %.3f)\n"
-    //     "current= (%.3f %.3f %.3f)\n"
-    //     "dot    = %.3f\n",
-    //     restDir.x, restDir.y, restDir.z,
-    //     currentDir.x, currentDir.y, currentDir.z,
-    //     bx::dot(restDir, currentDir)
-    // );
+		// ===== Debug Draw =====
 
-	// printf(
-	// 	"UpperArm local = %.3f %.3f %.3f\n",
-	// 	node.trs.pos.x,
-	// 	node.trs.pos.y,
-	// 	node.trs.pos.z
-	// );
+		vec3f origin = parent + vec3f{0, 2, 0};
 
-	// Node& childNode =
-	// nodeReg.get(
-	// 	node.children[0]
-	// );
+		// 赤 = Tポーズ方向
+		debug.drawLine(
+			origin,
+			origin + restDir * 0.3f,
+			0xff0000ff
+		);
 
-	// printf(
-	// 	"ForeArm local = %.3f %.3f %.3f\n",
-	// 	childNode.trs.pos.x,
-	// 	childNode.trs.pos.y,
-	// 	childNode.trs.pos.z
-	// );
+		// 緑 = MediaPipe方向
+		debug.drawLine(
+			origin,
+			origin + currentDir * 0.3f,
+			0xff00ff00
+		);
 
-	// printf(
-	// 	"shoulder=(%.3f %.3f %.3f)\n",
-	// 	parent.x,parent.y,parent.z
-	// );
+		node.trs.rot = Quat::fromTo(restDir, currentDir);
 
-	// printf(
-	// 	"elbow   =(%.3f %.3f %.3f)\n",
-	// 	child.x,child.y,child.z
-	// );
+		// puts("==============================");
 
-	// for (NodeHandle h : node.children) {
-	// 	Node& c = nodeReg.get(h);
+		// vec3f check = node.trs.rot * restDir;
 
-	// 	printf(
-	// 		"%s  pos=(%.3f %.3f %.3f)\n",
-	// 		strsv().get(c.name).data(),
-	// 		c.trs.pos.x,
-	// 		c.trs.pos.y,
-	// 		c.trs.pos.z
-	// 	);
-	// }
-
-    // ===== Debug Draw =====
-
-    vec3f origin = parent + vec3f{0, 2, 0};
-
-    // 赤 = Tポーズ方向
-    debug.drawLine(
-        origin,
-        origin + restDir * 0.3f,
-        0xff0000ff
-    );
-
-    // 緑 = MediaPipe方向
-    debug.drawLine(
-        origin,
-        origin + currentDir * 0.3f,
-        0xff00ff00
-    );
-
-    node.trs.rot = Quat::fromTo(restDir, currentDir);
-
-    // puts("==============================");
+		// printf(
+		// 	"rest    = %.3f %.3f %.3f\n"
+		// 	"current = %.3f %.3f %.3f\n"
+		// 	"quat    = %.3f %.3f %.3f %.3f\n"
+		// 	"check   = %.3f %.3f %.3f\n",
+		// 	restDir.x,restDir.y,restDir.z,
+		// 	currentDir.x,currentDir.y,currentDir.z,
+		// 	node.trs.rot.x,
+		// 	node.trs.rot.y,
+		// 	node.trs.rot.z,
+		// 	node.trs.rot.w,
+		// 	check.x, check.y, check.z
+		// );
+	}
 }
 
 

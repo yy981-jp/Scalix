@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <core/avatar.h>
+#include <model/humanoid.h>
 #include <tracker/pose.h>
 
 
