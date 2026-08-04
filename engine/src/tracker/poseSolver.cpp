@@ -124,71 +124,71 @@ void PoseSolver::solve(const PoseFrame& frame) {
     const vec3f& child =
         frame.landmarks[(size_t)cnct.child].pos;
 
-    vec3f currentDir = (child - parent).normalized();
+    const vec3f& currentDir = (child - parent).normalized();
     const vec3f& restDir = bones[(size_t)cnct.bone].restDir;
 
     Node& node =
         nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
 
-    printf("node   : %s\n", strsv().get(node.name).data());
-    printf("parent : %s\n",
-        strsv().get(nodeReg.get(node.parent).name).data());
+    // printf("node   : %s\n", strsv().get(node.name).data());
+    // printf("parent : %s\n",
+    //     strsv().get(nodeReg.get(node.parent).name).data());
 
-    printf(
-        "rest   = (%.3f %.3f %.3f)\n"
-        "current= (%.3f %.3f %.3f)\n"
-        "dot    = %.3f\n",
-        restDir.x, restDir.y, restDir.z,
-        currentDir.x, currentDir.y, currentDir.z,
-        bx::dot(restDir, currentDir)
-    );
+    // printf(
+    //     "rest   = (%.3f %.3f %.3f)\n"
+    //     "current= (%.3f %.3f %.3f)\n"
+    //     "dot    = %.3f\n",
+    //     restDir.x, restDir.y, restDir.z,
+    //     currentDir.x, currentDir.y, currentDir.z,
+    //     bx::dot(restDir, currentDir)
+    // );
 
-	printf(
-		"UpperArm local = %.3f %.3f %.3f\n",
-		node.trs.pos.x,
-		node.trs.pos.y,
-		node.trs.pos.z
-	);
+	// printf(
+	// 	"UpperArm local = %.3f %.3f %.3f\n",
+	// 	node.trs.pos.x,
+	// 	node.trs.pos.y,
+	// 	node.trs.pos.z
+	// );
 
-	Node& childNode =
-	nodeReg.get(
-		node.children[0]
-	);
+	// Node& childNode =
+	// nodeReg.get(
+	// 	node.children[0]
+	// );
 
-	printf(
-		"ForeArm local = %.3f %.3f %.3f\n",
-		childNode.trs.pos.x,
-		childNode.trs.pos.y,
-		childNode.trs.pos.z
-	);
+	// printf(
+	// 	"ForeArm local = %.3f %.3f %.3f\n",
+	// 	childNode.trs.pos.x,
+	// 	childNode.trs.pos.y,
+	// 	childNode.trs.pos.z
+	// );
 
-	printf(
-		"shoulder=(%.3f %.3f %.3f)\n",
-		parent.x,parent.y,parent.z
-	);
+	// printf(
+	// 	"shoulder=(%.3f %.3f %.3f)\n",
+	// 	parent.x,parent.y,parent.z
+	// );
 
-	printf(
-		"elbow   =(%.3f %.3f %.3f)\n",
-		child.x,child.y,child.z
-	);
+	// printf(
+	// 	"elbow   =(%.3f %.3f %.3f)\n",
+	// 	child.x,child.y,child.z
+	// );
 
-	for (NodeHandle h : node.children) {
-		Node& c = nodeReg.get(h);
+	// for (NodeHandle h : node.children) {
+	// 	Node& c = nodeReg.get(h);
 
-		printf(
-			"%s  pos=(%.3f %.3f %.3f)\n",
-			strsv().get(c.name).data(),
-			c.trs.pos.x,
-			c.trs.pos.y,
-			c.trs.pos.z
-		);
-	}
+	// 	printf(
+	// 		"%s  pos=(%.3f %.3f %.3f)\n",
+	// 		strsv().get(c.name).data(),
+	// 		c.trs.pos.x,
+	// 		c.trs.pos.y,
+	// 		c.trs.pos.z
+	// 	);
+	// }
 
     // ===== Debug Draw =====
 
     vec3f origin = parent + vec3f{0, 2, 0};
 
-    // 青 = Tポーズ方向
+    // 赤 = Tポーズ方向
     debug.drawLine(
         origin,
         origin + restDir * 0.3f,
@@ -204,7 +204,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 
     node.trs.rot = Quat::fromTo(restDir, currentDir);
 
-    puts("==============================");
+    // puts("==============================");
 }
 
 

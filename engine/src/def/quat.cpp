@@ -86,7 +86,12 @@ vec3f Quat::operator*(const vec3f& v) const {
 
 	vec3f t = vec3f::cross(u, v) * 2.0f;
 	return v + w * t + vec3f::cross(u, t);
-}	
+}
+
+Quat& Quat::operator*=(const Quat& other) {
+	*this = *this * other;
+	return *this;
+}
 
 
 void Quat::normalize() {
