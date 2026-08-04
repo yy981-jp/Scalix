@@ -92,6 +92,10 @@ void vec3f::normalize() {
 	*this = bx::normalize(*this);
 }
 
+vec3f vec3f::normalized() const {
+	return bx::normalize(*this);
+}
+
 
 vec3f vec3f::lerp(const vec3f& a, const vec3f& b, float t) {
 	return bx::lerp(a,b,t);

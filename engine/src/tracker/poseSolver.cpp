@@ -1,5 +1,4 @@
-#include "tracker/pose.h"
-#include <cstdint>
+#include <tracker/pose.h>
 #include <tracker/poseSolver.h>
 
 #include <debug/debugDraw.h>
@@ -103,20 +102,109 @@ constexpr LandmarkConnection poseConnections[] = {
 
 
 PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
-	// setMode();
+	for (const auto& cnct : upperBody_list) {
+		NodeHandle& nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
+		NodeHandle& parentHdl = nodeReg.get(nodeHdl).parent;
+
+		bones[(size_t)cnct.bone].restDir =
+			( avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
+			- avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos
+			).normalized();
+	}
 }
 
 
 void PoseSolver::solve(const PoseFrame& frame) {
-	debug_(frame);
-	
-	// for (const auto& cnct: upperBody_list) {
-	// 	const vec3f& parent = frame.landmarks[ static_cast<size_t>(cnct.parent) ].pos;
-	// 	const vec3f& child = frame.landmarks[ static_cast<size_t>(cnct.child) ].pos;
-		
-	// 	Node& bone = avatar.model.nodes[static_cast<size_t>(cnct.bone)];
-	// 	bone.trs.rot = Quat::fromTo(parent, child);
-	// }
+    debug_(frame);
+
+    const auto& cnct = upperBody_list[0];
+
+    const vec3f& parent =
+        frame.landmarks[(size_t)cnct.parent].pos;
+    const vec3f& child =
+        frame.landmarks[(size_t)cnct.child].pos;
+
+    vec3f currentDir = (child - parent).normalized();
+    const vec3f& restDir = bones[(size_t)cnct.bone].restDir;
+
+    Node& node =
+        nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
+
+    printf("node   : %s\n", strsv().get(node.name).data());
+    printf("parent : %s\n",
+        strsv().get(nodeReg.get(node.parent).name).data());
+
+    printf(
+        "rest   = (%.3f %.3f %.3f)\n"
+        "current= (%.3f %.3f %.3f)\n"
+        "dot    = %.3f\n",
+        restDir.x, restDir.y, restDir.z,
+        currentDir.x, currentDir.y, currentDir.z,
+        bx::dot(restDir, currentDir)
+    );
+
+	printf(
+		"UpperArm local = %.3f %.3f %.3f\n",
+		node.trs.pos.x,
+		node.trs.pos.y,
+		node.trs.pos.z
+	);
+
+	Node& childNode =
+	nodeReg.get(
+		node.children[0]
+	);
+
+	printf(
+		"ForeArm local = %.3f %.3f %.3f\n",
+		childNode.trs.pos.x,
+		childNode.trs.pos.y,
+		childNode.trs.pos.z
+	);
+
+	printf(
+		"shoulder=(%.3f %.3f %.3f)\n",
+		parent.x,parent.y,parent.z
+	);
+
+	printf(
+		"elbow   =(%.3f %.3f %.3f)\n",
+		child.x,child.y,child.z
+	);
+
+	for (NodeHandle h : node.children) {
+		Node& c = nodeReg.get(h);
+
+		printf(
+			"%s  pos=(%.3f %.3f %.3f)\n",
+			strsv().get(c.name).data(),
+			c.trs.pos.x,
+			c.trs.pos.y,
+			c.trs.pos.z
+		);
+	}
+
+    // ===== Debug Draw =====
+
+    vec3f origin = parent + vec3f{0, 2, 0};
+
+    // 青 = Tポーズ方向
+    debug.drawLine(
+        origin,
+        origin + restDir * 0.3f,
+        0xff0000ff
+    );
+
+    // 緑 = MediaPipe方向
+    debug.drawLine(
+        origin,
+        origin + currentDir * 0.3f,
+        0xff00ff00
+    );
+
+    node.trs.rot = Quat::fromTo(restDir, currentDir);
+
+    puts("==============================");
 }
 
 

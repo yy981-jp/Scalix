@@ -105,15 +105,15 @@ void Engine::update(float dt) {
 	if (has(keyStat,KCode::Esc)) running = false;
 
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -5},{0.0f, 0.7f, 0});
 	springBoneSystem.update(dt);
-
-	avatarSystem.update(gctx,dt);
 
 	PoseFrame frame;
 	if (receiver.tick(frame)) {
 		poseSolver->solve(frame);
 	}
+
+	avatarSystem.update(gctx,dt);
 
 	mStat.relPos = {0, 0};
 }

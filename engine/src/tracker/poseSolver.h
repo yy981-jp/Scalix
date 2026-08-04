@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <vector>
 
 #include <core/avatar.h>
@@ -12,8 +13,14 @@ namespace PoseSolverMode {
 					  lowerBody = 1 << 1;
 }
 
+
+struct BoneState {
+    vec3f restDir;
+};
+
 class PoseSolver {
 	Avatar& avatar;
+	std::array<BoneState, static_cast<size_t>(HBT::Count)> bones;
 
 public:
 	explicit PoseSolver(Avatar& avatar);
