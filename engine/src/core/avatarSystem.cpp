@@ -3,8 +3,8 @@
 #include <gltf/loader.h>
 #include <core/key.h>
 #include <core/nodeRegistry.h>
-#include <util/mtxutil.h>
 #include <util/cache.h>
+#include <def/mtx.h>
 
 #include <bx/math.h>
 
@@ -100,7 +100,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 		if (avatar.model.skins.empty()) continue;
 
 
-		std::vector<std::vector<std::array<float,16>>> allJointMtx;
+		std::vector<std::vector<Mtx>> allJointMtx;
 		allJointMtx.resize(avatar.model.skins.size());
 
 		for (int skinIdx = 0; skinIdx < avatar.model.skins.size(); skinIdx++) {
@@ -137,7 +137,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				const Mesh& mesh = avatar.model.meshes[node.meshStartIndex + i];
 
 				// ===== パレット =====
-				std::vector<std::array<float,16>> palette;
+				std::vector<Mtx> palette;
 				palette.resize(mesh.boneRemapInverse.size());
 
 				for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {

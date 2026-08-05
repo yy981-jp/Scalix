@@ -105,7 +105,7 @@ constexpr LandmarkConnection poseConnections[] = {
 PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 	for (const auto& cnct : upperBody_list) {
 		NodeHandle& nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
-		NodeHandle& parentHdl = avatar.humanoid.bones[ static_cast<size_t>(Humanoid::parentTable[(size_t)cnct.bone]) ];
+		NodeHandle& parentHdl = avatar.humanoid.bones[ (size_t)(Humanoid::parentTable[(size_t)cnct.bone]) ];
 
 		bones[(size_t)cnct.bone].restDir =
 			( avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
@@ -151,11 +151,39 @@ void PoseSolver::solve(const PoseFrame& frame) {
 			0xff00ff00
 		);
 
+		// 黄 = 適用後
+		debug.drawLine(
+			origin,
+			origin +
+				avatar.trackingTransforms[node.id].rot *
+				vec3f{0,1,0} * 0.3f,
+			0xff00ffff
+		);
+
 		node.trs.rot = Quat::fromTo(restDir, currentDir);
 
 		// puts("==============================");
 
+		printf(
+			"%s\n"
+			"local pos=(%.3f %.3f %.3f)\n",
+			strsv().get(node.name).data(),
+			node.trs.pos.x,
+			node.trs.pos.y,
+			node.trs.pos.z
+		);
+		
 		// vec3f check = node.trs.rot * restDir;
+
+		// printf(
+		// 	"bone=%s\n"
+		// 	"parent=(%.3f %.3f %.3f)\n"
+		// 	"child =(%.3f %.3f %.3f)\n",
+		// 	strsv().get(node.name).data(),
+		// 	parent.x,parent.y,parent.z,
+		// 	child.x,child.y,child.z
+		// );
+
 
 		// printf(
 		// 	"rest    = %.3f %.3f %.3f\n"

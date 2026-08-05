@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <gfx/mesh.h>
 #include <gfx/texture.h>
 #include <core/gctx.h>
@@ -29,7 +28,7 @@ struct Node {
 
 	// pos: vec3f -- local座標
 	// rot: Quat  -- identity quaternion
-	// scale: vec3f
+	// scale: vec3f -- {1,1,1}
 	Transform trs;
 
 	Node() {
@@ -39,7 +38,7 @@ struct Node {
 
 struct Skin {
 	std::vector<NodeId> joints; // node index
-	std::vector<std::array<float,16>> invBind;
+	std::vector<Mtx> invBind;
 };
 
 enum class Status {

@@ -114,11 +114,10 @@ void Avatar::draw(Camera& cam) {
 	// globalTransform のTRS成分は非一様スケール／鏡映を完全には表せないため、
 	// 描画と同じグローバル行列から視点の位置・向きを取得する。
 	const auto& headMtx = globalTransforms[headIdx].mtx;
-	const vec3f headPos{headMtx[12], headMtx[13], headMtx[14]};
 	const vec3f lookDir{bx::normalize(bx::mulXyz0({0.0f, 0.0f, 1.0f}, headMtx.data()))};
 
 
-	vec3f camPos = headPos
+	vec3f camPos = headMtx.pos()
 		+ lookDir * 0.1f
 		+ vec3f{0, 0.05f, 0};
 

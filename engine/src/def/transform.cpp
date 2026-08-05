@@ -1,9 +1,7 @@
 #include <def/transform.h>
-#include <util/mtxutil.h>
 
 
 Transform::Transform() : pos{}, rot{}, scale{1.0f, 1.0f, 1.0f} {
-	mtx.fill(0.0f);
 	rebuildMatrix();
 }
 
@@ -28,5 +26,20 @@ Transform Transform::operator*(const Transform& rhs) const {
 }
 
 void Transform::rebuildMatrix() {
-	buildTRS(mtx.data(), pos, rot, scale);
+	float t[16], r[16], s[16], tmp[16];
+
+	bx::mtxIdentity(t);
+	bx::mtxIdentity(r);
+	bx::mtxIdentity(s);
+
+	t[12] = pos.x;  t[13] = pos.y;  t[14] = pos.z;
+
+	// if (hasRot) {
+	bx::mtxFromQuaternion(r, rot);
+	// }
+
+	s[0] = scale.x;  s[5] = scale.y;  s[10] = scale.z;
+
+	bx::mtxMul(tmp, s, r);	   // R * S
+	bx::mtxMul(mtx.data(), tmp, t);	 // (S * R) * T
 }
