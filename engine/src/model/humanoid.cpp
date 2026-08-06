@@ -1,10 +1,13 @@
 #include <model/model.h>
+#include <model/humanoid.h>
 #include <util/fmutil.h>
 #include <core/nodeRegistry.h>
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
 #include <ranges>
+
+#include <y9inc/string.h>
 
 
 template <typename... Targets>
@@ -16,16 +19,26 @@ bool has(const std::vector<std::string>& w, const Targets&... targets_arg) {
 	return false;
 }
 
-enum class BoneType: uint8_t {
-	unknown,
-	head,
-	neck,
-	spine,
-	hips,
-	arm,
-	leg,
-	hand,
-	foot,
+
+
+enum class BoneType : uint8_t {
+    unknown,
+
+    head,
+    neck,
+
+    spine,
+    chest,
+    hips,
+
+    shoulder,
+    arm,
+
+    hand,
+
+    leg,
+    foot,
+    toes,
 };
 
 enum class Side: uint8_t {
@@ -35,10 +48,13 @@ enum class Side: uint8_t {
 	right,
 };
 
-enum class Level: uint8_t {
-	unknown,
-	upper,
-	lower,
+enum class Level : uint8_t {
+    unknown,
+
+    upper,
+    lower,
+
+    middle,
 };
 
 struct NodeInfo {
@@ -56,17 +72,37 @@ struct NodeInfo {
 
 
 static const std::unordered_map<std::string, BoneType> wordMap = {
-	{"head", BoneType::head},
-	{"neck", BoneType::neck},
-	{"spine", BoneType::spine},
-	{"hips", BoneType::hips},
-	{"pelvis", BoneType::hips},
+    {"head", BoneType::head},
 
-	{"arm", BoneType::arm},
-	{"leg", BoneType::leg},
+    {"neck", BoneType::neck},
 
-	{"hand", BoneType::hand},
-	{"foot", BoneType::foot},
+    {"spine", BoneType::spine},
+    {"chest", BoneType::chest},
+
+    {"hips", BoneType::hips},
+    {"hip", BoneType::hips},
+    {"pelvis", BoneType::hips},
+
+    {"shoulder", BoneType::shoulder},
+    {"clavicle", BoneType::shoulder},
+    {"collar", BoneType::shoulder},
+
+    {"arm", BoneType::arm},
+    {"forearm", BoneType::arm},
+
+    {"hand", BoneType::hand},
+    {"wrist", BoneType::hand},
+
+    {"leg", BoneType::leg},
+    {"thigh", BoneType::leg},
+    {"calf", BoneType::leg},
+    {"shin", BoneType::leg},
+
+    {"foot", BoneType::foot},
+    {"ankle", BoneType::foot},
+
+    {"toe", BoneType::toes},
+    {"toes", BoneType::toes},
 };
 
 static const std::unordered_map<std::string, Side> sideMap = {
@@ -83,6 +119,9 @@ static const std::unordered_map<std::string, Level> levelMap = {
 
 	{"lower", Level::lower},
 	{"low", Level::lower},
+
+	{"mid", Level::middle},
+	{"middle", Level::middle},
 };
 
 /// @brief 最適なnodeを選択
@@ -121,7 +160,7 @@ void Humanoid::init(const Model& model) {
 					cand.level = it->second;
 
 				// blacklist
-				if (w == "support" || w == "ik")
+				if (is_or(w,"support","ik","twist","roll"))
 					cand.score -= 100;
 			}
 			cands.push_back(cand);
@@ -141,28 +180,60 @@ void Humanoid::init(const Model& model) {
 
 			case BoneType::neck: {
 				bones_init[static_cast<size_t>(HBT::neck)].push_back(node);
-			}
+			} break;
 
 			case BoneType::arm: {
 				if (node.side == Side::left) {
-					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::arm_left_up)].push_back(node);
-					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::arm_left_low)].push_back(node);
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::leftUpperArm)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::leftLowerArm)].push_back(node);
 				}
 				if (node.side == Side::right) {
-					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::arm_right_up)].push_back(node);
-					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::arm_right_low)].push_back(node);
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::rightUpperArm)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::rightLowerArm)].push_back(node);
 				}
 			} break;
 
 			case BoneType::leg: {
 				if (node.side == Side::left) {
-					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::leg_left_up)].push_back(node);
-					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::leg_left_low)].push_back(node);
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::leftUpperLeg)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::leftLowerLeg)].push_back(node);
 				}
 				if (node.side == Side::right) {
-					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::leg_right_up)].push_back(node);
-					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::leg_right_low)].push_back(node);
+					if (node.level == Level::upper) bones_init[static_cast<size_t>(HBT::rightUpperLeg)].push_back(node);
+					if (node.level == Level::lower) bones_init[static_cast<size_t>(HBT::rightLowerLeg)].push_back(node);
 				}
+			} break;
+
+			case BoneType::shoulder: {
+				if (node.side == Side::left)
+					bones_init[(size_t)HBT::leftShoulder].push_back(node);
+
+				if (node.side == Side::right)
+					bones_init[(size_t)HBT::rightShoulder].push_back(node);
+			} break;
+
+			case BoneType::hand: {
+				if (node.side == Side::left)
+					bones_init[(size_t)HBT::leftHand].push_back(node);
+
+				if (node.side == Side::right)
+					bones_init[(size_t)HBT::rightHand].push_back(node);
+			} break;
+
+			case BoneType::foot: {
+				if (node.side == Side::left)
+					bones_init[(size_t)HBT::leftFoot].push_back(node);
+
+				if (node.side == Side::right)
+					bones_init[(size_t)HBT::rightFoot].push_back(node);
+			} break;
+
+			case BoneType::toes: {
+				if (node.side == Side::left)
+					bones_init[(size_t)HBT::leftToes].push_back(node);
+
+				if (node.side == Side::right)
+					bones_init[(size_t)HBT::rightToes].push_back(node);
 			} break;
 
 			case BoneType::spine: {

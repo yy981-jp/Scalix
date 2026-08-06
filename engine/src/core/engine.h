@@ -5,7 +5,7 @@
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 #include <bx/math.h>
-#include <stdexcept>
+// #include <stdexcept>
 
 #include <gfx/shader.h>
 #include <gltf/loader.h>
@@ -19,6 +19,8 @@
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
 #include <physics/springBone.h>
+#include <tracker/recv.h>
+#include <tracker/poseSolver.h>
 
 
 enum class ShaderId {
@@ -26,12 +28,13 @@ enum class ShaderId {
 	Count
 };
 
-class Game {
+class Engine {
 	GameContext gctx = {
 		.keyStat = keyStat,
 		.mStat = mStat,
 		.cam = cam0,
-		.cam_type = camId
+		.cam_type = camId,
+		.poseSolver = nullptr,
 	};
 
 	SDL_Window* window;
@@ -56,6 +59,9 @@ class Game {
 
 	Grid grid;
 
+	Recv receiver;
+	PoseSolver* poseSolver;
+
 	static constexpr int
 		T_WIDTH = 1200,
 		T_HEIGHT = 900;
@@ -72,12 +78,12 @@ class Game {
 	void onWindowEve(const SDL_WindowEvent& e);
 	void onMouseMt(const SDL_MouseMotionEvent& e);
 
-	void update();
+	void update(float dt);
 	void draw();
 
 public:
-	Game();
-	~Game();
+	Engine();
+	~Engine();
 
 	void tick();
 	inline bool isRunning() { return running; }

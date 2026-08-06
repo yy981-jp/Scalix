@@ -1,5 +1,6 @@
 # exec
-file(GLOB_RECURSE SOURCES src/*.cpp ../shared/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp generated/*.c* ../shared/*.cpp)
+
 # Windows icon
 if(WIN32)
     list(APPEND SOURCES ${CMAKE_SOURCE_DIR}/cmake/icon.rc)
@@ -33,12 +34,14 @@ set_target_properties(bimg PROPERTIES
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)
 pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
+find_package(Protobuf CONFIG REQUIRED)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
 	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external
 	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/nlohmann/include
 	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/external/yaml/include
 	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/engine/src
+	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/engine/generated
 	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}
 	${SDL2_INCLUDE_DIRS}
 	${SDL2_IMAGE_INCLUDE_DIRS}
@@ -50,6 +53,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	bimg
 	${SDL2_LIBRARIES}
 	${SDL2_IMAGE_LIBRARIES}
+	ws2_32
+	protobuf::libprotobuf
 )
 
 # mode

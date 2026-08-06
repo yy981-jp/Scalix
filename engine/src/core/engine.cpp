@@ -1,12 +1,12 @@
-#include <core/game.h>
+#include <core/engine.h>
 
 #include <gfx/shader.h>
+#include <debug/debugDraw.h>
 
 #include <physics/detect.h>
 
-#include <iostream>
 
-Game::Game() {
+Engine::Engine() {
 	SDL_Init(SDL_INIT_VIDEO);
 	if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
 
@@ -44,7 +44,7 @@ Game::Game() {
 	bgfx::setPlatformData(pd);
 
 	bgfx::Init init{};
-	init.type = bgfx::RendererType::Direct3D11;
+	init.type = bgfx::RendererType::Count;
 
 	init.platformData.nwh = pd.nwh;
 
@@ -55,22 +55,26 @@ Game::Game() {
 	
 	if (!bgfx::init(init)) throw std::runtime_error("bgfx init failed");
 	
-	bgfx::setDebug(BGFX_DEBUG_STATS | BGFX_DEBUG_TEXT);
+	bgfx::setDebug(BGFX_DEBUG_STATS);
+	// bgfx::setDebug(BGFX_DEBUG_TEXT);
 
 	// set mouse mode
 
 	SDL_SetRelativeMouseMode(static_cast<SDL_bool>(mouseRelMode));
 
+	
 	gameInit();
+
+	gctx.poseSolver = poseSolver;
 }
 
-Game::~Game() {
+Engine::~Engine() {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	IMG_Quit();
 }
 
-void Game::tick() {
+void Engine::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch(event.type) {
@@ -84,38 +88,44 @@ void Game::tick() {
 		}
 	}
 
-	update();
+	const float dt = elap.get();
+	update(dt);
 	
 	draw();
-	
-	// TODO: 何故動かない...?
+
 	bgfx::dbgTextClear();
-	bgfx::dbgTextPrintf(10, 25, 0x4f, "y9test: debug hello");
+	bgfx::dbgTextPrintf(5, 50, 0x4f, "fps: %f", 1/dt);
 
 
 	bgfx::frame();
 }
 
 
-void Game::update() {
+void Engine::update(float dt) {
 	if (has(keyStat,KCode::Esc)) running = false;
-	float dt = elap.get();
 
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -15},{0.0f, 0.7f, 0});
-	avatarSystem.update(gctx,dt);
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -5},{0.0f, 0.7f, 0});
 	springBoneSystem.update(dt);
+
+	PoseFrame frame;
+	if (receiver.tick(frame)) {
+		poseSolver->solve(frame);
+	}
+
+	avatarSystem.update(gctx,dt);
 
 	mStat.relPos = {0, 0};
 }
 
 
-void Game::draw() {
+void Engine::draw() {
 	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)], u_bones);
 	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
+	debug.render(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
-void Game::gameInit() {
+void Engine::gameInit() {
 	mStat.relMode = mouseRelMode;
 
 	// set camera
@@ -138,6 +148,8 @@ void Game::gameInit() {
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
 
+	debug.init();
+
 	// const bgfx::Caps* caps = bgfx::getCaps();
 	// int maxMat4 = caps->limits.maxUniforms / 4;
 	// usingUni = maxMat4 * 0.8;
@@ -150,12 +162,10 @@ void Game::gameInit() {
 	delete logo;
 
 
-	update();
+	avatarSystem.update(gctx,elap.get());
 
 
-	// for ( (nodeReg.find(0,176)).child ) {
-
-	// }
+	poseSolver = new PoseSolver{avatarSystem.player()};
 
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r
@@ -169,32 +179,32 @@ void Game::gameInit() {
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
 }
 
-void Game::onKeyDown(const SDL_KeyboardEvent& e) {
+void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
 	if (e.repeat) return;
 	auto it = keyMap.find(e.keysym.sym);
 	if (it != keyMap.end())
 		keyStat |= static_cast<KCodes>(it->second);
 }
 
-void Game::onKeyUp(const SDL_KeyboardEvent& e) {
+void Engine::onKeyUp(const SDL_KeyboardEvent& e) {
 	auto it = keyMap.find(e.keysym.sym);
 	if (it != keyMap.end())
 		keyStat &= ~static_cast<KCodes>(it->second);
 }
 
-void Game::onMouseBtDown(const SDL_MouseButtonEvent& e) {
+void Engine::onMouseBtDown(const SDL_MouseButtonEvent& e) {
 	auto it = mMap.find(e.button);
 	if (it != mMap.end())
 		mStat.codes |= static_cast<MCodes>(it->second);
 }
 
-void Game::onMouseBtUp(const SDL_MouseButtonEvent& e) {
+void Engine::onMouseBtUp(const SDL_MouseButtonEvent& e) {
 	auto it = mMap.find(e.button);
 	if (it != mMap.end())
 		mStat.codes &= ~static_cast<MCodes>(it->second);
 }
 
-void Game::onWindowEve(const SDL_WindowEvent& e) {
+void Engine::onWindowEve(const SDL_WindowEvent& e) {
 /*
 	if (e.event == SDL_WINDOWEVENT_FOCUS_LOST) {
 		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
@@ -202,7 +212,7 @@ void Game::onWindowEve(const SDL_WindowEvent& e) {
 */
 }
 
-void Game::onMouseMt(const SDL_MouseMotionEvent& e) {
+void Engine::onMouseMt(const SDL_MouseMotionEvent& e) {
 	mStat.absPos.x = e.x;
 	mStat.absPos.y = e.y;
 	mStat.relPos.x = e.xrel;

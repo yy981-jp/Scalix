@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package sxtr.landmark.pose;
+
+message Landmark {
+	float x = 1;
+	float y = 2;
+	float z = 3;
+	float visibility = 4;
+}
+
+message PoseFrame {
+	uint64 timestamp = 1;
+	repeated Landmark landmarks = 2;
+}

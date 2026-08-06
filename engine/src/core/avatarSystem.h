@@ -17,4 +17,6 @@ public:
 	void loadData(const std::vector<std::string> path);
 	void update(GameContext& gctx, float dt);
 	void draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones);
+
+	Avatar& player();
 };

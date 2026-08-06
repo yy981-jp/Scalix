@@ -3,12 +3,10 @@
 #include <gltf/loader.h>
 #include <core/key.h>
 #include <core/nodeRegistry.h>
-#include <util/mtxutil.h>
 #include <util/cache.h>
-#include <util/quatutil.h>
+#include <def/mtx.h>
 
 #include <bx/math.h>
-#include <iostream>
 
 
 void AvatarSystem::loadData(const std::vector<std::string> path) {
@@ -21,8 +19,8 @@ void AvatarSystem::loadData(const std::vector<std::string> path) {
 	}
 }
 
-void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
-				const Transform& entityTransform) {
+void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Transform>& out,
+				Avatar& avatar, const Transform& entityTransform) {
 	if (idx < 0 || idx >= avatar.model.nodes.size()) {
 		printf("invalid idx: %d\n", idx);
 		return;
@@ -35,11 +33,11 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent.isValid()) {
 		NodeId parent = nodeReg.getId(node.parent);
-		calcGlobal(parent, calculated, avatar, entityTransform);
-		avatar.globalTransforms[idx] = avatar.globalTransforms[parent] * node.trs;
+		calcGlobal(parent, calculated, out, avatar, entityTransform);
+		out[idx] = out[parent] * node.trs;
 	} else {
 		// bx::mtxMul の従来の積順と合わせ、ルートは local * entity。
-		avatar.globalTransforms[idx] = node.trs * entityTransform;
+		out[idx] = node.trs * entityTransform;
 	}
 
 	calculated[idx] = true;
@@ -57,19 +55,36 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		avatar.update(ctx,dt);
 
 		avatar.globalTransforms.resize(avatar.model.nodes.size());
+		avatar.trackingTransforms.resize(avatar.model.nodes.size());
 
 		Transform entityTransform;
 		entityTransform.pos = avatar.pos;
-		entityTransform.rot.setAxisAngle({0, 1, 0}, avatar.yaw);
+		entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
 		// glTF座標系からのX軸反転もEntityのTRSとして扱う。
 		entityTransform.scale = {-avatar.scale[0], avatar.scale[1], avatar.scale[2]};
 		entityTransform.rebuildMatrix();
+
+		// トラッキング(PoseSolver)用のentityTransform。
+		// モーションキャプチャの入力はカメラ空間の相対ベクトルであり、
+		// アバターがワールド上でどこを向いている(yaw)か・どこにいる(pos)かとは
+		// 無関係なため、そのぶんは含めない。glTFのX軸反転(scale)は座標系の
+		// 補正であって向きではないので、そのまま維持する。
+		Transform trackingEntityTransform;
+		trackingEntityTransform.scale = entityTransform.scale;
+		trackingEntityTransform.rebuildMatrix();
 
 		std::vector<bool> calculated;
 		calculated.resize(avatar.model.nodes.size(), false);
 
 		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, calculated, avatar, entityTransform);
+			calcGlobal(i, calculated, avatar.globalTransforms, avatar, entityTransform);
+		}
+
+		std::vector<bool> trackingCalculated;
+		trackingCalculated.resize(avatar.model.nodes.size(), false);
+
+		for (int i = 0; i < avatar.model.nodes.size(); i++) {
+			calcGlobal(i, trackingCalculated, avatar.trackingTransforms, avatar, trackingEntityTransform);
 		}
 
 		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
@@ -85,7 +100,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 		if (avatar.model.skins.empty()) continue;
 
 
-		std::vector<std::vector<std::array<float,16>>> allJointMtx;
+		std::vector<std::vector<Mtx>> allJointMtx;
 		allJointMtx.resize(avatar.model.skins.size());
 
 		for (int skinIdx = 0; skinIdx < avatar.model.skins.size(); skinIdx++) {
@@ -122,7 +137,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				const Mesh& mesh = avatar.model.meshes[node.meshStartIndex + i];
 
 				// ===== パレット =====
-				std::vector<std::array<float,16>> palette;
+				std::vector<Mtx> palette;
 				palette.resize(mesh.boneRemapInverse.size());
 
 				for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {
@@ -178,4 +193,8 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 
 		}
 	}
+}
+
+Avatar& AvatarSystem::player() {
+	return avatars[playableAvatar]; // TODO: 仮
 }

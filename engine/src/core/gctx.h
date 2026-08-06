@@ -1,8 +1,10 @@
 #pragma once
 
-#include <cstdint>
+// #include <tracker/poseSolver.h>
 #include <core/key.h>
 #include <core/camera.h>
+
+class PoseSolver;
 
 
 struct GameContext {
@@ -10,4 +12,5 @@ struct GameContext {
 	MouseState& mStat;
 	Camera& cam;
 	CameraType& cam_type;
+	PoseSolver* poseSolver;
 };
