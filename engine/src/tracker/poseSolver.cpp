@@ -1,31 +1,25 @@
-#include <cstdint>
+#include "def/node.h"
+#include "util/math.h"
+#include <tracker/pose.h>
 #include <tracker/poseSolver.h>
 
-#include <algorithm>
-#include <cmath>
+#include <debug/debugDraw.h>
 
 #include <core/nodeRegistry.h>
-#include <util/quatutil.h>
 #include <util/fmutil.h>
 #include <def/str.h>
 
 
-namespace {
+struct LandmarkConnection {
+	LandmarkId a;
+	LandmarkId b;
+};
 
-constexpr float directionEpsilon = 0.0001f;
 
 struct HumanoidConnection {
 	HBT bone;
 	LandmarkId parent;
 	LandmarkId child;
-	// ひねり(twist/roll)補正用の参照ランドマーク2点。指定しない場合はtwist=LandmarkId::Countの
-	// ままにし、swing(向きを合わせる回転)のみで済ませる(quatFromToは軸まわりのひねりを
-	// 一切決定できない)。
-	// twist(index)とtwistSecondary(pinky)を結ぶベクトル(=手の甲を横切る「幅」方向)を使う。
-	// 「手首→Index」のような指先方向のベクトルは、指をまっすぐ伸ばしていると前腕の軸と
-	// ほぼ平行になってしまい、垂直成分がノイズだけになって不安定なため採用しない。
-	LandmarkId twist = LandmarkId::Count;
-	LandmarkId twistSecondary = LandmarkId::Count;
 };
 
 enum class HMCnsId {
@@ -35,281 +29,193 @@ enum class HMCnsId {
 	Count
 };
 
-constexpr std::array upperBody_list = {
-	HumanoidConnection{HBT::arm_left_up, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
-	HumanoidConnection{HBT::arm_left_low, LandmarkId::LeftElbow, LandmarkId::LeftWrist, LandmarkId::LeftIndex},
-	HumanoidConnection{HBT::arm_right_up, LandmarkId::RightShoulder, LandmarkId::RightElbow},
-	HumanoidConnection{HBT::arm_right_low, LandmarkId::RightElbow, LandmarkId::RightWrist, LandmarkId::RightIndex},
+const std::vector<HumanoidConnection> upperBody_list = {
+	HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
+	// HumanoidConnection{HBT::leftLowerArm, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
+	// HumanoidConnection{HBT::rightUpperArm, LandmarkId::RightShoulder, LandmarkId::RightElbow},
+	// HumanoidConnection{HBT::rightLowerArm, LandmarkId::RightElbow, LandmarkId::RightWrist},
 };
 
-constexpr std::array lowerBody_list = {
-	HumanoidConnection{HBT::leg_left_up, LandmarkId::LeftHip, LandmarkId::LeftKnee},
-	HumanoidConnection{HBT::leg_left_low, LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
-	HumanoidConnection{HBT::leg_right_up, LandmarkId::RightHip, LandmarkId::RightKnee},
-	HumanoidConnection{HBT::leg_right_low, LandmarkId::RightKnee, LandmarkId::RightAnkle},
+const std::vector<HumanoidConnection> lowerBody_list = {
+	HumanoidConnection{HBT::leftUpperLeg, LandmarkId::LeftHip, LandmarkId::LeftKnee},
+	HumanoidConnection{HBT::leftLowerLeg, LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
+	HumanoidConnection{HBT::rightUpperLeg, LandmarkId::RightHip, LandmarkId::RightKnee},
+	HumanoidConnection{HBT::rightLowerLeg, LandmarkId::RightKnee, LandmarkId::RightAnkle},
 };
 
-constexpr std::array humanoidConnections = {
+const std::vector<std::vector<HumanoidConnection>> humanoidConnections = {
 	upperBody_list,
 	lowerBody_list,
 };
 
 
-bool hasDirection(const vec3f& direction) {
-	return bx::length(direction) > directionEpsilon;
-}
+constexpr LandmarkConnection poseConnections[] = {
+    // 顔（目）
+    {LandmarkId::Nose, LandmarkId::LeftEyeInner},
+    {LandmarkId::LeftEyeInner, LandmarkId::LeftEye},
+    {LandmarkId::LeftEye, LandmarkId::LeftEyeOuter},
+    {LandmarkId::Nose, LandmarkId::RightEyeInner},
+    {LandmarkId::RightEyeInner, LandmarkId::RightEye},
+    {LandmarkId::RightEye, LandmarkId::RightEyeOuter},
 
-// vをaxis(正規化済み)に垂直な成分だけにする。
-// ひねり(twist)角の計算では、ボーン軸まわりの回転で参照ベクトルの
-// 「軸に垂直な成分」がどれだけ回っているかを見る必要がある。
-vec3f perpendicularComponent(const vec3f& v, const vec3f& axis) {
-	return v - axis * bx::dot(v, axis);
-}
+    // 顔（耳・口）
+    {LandmarkId::LeftEar, LandmarkId::MouthLeft},
+    {LandmarkId::RightEar, LandmarkId::MouthRight},
+    {LandmarkId::MouthLeft, LandmarkId::MouthRight},
 
-vec3f position(const Avatar& avatar, NodeHandle node) {
-	// トラッキングの基準はavatar.yaw/posに依存しないtrackingTransformsを使う。
-	// globalTransformsを使うと、アバターが振り向くたびにこの後の
-	// directionInParentSpace()の基準もずれてしまう。
-	const auto& mtx = avatar.trackingTransforms[nodeReg.getId(node)].mtx;
-	return {mtx[12], mtx[13], mtx[14]};
-}
+    // 上半身（両肩）
+    {LandmarkId::LeftShoulder, LandmarkId::RightShoulder},
 
-vec3f directionInParentSpace(const Avatar& avatar, NodeHandle node, const vec3f& direction) {
-	NodeHandle parent = nodeReg.get(node).parent;
-	if (!parent.isValid()) return direction;
+    // 腕・手（左）
+    {LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
+    {LandmarkId::LeftElbow, LandmarkId::LeftWrist},
+    {LandmarkId::LeftWrist, LandmarkId::LeftPinky},
+    {LandmarkId::LeftWrist, LandmarkId::LeftIndex},
+    {LandmarkId::LeftWrist, LandmarkId::LeftThumb},
+    {LandmarkId::LeftPinky, LandmarkId::LeftIndex},
 
-	// モーションキャプチャ入力(カメラ空間の相対ベクトル)はアバターの
-	// ワールド上の向き(yaw)や位置(pos)とは無関係なため、その成分を含まない
-	// trackingTransformsの逆行列で親ボーン空間へ変換する。ここで
-	// globalTransforms(yaw込み)を使うと、キャリブレーション後にアバターが
-	// 振り向いた分だけ基準がずれ、ローカルなはずの動きがワールド軸に
-	// 引きずられてしまう(=global化してしまう)。
-	const auto& parentMtx = avatar.trackingTransforms[nodeReg.getId(parent)].mtx;
-	float inverse[16];
-	bx::mtxInverse(inverse, parentMtx.data());
-	return vec3f{bx::mulXyz0(direction, inverse)};
-}
+    // 腕・手（右）
+    {LandmarkId::RightShoulder, LandmarkId::RightElbow},
+    {LandmarkId::RightElbow, LandmarkId::RightWrist},
+    {LandmarkId::RightWrist, LandmarkId::RightPinky},
+    {LandmarkId::RightWrist, LandmarkId::RightIndex},
+    {LandmarkId::RightWrist, LandmarkId::RightThumb},
+    {LandmarkId::RightPinky, LandmarkId::RightIndex},
 
-bool containsSupport(std::string_view name) {
-	for (const auto& w : tokenizer(name)) {
-		if (w == "support") return true;
-	}
-	return false;
-}
+    // 胴体（肩〜腰）
+    {LandmarkId::LeftShoulder, LandmarkId::LeftHip},
+    {LandmarkId::RightShoulder, LandmarkId::RightHip},
+    {LandmarkId::LeftHip, LandmarkId::RightHip},
 
-NodeHandle firstChild(NodeHandle node) {
-	const Node& source = nodeReg.get(node);
-	if (source.children.empty()) return NodeHandle::invalid();
+    // 脚・足（左）
+    {LandmarkId::LeftHip, LandmarkId::LeftKnee},
+    {LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
+    {LandmarkId::LeftAnkle, LandmarkId::LeftHeel},
+    {LandmarkId::LeftHeel, LandmarkId::LeftFootIndex},
+    {LandmarkId::LeftAnkle, LandmarkId::LeftFootIndex},
 
-	// "support"を含む名前の子（衣装/腕などの補正ボーン）は関節チェーンの本流ではないため、
-	// 他に候補があればスキップして次の実関節ボーンを優先する。
-	// 例: Upper_arm.L の children = [Costume_support1.L, Costume_support3.L, Lower_arm.L, Upper_arm_support.L]
-	//     -> Lower_arm.L を選びたい
-	for (const NodeHandle& child : source.children) {
-		std::string_view name = strsv().get(nodeReg.get(child).name);
-		if (!containsSupport(name)) return child;
-	}
-
-	return source.children.front();
-}
-
-}
+    // 脚・足（右）
+    {LandmarkId::RightHip, LandmarkId::RightKnee},
+    {LandmarkId::RightKnee, LandmarkId::RightAnkle},
+    {LandmarkId::RightAnkle, LandmarkId::RightHeel},
+    {LandmarkId::RightHeel, LandmarkId::RightFootIndex},
+    {LandmarkId::RightAnkle, LandmarkId::RightFootIndex},
+};
 
 
 PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
-	setMode();
-}
+	for (const auto& cnct : upperBody_list) {
+		NodeHandle& nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
+		NodeHandle& parentHdl = avatar.humanoid.bones[ (size_t)(Humanoid::parentTable[(size_t)cnct.bone]) ];
 
-void PoseSolver::setSmoothing(float value) {
-	smoothing = std::clamp(value, 0.0f, 1.0f);
-}
-
-void PoseSolver::setMinimumVisibility(float value) {
-	minimumVisibility = std::clamp(value, 0.0f, 1.0f);
-}
-
-void PoseSolver::setMode(uint8_t mode) {
-	bones.clear();
-
-	for (int targetMode = 0; targetMode < static_cast<int>(HMCnsId::Count); targetMode++) {
-		if ( !(mode & (1 << targetMode)) ) continue; // 指定されていないフラグは無視
-
-		// flagで指定されたものだけ処理
-		for (const HumanoidConnection& connection: humanoidConnections[targetMode]) {
-			if (!avatar.humanoid.has(connection.bone)) continue;
-
-			NodeHandle node = avatar.humanoid.bones[static_cast<size_t>(connection.bone)];
-			NodeHandle childNode = firstChild(node);
-			if (!childNode.isValid()) continue;
-
-			vec3f direction = position(avatar, childNode) - position(avatar, node);
-			direction = directionInParentSpace(avatar, node, direction);
-			float length = bx::length(direction);
-			if (length <= directionEpsilon) continue;
-
-			bones.push_back( {
-				.humanoidBone = connection.bone,
-				.landmarks = {connection.parent, connection.child},
-				.node = node,
-				.childNode = childNode,
-				.restLength = length,
-				.restDirection = direction / length,
-				.restRotation = nodeReg.get(node).trs.rot,
-				.calibratedDirection = direction / length, // キャリブレーションされるまではrestDirectionにフォールバック
-				.twistLandmark = connection.twist,
-				.twistCalibrated = false,
-			} );
-		}
+		bones[(size_t)cnct.bone].restDir =
+			( avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
+			- avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos
+			).normalized();
+		bones[(size_t)cnct.bone].bindRot = nodeReg.get(nodeHdl).trs.rot.fromAxisAngle({0,0,1}, deg2rad(90));
 	}
 
-	needsCalibration = true;
+
+	// for (const auto& cnct: upperBody_list) {
+	// 	const Node& node = nodeReg.get( avatar.humanoid.bones[(size_t)cnct.bone] );
+	// 	const Mtx& invBind = avatar.model.skins[ node.skinIndex ].invBind[node.jointIndex];
+	// 	Mtx bind = Mtx::inverse(invBind);
+	// }
 }
 
-void PoseSolver::smoothAndRepair(PoseFrame& frame) {
-	for (size_t i = 0; i < landmarkCount; ++i) {
-		PoseLandmark& landmark = frame.landmarks[i];
-		const bool reliable = landmark.visibility >= minimumVisibility;
 
-		if (!reliable && hasPrevious) {
-			landmark.pos = previous[i].pos;
-		} else if (hasPrevious) {
-			landmark.pos = vec3f::lerp(previous[i].pos, landmark.pos, smoothing);
+void PoseSolver::solve(const PoseFrame& frame) {
+    debug_(frame);
+
+
+	for (const auto& cnct: upperBody_list) {
+		// const auto& cnct = upperBody_list[0];
+
+		const vec3f& parent =
+			frame.landmarks[(size_t)cnct.parent].pos;
+		const vec3f& child =
+			frame.landmarks[(size_t)cnct.child].pos;
+
+		const vec3f& currentDir = (child - parent).normalized();
+		const auto& bone = bones[(size_t)cnct.bone];
+
+		Node& node =
+			nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
+
+		node.trs.rot = Quat::fromTo(bone.restDir, currentDir)
+						* bone.bindRot;
+
+
+
+
+		// ===== Debug Draw =====
+
+		vec3f origin = parent + vec3f{0, 2, 0};
+
+		for (const auto& cnct: upperBody_list) {
+			// bind = inverse(invBind)
+			const Node& node =
+				nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
+
+			const Mtx& invBind =
+				avatar.model.skins[node.skinIndex].invBind[node.jointIndex];
+
+			Mtx bind = Mtx::inverse(invBind);
+
+			const float* m = bind.data();
+
+			// column-major
+			vec3f axisX = { m[0], m[1], m[2] };
+			vec3f axisY = { m[4], m[5], m[6] };
+			vec3f axisZ = { m[8], m[9], m[10] };
+
+			axisX.normalize();
+			axisY.normalize();
+			axisZ.normalize();
+
+			debug.drawLine(origin, origin + axisX * 0.3f, 0xff0000ff); // X = 赤
+			debug.drawLine(origin, origin + axisY * 0.3f, 0xff00ff00); // Y = 緑
+			debug.drawLine(origin, origin + axisZ * 0.3f, 0xffff0000); // Z = 青
+
+			// MediaPipe方向(白)
+			debug.drawLine(origin, origin + currentDir * 0.3f, 0xffffffff);
 		}
+
+		NodeHandle parentHdl =
+			avatar.humanoid.bones[
+				(size_t)Humanoid::parentTable[(size_t)cnct.bone]
+			];
+
+		vec3f parentPos =
+			avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos;
+
+		vec3f childPos =
+			avatar.trackingTransforms[node.id].pos;
+
+		vec3f debug_restDir =
+			(childPos - parentPos).normalized();
+
+		debug.drawLine(
+			origin,
+			origin + debug_restDir * 0.3f,
+			0xff00ffff // 黄色
+		);
+		// puts("==============================");
+		
+	}
+}
+
+
+void PoseSolver::debug_(const PoseFrame& frame) {
+	for (auto& lm : frame.landmarks) {
+		if (lm.visibility < 0.5) continue;
+		debug.drawCross(lm.pos + vec3f{0,2,0}, 0.01f, 0xffff0000u);
 	}
 
-	constrainBoneLengths(frame);
-	previous = frame.landmarks;
-	hasPrevious = true;
-}
-
-void PoseSolver::constrainBoneLengths(PoseFrame& frame) {
-	for (PoseBone& bone : bones) {
-		PoseLandmark& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)];
-		PoseLandmark& child = frame.landmarks[landmarkIndex(bone.landmarks.child)];
-		vec3f observed = child.pos - parent.pos;
-		float observedLength = bx::length(observed);
-		if (parent.visibility >= minimumVisibility &&
-			child.visibility >= minimumVisibility &&
-			bone.landmarkRestLength <= directionEpsilon &&
-			observedLength > directionEpsilon) {
-			bone.landmarkRestLength = observedLength;
-		}
-
-		if (child.visibility >= minimumVisibility || bone.landmarkRestLength <= directionEpsilon) continue;
-
-		vec3f direction = observed;
-		if (!hasDirection(direction)) direction = bone.restDirection;
-		else direction = bx::normalize(direction);
-
-		child.pos = parent.pos + direction * bone.landmarkRestLength;
-	}
-}
-
-void PoseSolver::calibrate(const PoseFrame& frame) {
-	bool allOk = true;
-
-	for (PoseBone& bone : bones) {
-		const PoseLandmark& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)];
-		const PoseLandmark& child = frame.landmarks[landmarkIndex(bone.landmarks.child)];
-
-		if (parent.visibility < minimumVisibility || child.visibility < minimumVisibility) {
-			allOk = false;
-			continue;
-		}
-
-		vec3f direction = child.pos - parent.pos;
-		if (!hasDirection(direction)) { allOk = false; continue; }
-
-		direction = directionInParentSpace(avatar, bone.node, direction);
-		if (!hasDirection(direction)) { allOk = false; continue; }
-
-		bone.calibratedDirection = bx::normalize(direction);
-
-		// ひねり基準の記録。手のIndexなどのvisibilityが低い/軸とほぼ平行などで
-		// うまく取れない場合は、そのボーンだけswing-onlyにフォールバックする
-		// (allOkには影響させない。指のトラッキングが不安定なだけで全体の
-		// キャリブレーションをやり直させるのは過剰なため)。
-		if (bone.twistLandmark != LandmarkId::Count) {
-			const PoseLandmark& twistLm = frame.landmarks[landmarkIndex(bone.twistLandmark)];
-			if (twistLm.visibility >= minimumVisibility) {
-				vec3f twistVec = twistLm.pos - child.pos;
-				twistVec = directionInParentSpace(avatar, bone.node, twistVec);
-				vec3f perp = perpendicularComponent(twistVec, bone.calibratedDirection);
-				if (hasDirection(perp)) {
-					bone.calibratedTwistRef = bx::normalize(perp);
-					bone.twistCalibrated = true;
-				} else {
-					bone.twistCalibrated = false;
-				}
-			} else {
-				bone.twistCalibrated = false;
-			}
-		}
-	}
-
-	// 全ボーンぶんキャリブレーションできた時だけ完了扱いにする。
-	// 一部失敗した場合は次のフレームで再試行する（その間はrestDirection/前回値のまま）。
-	if (allOk) needsCalibration = false;
-}
-
-void PoseSolver::solve(const PoseFrame& input) {
-	PoseFrame frame = input;
-	smoothAndRepair(frame);
-
-	if (needsCalibration) calibrate(frame);
-
-	for (const PoseBone& bone : bones) {
-		const vec3f& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)].pos;
-		const vec3f& child = frame.landmarks[landmarkIndex(bone.landmarks.child)].pos;
-		vec3f currentDirection = child - parent;
-		if (!hasDirection(currentDirection)) continue;
-		currentDirection = directionInParentSpace(avatar, bone.node, currentDirection);
-		if (!hasDirection(currentDirection)) continue;
-
-		float rotation[4];
-		// モデルの基準ポーズ(restDirection)ではなく、トラッキング開始時に実際に
-		// 観測された姿勢(calibratedDirection)からの相対回転を使う。
-		// これによりモデルがTポーズ/Aポーズいずれの基準ポーズであっても、
-		// トラッキング対象の人が普段どんな姿勢で立っていても正しく追従する。
-		vec3f normalizedCurrent = bx::normalize(currentDirection);
-		quatFromTo(rotation, bone.calibratedDirection, normalizedCurrent);
-		Quat poseRotation{rotation[0], rotation[1], rotation[2], rotation[3]};
-
-		// ひねり(twist)補正。quatFromToで求めたswing回転は、ボーン自身の軸
-		// まわりの回転(ひねり)を一切決めない(手首を返しても腕の向きベクトルだけ
-		// 見れば同じに見えるため)。手のIndexランドマークなど、軸に対してほぼ
-		// 垂直な参照ベクトルを使い、その垂直成分がキャリブレーション時から
-		// どれだけ回転したかを求めて追加で合成する。
-		if (bone.twistCalibrated) {
-			const PoseLandmark& twistLm = frame.landmarks[landmarkIndex(bone.twistLandmark)];
-			if (twistLm.visibility >= minimumVisibility) {
-				vec3f twistVec = twistLm.pos - child;
-				twistVec = directionInParentSpace(avatar, bone.node, twistVec);
-				vec3f currentPerp = perpendicularComponent(twistVec, normalizedCurrent);
-
-				// キャリブレーション時のひねり参照ベクトルを、いま求めたswing回転で
-				// 現在のボーン軸まわりの平面へ運び、現在の参照ベクトルとの差分角度を
-				// そのままひねり角として使う。
-				vec3f calibratedPerpRotated = poseRotation * bone.calibratedTwistRef;
-				calibratedPerpRotated = perpendicularComponent(calibratedPerpRotated, normalizedCurrent);
-
-				if (hasDirection(currentPerp) && hasDirection(calibratedPerpRotated)) {
-					currentPerp = bx::normalize(currentPerp);
-					calibratedPerpRotated = bx::normalize(calibratedPerpRotated);
-
-					float cosAngle = std::clamp(bx::dot(calibratedPerpRotated, currentPerp), -1.0f, 1.0f);
-					vec3f axisCross = vec3f::cross(calibratedPerpRotated, currentPerp);
-					float sinAngle = bx::dot(axisCross, normalizedCurrent);
-					float twistAngle = atan2f(sinAngle, cosAngle);
-
-					float twistRotation[4];
-					quatRotateAxis(twistRotation, normalizedCurrent.x, normalizedCurrent.y, normalizedCurrent.z, twistAngle);
-					Quat twist{twistRotation[0], twistRotation[1], twistRotation[2], twistRotation[3]};
-					poseRotation = twist * poseRotation;
-				}
-			}
-		}
-
-		nodeReg.get(bone.node).trs.rot = poseRotation * bone.restRotation;
+	for (const auto& c : poseConnections) {
+		debug.drawLine(
+			frame.landmarks[static_cast<size_t>(c.a)].pos + vec3f{0,2,0},
+			frame.landmarks[static_cast<size_t>(c.b)].pos + vec3f{0,2,0}
+		);
 	}
 }

@@ -1,3 +1,4 @@
+#include <bx/math.h>
 #include <def/quat.h>
 
 #include <util/cache.h>
@@ -85,19 +86,68 @@ vec3f Quat::operator*(const vec3f& v) const {
 
 	vec3f t = vec3f::cross(u, v) * 2.0f;
 	return v + w * t + vec3f::cross(u, t);
-}	
+}
+
+Quat& Quat::operator*=(const Quat& other) {
+	*this = *this * other;
+	return *this;
+}
+
+
+void Quat::normalize() {
+	*this = bx::normalize(*this);
+}
+
+float* Quat::data() {
+	return &x;
+}
+
 
 
 Quat Quat::lerp(const Quat& a, const Quat& b, float t) {
 	return bx::lerp(a,b,t);
 }
 
-void Quat::setAxisAngle(const vec3f& axis, float rad) {
+Quat Quat::fromAxisAngle(const vec3f& axis, float rad) {
 	float half = rad * 0.5f;
 	float s = lutsv.getSin(half);
 
-	x = axis.x * s;
-	y = axis.y * s;
-	z = axis.z * s;
-	w = lutsv.getCos(half);
+	Quat res;
+	res.x = axis.x * s;
+	res.y = axis.y * s;
+	res.z = axis.z * s;
+	res.w = lutsv.getCos(half);
+
+	return res;
+}
+
+Quat Quat::fromTo(vec3f from, vec3f to) {
+	from.normalize();
+	to.normalize();
+
+	float dot = bx::dot(from, to);
+
+	// ほぼ同じ方向
+	if (dot > 0.9999f) return {0,0,0,1};
+
+	// 逆向き
+	if (dot < -0.9999f) {
+		// 適当な直交軸を作る
+		vec3f axis = bx::cross({1,0,0}, from);
+		if (bx::length(axis) < 0.0001f)
+			axis = bx::cross({0,1,0}, from);
+
+		axis = bx::normalize(axis);
+		return fromAxisAngle(axis, bx::kPi);
+	}
+
+	vec3f axis = bx::cross(from, to);
+	axis = bx::normalize(axis);
+
+	float angle = acosf(dot);
+
+	Quat res = fromAxisAngle(axis, angle);
+	res.normalize();
+
+	return res;
 }

@@ -12,7 +12,7 @@ SpringBoneChain::SpringBoneChain(const std::vector<NodeHandle>& boneIndex):
 		Avatar* ava = nodeReg.getAvatar(boneIndex[i]);
 		const auto& mtx = ava->globalTransforms[nodeReg.getId(boneIndex[i])].mtx;
 
-		bones[i].currPos = {mtx[12], mtx[13], mtx[14]};
+		bones[i].currPos = mtx.pos();
 		bones[i].prevPos = bones[i].currPos;
 	}
 	
@@ -33,7 +33,7 @@ void SpringBoneChain::update(float dt) {
 	// Keep the root anchored to its animated world-space position.
 	Avatar* rootAvatar = nodeReg.getAvatar(boneIndex[0]);
 	const auto& rootMtx = rootAvatar->globalTransforms[nodeReg.getId(boneIndex[0])].mtx;
-	bones[0].currPos = {rootMtx[12], rootMtx[13], rootMtx[14]};
+	bones[0].currPos = rootMtx.pos();
 	bones[0].prevPos = bones[0].currPos;
 
 	// 予測: 速度 + 重力
@@ -62,14 +62,13 @@ void SpringBoneChain::update(float dt) {
 
 		// Convert the global simulation position back to the parent's local space.
 		Avatar* parentAvatar = nodeReg.getAvatar(boneIndex[i - 1]);
-		std::array<float, 16> parentMtx =
+		Mtx parentMtx =
 			parentAvatar->globalTransforms[nodeReg.getId(boneIndex[i - 1])].mtx;
-		parentMtx[12] = parent.currPos.x;
-		parentMtx[13] = parent.currPos.y;
-		parentMtx[14] = parent.currPos.z;
+		parentMtx.setPos(parent.currPos);
 
-		float invParentMtx[16];
-		bx::mtxInverse(invParentMtx, parentMtx.data());
-		nodeReg.get(h).trs.pos = vec3f{bx::mul(child.currPos, invParentMtx)};
+		Mtx invParentMtx;
+		// bx::mtxInverse(invParentMtx, parentMtx.data());
+		invParentMtx = Mtx::inverse(parentMtx);
+		nodeReg.get(h).trs.pos = child.currPos * invParentMtx;
 	}
 }

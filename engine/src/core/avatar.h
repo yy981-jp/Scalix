@@ -1,6 +1,7 @@
 #pragma once
 
 #include <model/model.h>
+#include <model/humanoid.h>
 #include <anim/animSystem.h>
 #include <def/euler.h>
 #include <def/pose.h>

@@ -3,7 +3,7 @@ import mediapipe as mp
 import socket
 from generated.proto import pose_pb2
 
-MODEL_PATH = "models/pose_landmarker_heavy.task"
+MODEL_PATH = "models/pose_landmarker_full.task"
 
 POSE_CONNECTIONS = [
 	(0, 1), (1, 2), (2, 3),
