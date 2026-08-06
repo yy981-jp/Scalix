@@ -20,6 +20,7 @@ struct Node {
 	std::vector<NodeHandle> children;
 
 	int skinIndex = -1;
+	int jointIndex = -1;
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;		 // 複数primitiveに対応するメッシュ数

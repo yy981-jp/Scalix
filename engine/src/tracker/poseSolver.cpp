@@ -1,4 +1,5 @@
 #include "def/node.h"
+#include "util/math.h"
 #include <tracker/pose.h>
 #include <tracker/poseSolver.h>
 
@@ -111,7 +112,15 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 			( avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
 			- avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos
 			).normalized();
+		bones[(size_t)cnct.bone].bindRot = nodeReg.get(nodeHdl).trs.rot.fromAxisAngle({0,0,1}, deg2rad(90));
 	}
+
+
+	// for (const auto& cnct: upperBody_list) {
+	// 	const Node& node = nodeReg.get( avatar.humanoid.bones[(size_t)cnct.bone] );
+	// 	const Mtx& invBind = avatar.model.skins[ node.skinIndex ].invBind[node.jointIndex];
+	// 	Mtx bind = Mtx::inverse(invBind);
+	// }
 }
 
 
@@ -128,76 +137,71 @@ void PoseSolver::solve(const PoseFrame& frame) {
 			frame.landmarks[(size_t)cnct.child].pos;
 
 		const vec3f& currentDir = (child - parent).normalized();
-		const vec3f& restDir = bones[(size_t)cnct.bone].restDir;
+		const auto& bone = bones[(size_t)cnct.bone];
 
 		Node& node =
 			nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
+
+		node.trs.rot = Quat::fromTo(bone.restDir, currentDir)
+						* bone.bindRot;
+
+
+
 
 		// ===== Debug Draw =====
 
 		vec3f origin = parent + vec3f{0, 2, 0};
 
-		// 赤 = Tポーズ方向
+		for (const auto& cnct: upperBody_list) {
+			// bind = inverse(invBind)
+			const Node& node =
+				nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
+
+			const Mtx& invBind =
+				avatar.model.skins[node.skinIndex].invBind[node.jointIndex];
+
+			Mtx bind = Mtx::inverse(invBind);
+
+			const float* m = bind.data();
+
+			// column-major
+			vec3f axisX = { m[0], m[1], m[2] };
+			vec3f axisY = { m[4], m[5], m[6] };
+			vec3f axisZ = { m[8], m[9], m[10] };
+
+			axisX.normalize();
+			axisY.normalize();
+			axisZ.normalize();
+
+			debug.drawLine(origin, origin + axisX * 0.3f, 0xff0000ff); // X = 赤
+			debug.drawLine(origin, origin + axisY * 0.3f, 0xff00ff00); // Y = 緑
+			debug.drawLine(origin, origin + axisZ * 0.3f, 0xffff0000); // Z = 青
+
+			// MediaPipe方向(白)
+			debug.drawLine(origin, origin + currentDir * 0.3f, 0xffffffff);
+		}
+
+		NodeHandle parentHdl =
+			avatar.humanoid.bones[
+				(size_t)Humanoid::parentTable[(size_t)cnct.bone]
+			];
+
+		vec3f parentPos =
+			avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos;
+
+		vec3f childPos =
+			avatar.trackingTransforms[node.id].pos;
+
+		vec3f debug_restDir =
+			(childPos - parentPos).normalized();
+
 		debug.drawLine(
 			origin,
-			origin + restDir * 0.3f,
-			0xff0000ff
+			origin + debug_restDir * 0.3f,
+			0xff00ffff // 黄色
 		);
-
-		// 緑 = MediaPipe方向
-		debug.drawLine(
-			origin,
-			origin + currentDir * 0.3f,
-			0xff00ff00
-		);
-
-		// 黄 = 適用後
-		debug.drawLine(
-			origin,
-			origin +
-				avatar.trackingTransforms[node.id].rot *
-				vec3f{0,1,0} * 0.3f,
-			0xff00ffff
-		);
-
-		node.trs.rot = Quat::fromTo(restDir, currentDir);
-
 		// puts("==============================");
-
-		printf(
-			"%s\n"
-			"local pos=(%.3f %.3f %.3f)\n",
-			strsv().get(node.name).data(),
-			node.trs.pos.x,
-			node.trs.pos.y,
-			node.trs.pos.z
-		);
 		
-		// vec3f check = node.trs.rot * restDir;
-
-		// printf(
-		// 	"bone=%s\n"
-		// 	"parent=(%.3f %.3f %.3f)\n"
-		// 	"child =(%.3f %.3f %.3f)\n",
-		// 	strsv().get(node.name).data(),
-		// 	parent.x,parent.y,parent.z,
-		// 	child.x,child.y,child.z
-		// );
-
-
-		// printf(
-		// 	"rest    = %.3f %.3f %.3f\n"
-		// 	"current = %.3f %.3f %.3f\n"
-		// 	"quat    = %.3f %.3f %.3f %.3f\n"
-		// 	"check   = %.3f %.3f %.3f\n",
-		// 	restDir.x,restDir.y,restDir.z,
-		// 	currentDir.x,currentDir.y,currentDir.z,
-		// 	node.trs.rot.x,
-		// 	node.trs.rot.y,
-		// 	node.trs.rot.z,
-		// 	node.trs.rot.w,
-		// 	check.x, check.y, check.z
-		// );
 	}
 }
 

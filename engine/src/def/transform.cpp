@@ -42,4 +42,6 @@ void Transform::rebuildMatrix() {
 
 	bx::mtxMul(tmp, s, r);	   // R * S
 	bx::mtxMul(mtx.data(), tmp, t);	 // (S * R) * T
+
+	
 }

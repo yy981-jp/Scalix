@@ -29,6 +29,17 @@ public:
 		m_data[13] = pos.y;
 		m_data[14] = pos.z;
 	}
+	void setScale(const vec3f& scale) {
+		m_data[0] = scale.x;
+		m_data[5] = scale.y;
+		m_data[10] = scale.z;
+	}
 	vec3f pos() { return {m_data[12], m_data[13], m_data[14]}; }
 	const vec3f pos() const { return {m_data[12], m_data[13], m_data[14]}; }
+
+	static Mtx inverse(const Mtx& target) {
+		Mtx res;
+		bx::mtxInverse(res.data(), target.data());
+		return res;
+	}
 };

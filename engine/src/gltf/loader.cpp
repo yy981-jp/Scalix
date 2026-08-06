@@ -362,6 +362,16 @@ void GltfLoaderImpl::parse() {
 				}
 			}
 		}
+
+		for (size_t jointIndex = 0; jointIndex < skin.joints.size(); ++jointIndex) {
+			int nodeIndex = skin.joints[jointIndex];
+			if (nodeIndex >= 0 && nodeIndex < nodesSize) {
+				auto& node = scalixModel.nodes[nodeIndex];
+				node.skinIndex = static_cast<int>(scalixModel.skins.size());
+				node.jointIndex = static_cast<int>(jointIndex);
+			}
+		}
+		
 		scalixModel.skins.push_back(skin);
 
 		// for (int i = 0; i < skin.joints.size(); i++) {

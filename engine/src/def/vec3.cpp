@@ -1,4 +1,5 @@
 #include <def/vec3.h>
+#include <def/mtx.h>
 
 #include <limits.h>
 
@@ -73,6 +74,10 @@ vec3f vec3f::operator*(const vec3f& other) const {
 		y * other.y,
 		z * other.z
 	};
+}
+
+vec3f vec3f::operator*(const Mtx& other) const {
+	return bx::mul(*this,other.data());
 }
 
 vec3f operator*(float s, const vec3f& v) {

@@ -66,8 +66,9 @@ void SpringBoneChain::update(float dt) {
 			parentAvatar->globalTransforms[nodeReg.getId(boneIndex[i - 1])].mtx;
 		parentMtx.setPos(parent.currPos);
 
-		float invParentMtx[16];
-		bx::mtxInverse(invParentMtx, parentMtx.data());
-		nodeReg.get(h).trs.pos = vec3f{bx::mul(child.currPos, invParentMtx)};
+		Mtx invParentMtx;
+		// bx::mtxInverse(invParentMtx, parentMtx.data());
+		invParentMtx = Mtx::inverse(parentMtx);
+		nodeReg.get(h).trs.pos = child.currPos * invParentMtx;
 	}
 }

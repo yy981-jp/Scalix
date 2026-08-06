@@ -17,6 +17,7 @@ namespace PoseSolverMode {
 
 struct BoneState {
     vec3f restDir;
+	Quat bindRot;
 };
 
 class PoseSolver {

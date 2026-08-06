@@ -2,6 +2,7 @@
 #include <bx/math.h>
 #include <shared/format.h>
 
+struct Mtx;
 
 struct vec3f {
 	float x, y, z;
@@ -26,6 +27,7 @@ struct vec3f {
 	
 	vec3f operator*(float scalar) const;
 	vec3f operator*(const vec3f& other) const;
+	vec3f operator*(const Mtx& other) const;
 	friend vec3f operator*(float s, const vec3f& v);
 	
 	vec3f operator/(float scalar) const;
