@@ -48,8 +48,8 @@ void Avatar::update(GameContext& ctx, float dt) {
 		pos.z += rz * aplSpeed * rlMove;
 	}
 
-	// if (has(ctx.keyStat, KCode::T))
-	// 	ctx.poseSolver->requestCalibration();
+	if (has(ctx.keyStat, KCode::T))
+		ctx.poseSolver->requestCalibration();
 
 	status = (walking? Status::walk : Status::stay);
 

@@ -152,7 +152,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 
 		vec3f origin = parent + vec3f{0, 2, 0};
 
-		for (const auto& cnct: upperBody_list) {
+		{
 			// bind = inverse(invBind)
 			const Node& node =
 				nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
@@ -178,7 +178,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 			debug.drawLine(origin, origin + axisZ * 0.3f, 0xffff0000); // Z = 青
 
 			// MediaPipe方向(白)
-			debug.drawLine(origin, origin + currentDir * 0.3f, 0xffffffff);
+			// debug.drawLine(origin, origin + currentDir * 0.3f, 0xffffffff);
 		}
 
 		NodeHandle parentHdl =
