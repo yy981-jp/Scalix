@@ -61,7 +61,7 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		entityTransform.pos = avatar.pos;
 		entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
 		// glTF座標系からのX軸反転もEntityのTRSとして扱う。
-		entityTransform.scale = {-avatar.scale[0], avatar.scale[1], avatar.scale[2]};
+		entityTransform.scale = avatar.scale;
 		entityTransform.rebuildMatrix();
 
 		// トラッキング(PoseSolver)用のentityTransform。

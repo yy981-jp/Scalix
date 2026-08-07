@@ -39,17 +39,17 @@ void Avatar::update(GameContext& ctx, float dt) {
 	}
 	if (has(ctx.keyStat, KCode::A)) {
 		walking = true;
-		pos.x -= rx * aplSpeed * rlMove;
-		pos.z -= rz * aplSpeed * rlMove;
-	}
-	if (has(ctx.keyStat, KCode::D)) {
-		walking = true;
 		pos.x += rx * aplSpeed * rlMove;
 		pos.z += rz * aplSpeed * rlMove;
 	}
+	if (has(ctx.keyStat, KCode::D)) {
+		walking = true;
+		pos.x -= rx * aplSpeed * rlMove;
+		pos.z -= rz * aplSpeed * rlMove;
+	}
 
-	if (has(ctx.keyStat, KCode::T))
-		ctx.poseSolver->requestCalibration();
+	// if (has(ctx.keyStat, KCode::T))
+	// 	ctx.poseSolver->requestCalibration();
 
 	status = (walking? Status::walk : Status::stay);
 
@@ -77,7 +77,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		clampedHeadYaw = -headYawLimit;
 	}
 	if (head.yaw != clampedHeadYaw) {
-		yaw -= head.yaw - clampedHeadYaw;
+		yaw += head.yaw - clampedHeadYaw;
 		head.yaw = clampedHeadYaw;
 	}
 
@@ -99,6 +99,10 @@ void Avatar::update(GameContext& ctx, float dt) {
 
 		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
+	
+	printf("ava.pos: %.3f %.3f %.3f\n"
+			, pos.x, pos.y, pos.z
+	);
 }
 
 

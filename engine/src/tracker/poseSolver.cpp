@@ -202,6 +202,10 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		);
 		// puts("==============================");
 		
+		// const auto& test = node.trs.rot;
+		// printf("restDir: %.3f %.3f %.3f %.3f\n"
+		// 		, test.w, test.x, test.y, test.z
+		// );
 	}
 }
 

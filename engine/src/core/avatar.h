@@ -28,7 +28,7 @@ struct Avatar {
 
 	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float yaw = 0.0f;
-	float scale[3] = {1.0f, 1.0f, 1.0f};
+	vec3f scale = {1.0f, 1.0f, 1.0f};
 
 	Euler head{};
 	static constexpr float sensitivity = 0.01f;
