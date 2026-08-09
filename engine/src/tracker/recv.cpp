@@ -35,7 +35,7 @@ bool Recv::tick(PoseFrame& out) {
 		// mediapipe -> scalix 座標系 変換
 		out.landmarks[i] = {
 			.pos = {
-				-landmark.x(),
+				landmark.x(),
 				-landmark.y(),
 				-landmark.z()
 			},

@@ -100,9 +100,9 @@ void Avatar::update(GameContext& ctx, float dt) {
 		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
 	
-	printf("ava.pos: %.3f %.3f %.3f\n"
-			, pos.x, pos.y, pos.z
-	);
+	// printf("ava.pos: %.3f %.3f %.3f\n"
+	// 		, pos.x, pos.y, pos.z
+	// );
 }
 
 

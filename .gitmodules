@@ -12,7 +12,7 @@
 	url = https://github.com/bkaradzic/bgfx.cmake
 [submodule "external/tinygltf"]
 	path = external/tinygltf
-	url = git@github.com:syoyo/tinygltf.git
+	url = git@github.com:yy981-jp/tinygltf.git
 [submodule "external/yaml-cpp"]
 	path = external/yaml-cpp
 	url = git@github.com:jbeder/yaml-cpp.git
