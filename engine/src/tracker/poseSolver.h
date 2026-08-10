@@ -18,6 +18,13 @@ namespace PoseSolverMode {
 struct BoneState {
     vec3f restDir;
 	Quat bindRot;
+
+	// スキニングで実際に使われる「子ボーンのローカル位置オフセット」の正規化方向。
+	// デバッグ描画で {0,0,1} 等の決め打ち軸を使うと、モデルのボーン軸の向き
+	// (Y軸方向がボーンの長軸、等)の思い込みに依存してしまい、
+	// 実際とズレていても気づけない。これを使えば実際のスキニングと同じ
+	// 計算過程(親のグローバル回転 × 子のローカルオフセット)で方向を出せる。
+	vec3f childLocalDir;
 };
 
 class PoseSolver {

@@ -1,6 +1,7 @@
 #pragma once
 #include "def/node.h"
 #include <cstdint>
+#include <array>
 
 #include <model/model.h>
 
@@ -46,7 +47,7 @@ struct Humanoid {
 	void init(const Model& model);
 
 	// node handle
-	NodeHandle bones[static_cast<size_t>(HBT::Count)];
+	std::array<NodeHandle,static_cast<size_t>(HBT::Count)> bones;
 	std::vector<NodeHandle> spines;
 
 	// std::vector<NodeHandle> nodes;

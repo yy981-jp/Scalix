@@ -30,8 +30,8 @@ enum class HMCnsId {
 };
 
 const std::vector<HumanoidConnection> upperBody_list = {
-	HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
-	// HumanoidConnection{HBT::leftLowerArm, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
+	// HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
+	HumanoidConnection{HBT::leftLowerArm, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
 	// HumanoidConnection{HBT::rightUpperArm, LandmarkId::RightShoulder, LandmarkId::RightElbow},
 	// HumanoidConnection{HBT::rightLowerArm, LandmarkId::RightElbow, LandmarkId::RightWrist},
 };
@@ -103,16 +103,40 @@ constexpr LandmarkConnection poseConnections[] = {
 };
 
 
+// Humanoid::parentTable は「親」しか引けないので、逆引き用のヘルパー。
+// 腕のチェーン(leftUpperArm -> leftLowerArm -> leftHand 等)では子は一意に決まる。
+HBT childBoneOf(HBT bone) {
+	for (size_t i = 0; i < (size_t)HBT::Count; i++) {
+		if (Humanoid::parentTable[i] == bone) return (HBT)i;
+	}
+	return HBT::Count;
+}
+
+
 PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 	for (const auto& cnct : upperBody_list) {
 		NodeHandle& nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
-		NodeHandle& parentHdl = avatar.humanoid.bones[ (size_t)(Humanoid::parentTable[(size_t)cnct.bone]) ];
+
+		// restDir は node.trs.rot（このボーン自身の回転）ではなく、
+		// 「このボーンの根本の関節 -> 次の関節(子ボーンの原点)」の向きでなければならない。
+		// 例えば leftUpperArm なら「肩関節 -> 肘関節」。
+		// 以前は Humanoid::parentTable(=leftShoulder、鎖骨側)との差分を使っていたため、
+		// 実質「鎖骨の向き」を restDir にしてしまっており、
+		// solve() 側の currentDir(肩ランドマーク -> 肘ランドマーク)と
+		// そもそも比較対象がズレていた。
+		HBT childBone = childBoneOf(cnct.bone);
+		NodeHandle& childHdl = avatar.humanoid.bones[(size_t)childBone];
 
 		bones[(size_t)cnct.bone].restDir =
-			( avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
-			- avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos
+			( avatar.trackingTransforms[nodeReg.getId(childHdl)].pos
+			- avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
 			).normalized();
-		bones[(size_t)cnct.bone].bindRot = nodeReg.get(nodeHdl).trs.rot.fromAxisAngle({0,0,1}, deg2rad(90));
+		bones[(size_t)cnct.bone].bindRot = nodeReg.get(nodeHdl).trs.rot;
+
+		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
+		// 子ボーンの向き)。実際のスキニングパイプラインが使う値そのもの。
+		bones[(size_t)cnct.bone].childLocalDir =
+			nodeReg.get(childHdl).trs.pos.normalized();
 	}
 
 
@@ -127,6 +151,14 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 void PoseSolver::solve(const PoseFrame& frame) {
     debug_(frame);
 
+	// このフレームで新たに計算したボーンのグローバル回転(トラッキング空間)を
+	// キャッシュしておく。leftLowerArm の親は leftUpperArm であり、
+	// upperBody_list は親→子の順で並んでいるため、子を解く時点では
+	// avatar.trackingTransforms はまだ「前フレーム」の値のまま(このsolve()の後で
+	// avatarSystem.update()が再計算する)。stale な値を親の回転として使うと
+	// 特に手首側でズレ・破綻が起きるため、直前に計算した値を優先して使う。
+	std::array<Quat, static_cast<size_t>(HBT::Count)> solvedGlobalRot{};
+	std::array<bool, static_cast<size_t>(HBT::Count)> hasSolvedGlobalRot{};
 
 	for (const auto& cnct: upperBody_list) {
 		// const auto& cnct = upperBody_list[0];
@@ -142,8 +174,33 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		Node& node =
 			nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
 
-		node.trs.rot = Quat::fromTo(bone.restDir, currentDir)
-						* bone.bindRot;
+		HBT parentBone = Humanoid::parentTable[(size_t)cnct.bone];
+		NodeHandle parentHdl = avatar.humanoid.bones[(size_t)parentBone];
+
+		Quat parentGlobalRot =
+			hasSolvedGlobalRot[(size_t)parentBone]
+				? solvedGlobalRot[(size_t)parentBone]
+				: avatar.trackingTransforms[nodeReg.getId(parentHdl)].rot;
+
+		// restDir/currentDir はどちらもワールド(トラッキング)空間のベクトルなので、
+		// fromTo() で得られる差分回転もワールド空間の回転になる。
+		// これを node.trs.rot (親ボーンのローカル空間) にそのまま代入すると、
+		// 親ボーンの現在のグローバル回転ぶんだけ軸がズレてしまい、
+		// 本来スイングになるはずの回転がボーン自身の軸まわりのツイストとして
+		// 現れてしまう。親のグローバル回転で挟み込んでローカル空間に変換する。
+		Quat worldDelta = Quat::fromTo(bone.restDir, currentDir);
+
+		Quat parentGlobalRotInv = {
+			-parentGlobalRot.x, -parentGlobalRot.y, -parentGlobalRot.z,
+			 parentGlobalRot.w
+		};
+
+		Quat localDelta = parentGlobalRotInv * worldDelta * parentGlobalRot;
+
+		node.trs.rot = localDelta * bone.bindRot;
+
+		solvedGlobalRot[(size_t)cnct.bone] = parentGlobalRot * node.trs.rot;
+		hasSolvedGlobalRot[(size_t)cnct.bone] = true;
 
 
 
@@ -164,27 +221,22 @@ void PoseSolver::solve(const PoseFrame& frame) {
 
 			const float* m = bind.data();
 
-			// column-major
-			vec3f axisX = { m[0], m[1], m[2] };
-			vec3f axisY = { m[4], m[5], m[6] };
-			vec3f axisZ = { m[8], m[9], m[10] };
+			// // column-major
+			// vec3f axisX = { m[0], m[1], m[2] };
+			// vec3f axisY = { m[4], m[5], m[6] };
+			// vec3f axisZ = { m[8], m[9], m[10] };
 
-			axisX.normalize();
-			axisY.normalize();
-			axisZ.normalize();
+			// axisX.normalize();
+			// axisY.normalize();
+			// axisZ.normalize();
 
-			debug.drawLine(origin, origin + axisX * 0.3f, 0xff0000ff); // X = 赤
-			debug.drawLine(origin, origin + axisY * 0.3f, 0xff00ff00); // Y = 緑
-			debug.drawLine(origin, origin + axisZ * 0.3f, 0xffff0000); // Z = 青
+			// debug.drawLine(origin, origin + axisX * 0.3f, 0xff0000ff); // X = 赤
+			// debug.drawLine(origin, origin + axisY * 0.3f, 0xff00ff00); // Y = 緑
+			// debug.drawLine(origin, origin + axisZ * 0.3f, 0xffff0000); // Z = 青
 
 			// MediaPipe方向(白)
 			// debug.drawLine(origin, origin + currentDir * 0.3f, 0xffffffff);
 		}
-
-		NodeHandle parentHdl =
-			avatar.humanoid.bones[
-				(size_t)Humanoid::parentTable[(size_t)cnct.bone]
-			];
 
 		vec3f parentPos =
 			avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos;
@@ -197,7 +249,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 
 		debug.drawLine(
 			origin,
-			origin + debug_restDir * 0.3f,
+			origin + (solvedGlobalRot[(size_t)cnct.bone] * bone.childLocalDir) * 0.3f,
 			0xff00ffff // 黄色
 		);
 		// puts("==============================");

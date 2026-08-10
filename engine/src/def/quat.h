@@ -38,4 +38,5 @@ struct Quat {
 	static Quat lerp(const Quat& a, const Quat& b, float t);
 	static Quat fromAxisAngle(const vec3f& axis, float rad);
 	static Quat fromTo(vec3f from, vec3f to);
+	static Quat inverse(const Quat& target);
 };

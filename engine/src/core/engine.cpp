@@ -1,3 +1,4 @@
+#include "physics/springBone.h"
 #include <core/engine.h>
 
 #include <gfx/shader.h>
@@ -166,6 +167,10 @@ void Engine::gameInit() {
 
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
+
+	// for (const NodeHandle& nh: nodeReg.get(nodeReg.findFromAvaId(0, 176)).children ) {
+	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
+	// }
 
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r

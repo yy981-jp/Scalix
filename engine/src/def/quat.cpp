@@ -151,3 +151,12 @@ Quat Quat::fromTo(vec3f from, vec3f to) {
 
 	return res;
 }
+
+Quat Quat::inverse(const Quat& target) {
+	return {
+		-target.x,
+		-target.y,
+		-target.z,
+		target.w
+	};
+}
