@@ -30,7 +30,7 @@ enum class HMCnsId {
 };
 
 const std::vector<HumanoidConnection> upperBody_list = {
-	// HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
+	HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
 	HumanoidConnection{HBT::leftLowerArm, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
 	// HumanoidConnection{HBT::rightUpperArm, LandmarkId::RightShoulder, LandmarkId::RightElbow},
 	// HumanoidConnection{HBT::rightLowerArm, LandmarkId::RightElbow, LandmarkId::RightWrist},
@@ -131,7 +131,12 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 			( avatar.trackingTransforms[nodeReg.getId(childHdl)].pos
 			- avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
 			).normalized();
-		bones[(size_t)cnct.bone].bindRot = nodeReg.get(nodeHdl).trs.rot;
+
+		// このボーン自身のバインドポーズでのグローバル回転をそのまま保存する。
+		// trackingTransforms は calcGlobal() で親→子の順にローカルTRSを合成した
+		// 結果なので、.rot にはこのボーンまでの回転がすべて含まれている。
+		bones[(size_t)cnct.bone].globalBindRot =
+			avatar.trackingTransforms[nodeReg.getId(nodeHdl)].rot;
 
 		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
 		// 子ボーンの向き)。実際のスキニングパイプラインが使う値そのもの。
@@ -184,22 +189,22 @@ void PoseSolver::solve(const PoseFrame& frame) {
 
 		// restDir/currentDir はどちらもワールド(トラッキング)空間のベクトルなので、
 		// fromTo() で得られる差分回転もワールド空間の回転になる。
-		// これを node.trs.rot (親ボーンのローカル空間) にそのまま代入すると、
-		// 親ボーンの現在のグローバル回転ぶんだけ軸がズレてしまい、
-		// 本来スイングになるはずの回転がボーン自身の軸まわりのツイストとして
-		// 現れてしまう。親のグローバル回転で挟み込んでローカル空間に変換する。
+		// これを bone.globalBindRot(バインドポーズでのこのボーンのグローバル回転)に
+		// 適用すれば、このボーンの「現在のグローバル回転」が直接求まる。
 		Quat worldDelta = Quat::fromTo(bone.restDir, currentDir);
+		Quat newGlobalRot = worldDelta * bone.globalBindRot;
 
-		Quat parentGlobalRotInv = {
-			-parentGlobalRot.x, -parentGlobalRot.y, -parentGlobalRot.z,
-			 parentGlobalRot.w
-		};
+		// node.trs.rot は親ボーンのローカル空間での回転なので、
+		// 親ボーンの「現在の」グローバル回転を割って(逆回転をかけて)ローカルに変換する。
+		// ※ここで使う parentGlobalRot は必ず「現在」の値でなければならない。
+		// leftLowerArm のように親(leftUpperArm)自身もトラッキングで動く場合、
+		// bind時の親回転と現在の親回転は別物になるため、
+		// 親の回転で挟み込む(サンドイッチする)方式だと式が成立しない。
+		Quat parentGlobalRotInv = Quat::inverse(parentGlobalRot);
 
-		Quat localDelta = parentGlobalRotInv * worldDelta * parentGlobalRot;
+		node.trs.rot = parentGlobalRotInv * newGlobalRot;
 
-		node.trs.rot = localDelta * bone.bindRot;
-
-		solvedGlobalRot[(size_t)cnct.bone] = parentGlobalRot * node.trs.rot;
+		solvedGlobalRot[(size_t)cnct.bone] = newGlobalRot;
 		hasSolvedGlobalRot[(size_t)cnct.bone] = true;
 
 
