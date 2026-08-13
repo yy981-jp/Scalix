@@ -2,12 +2,16 @@
 #include "util/math.h"
 #include <tracker/pose.h>
 #include <tracker/poseSolver.h>
+#include <tracker/motionDebug.h>
 
 #include <debug/debugDraw.h>
 
 #include <core/nodeRegistry.h>
 #include <util/fmutil.h>
 #include <def/str.h>
+
+#include <cmath>
+#include <cstdio>
 
 
 struct LandmarkConnection {
@@ -32,8 +36,8 @@ enum class HMCnsId {
 const std::vector<HumanoidConnection> upperBody_list = {
 	HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
 	HumanoidConnection{HBT::leftLowerArm, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
-	// HumanoidConnection{HBT::rightUpperArm, LandmarkId::RightShoulder, LandmarkId::RightElbow},
-	// HumanoidConnection{HBT::rightLowerArm, LandmarkId::RightElbow, LandmarkId::RightWrist},
+	HumanoidConnection{HBT::rightUpperArm, LandmarkId::RightShoulder, LandmarkId::RightElbow},
+	HumanoidConnection{HBT::rightLowerArm, LandmarkId::RightElbow, LandmarkId::RightWrist},
 };
 
 const std::vector<HumanoidConnection> lowerBody_list = {
@@ -155,6 +159,7 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 
 void PoseSolver::solve(const PoseFrame& frame) {
     debug_(frame);
+	for (auto& bone : bones) bone.wasSolved = false;
 
 	// このフレームで新たに計算したボーンのグローバル回転(トラッキング空間)を
 	// キャッシュしておく。leftLowerArm の親は leftUpperArm であり、
@@ -174,7 +179,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 			frame.landmarks[(size_t)cnct.child].pos;
 
 		const vec3f& currentDir = (child - parent).normalized();
-		const auto& bone = bones[(size_t)cnct.bone];
+		auto& bone = bones[(size_t)cnct.bone];
 
 		Node& node =
 			nodeReg.get(avatar.humanoid.bones[(size_t)cnct.bone]);
@@ -203,6 +208,15 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		Quat parentGlobalRotInv = Quat::inverse(parentGlobalRot);
 
 		node.trs.rot = parentGlobalRotInv * newGlobalRot;
+		bone.lastTargetDir = currentDir;
+		bone.lastSolvedGlobalRot = newGlobalRot;
+		bone.wasSolved = true;
+
+		if (motionTraceEnabled()) {
+			auto finiteQuat = [](const Quat& q) { return std::isfinite(q.x) && std::isfinite(q.y) && std::isfinite(q.z) && std::isfinite(q.w); };
+			const vec3f solvedDir = newGlobalRot * bone.childLocalDir;
+			printf("MOTION solve bone=%d target=(%.5f,%.5f,%.5f) rest=(%.5f,%.5f,%.5f) bindGlobal=(%.5f,%.5f,%.5f,%.5f) parentGlobal=(%.5f,%.5f,%.5f,%.5f) delta=(%.5f,%.5f,%.5f,%.5f) solvedGlobal=(%.5f,%.5f,%.5f,%.5f) local=(%.5f,%.5f,%.5f,%.5f) solvedDir=(%.5f,%.5f,%.5f) dot=%.6f finite=%d\\n", static_cast<int>(cnct.bone), currentDir.x,currentDir.y,currentDir.z, bone.restDir.x,bone.restDir.y,bone.restDir.z, bone.globalBindRot.x,bone.globalBindRot.y,bone.globalBindRot.z,bone.globalBindRot.w, parentGlobalRot.x,parentGlobalRot.y,parentGlobalRot.z,parentGlobalRot.w, worldDelta.x,worldDelta.y,worldDelta.z,worldDelta.w, newGlobalRot.x,newGlobalRot.y,newGlobalRot.z,newGlobalRot.w, node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, solvedDir.x,solvedDir.y,solvedDir.z, bx::dot(solvedDir,currentDir), finiteQuat(worldDelta) && finiteQuat(newGlobalRot) && finiteQuat(node.trs.rot));
+		}
 
 		solvedGlobalRot[(size_t)cnct.bone] = newGlobalRot;
 		hasSolvedGlobalRot[(size_t)cnct.bone] = true;
@@ -263,6 +277,21 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		// printf("restDir: %.3f %.3f %.3f %.3f\n"
 		// 		, test.w, test.x, test.y, test.z
 		// );
+	}
+}
+
+void PoseSolver::traceAfterGlobalRebuild() const {
+	if (!motionTraceEnabled()) return;
+	for (const auto& cnct : upperBody_list) {
+		const BoneState& bone = bones[(size_t)cnct.bone];
+		if (!bone.wasSolved) continue;
+		NodeHandle nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
+		NodeHandle childHdl = avatar.humanoid.bones[(size_t)childBoneOf(cnct.bone)];
+		const Transform& global = avatar.trackingTransforms[nodeReg.getId(nodeHdl)];
+		const Transform& childGlobal = avatar.trackingTransforms[nodeReg.getId(childHdl)];
+		const Node& node = nodeReg.get(nodeHdl);
+		const vec3f actualDir = (childGlobal.pos - global.pos).normalized();
+		printf("MOTION global bone=%d localNow=(%.5f,%.5f,%.5f,%.5f) globalRot=(%.5f,%.5f,%.5f,%.5f) actualDir=(%.5f,%.5f,%.5f) targetDot=%.6f pos=(%.5f,%.5f,%.5f) childPos=(%.5f,%.5f,%.5f)\\n", static_cast<int>(cnct.bone), node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, global.rot.x,global.rot.y,global.rot.z,global.rot.w, actualDir.x,actualDir.y,actualDir.z, bx::dot(actualDir,bone.lastTargetDir), global.pos.x,global.pos.y,global.pos.z, childGlobal.pos.x,childGlobal.pos.y,childGlobal.pos.z);
 	}
 }
 

@@ -33,6 +33,9 @@ struct BoneState {
 	// 実際とズレていても気づけない。これを使えば実際のスキニングと同じ
 	// 計算過程(親のグローバル回転 × 子のローカルオフセット)で方向を出せる。
 	vec3f childLocalDir;
+	vec3f lastTargetDir;
+	Quat lastSolvedGlobalRot;
+	bool wasSolved = false;
 };
 
 class PoseSolver {
@@ -43,6 +46,7 @@ public:
 	explicit PoseSolver(Avatar& avatar);
 	
 	void solve(const PoseFrame& frame);
+	void traceAfterGlobalRebuild() const;
 
 	void debug_(const PoseFrame& frame);
 };

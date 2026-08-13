@@ -5,8 +5,21 @@
 #include <core/nodeRegistry.h>
 #include <util/cache.h>
 #include <def/mtx.h>
+#include <tracker/motionDebug.h>
+#include <tracker/poseSolver.h>
 
 #include <bx/math.h>
+
+namespace {
+void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
+	if (!motionTraceEnabled()) return;
+	for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
+		if (!avatar.humanoid.has(bone)) continue;
+		const Quat& q = nodeReg.get(avatar.humanoid.bones[(size_t)bone]).trs.rot;
+		printf("MOTION %s bone=%d local=(%.5f,%.5f,%.5f,%.5f)\\n", stage, static_cast<int>(bone), q.x, q.y, q.z, q.w);
+	}
+}
+}
 
 
 void AvatarSystem::loadData(const std::vector<std::string> path) {
@@ -51,8 +64,10 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		// printf("D: avatar.id: %d, playable: %d\n", avatar.id, playableAvatar);
 		if (avatar.id != playableAvatar) continue; // player以外の制御はしない
 
+		traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
 		// avatar update
 		avatar.update(ctx,dt);
+		traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
 		avatar.globalTransforms.resize(avatar.model.nodes.size());
 		avatar.trackingTransforms.resize(avatar.model.nodes.size());
@@ -86,6 +101,7 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		for (int i = 0; i < avatar.model.nodes.size(); i++) {
 			calcGlobal(i, trackingCalculated, avatar.trackingTransforms, avatar, trackingEntityTransform);
 		}
+		if (ctx.poseSolver != nullptr) ctx.poseSolver->traceAfterGlobalRebuild();
 
 		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
 
@@ -118,6 +134,21 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 					skin.invBind[i].data(),
 					avatar.globalTransforms[nodeIdx].mtx.data()
 				);
+			}
+		}
+
+		if (motionTraceEnabled()) {
+			for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
+				if (!avatar.humanoid.has(bone)) continue;
+				const Node& node = nodeReg.get(avatar.humanoid.bones[(size_t)bone]);
+				const Transform& global = avatar.globalTransforms[node.id];
+				const Mtx& skinMtx = allJointMtx[node.skinIndex][node.jointIndex];
+				const vec3f skinPos = skinMtx.pos();
+				const Mtx bindMtx = Mtx::inverse(avatar.model.skins[node.skinIndex].invBind[node.jointIndex]);
+				const vec3f bindJointPos = bindMtx.pos();
+				const vec3f skinnedJointPos = {bx::mulH(bindJointPos, skinMtx.data())};
+				const vec3f skinError = skinnedJointPos - global.mtx.pos();
+				printf("MOTION draw bone=%d globalPos=(%.5f,%.5f,%.5f) globalRot=(%.5f,%.5f,%.5f,%.5f) skinTranslation=(%.5f,%.5f,%.5f) bindJoint=(%.5f,%.5f,%.5f) skinnedJoint=(%.5f,%.5f,%.5f) skinError=(%.6f,%.6f,%.6f)\\n", static_cast<int>(bone), global.pos.x,global.pos.y,global.pos.z, global.rot.x,global.rot.y,global.rot.z,global.rot.w, skinPos.x,skinPos.y,skinPos.z, bindJointPos.x,bindJointPos.y,bindJointPos.z, skinnedJointPos.x,skinnedJointPos.y,skinnedJointPos.z, skinError.x,skinError.y,skinError.z);
 			}
 		}
 
