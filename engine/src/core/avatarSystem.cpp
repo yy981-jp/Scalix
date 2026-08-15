@@ -73,9 +73,7 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		avatar.update(ctx,dt);
 		traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
-		avatar.globalTransforms.resize(avatar.model.nodes.size());
 		avatar.globalMtx.resize(avatar.model.nodes.size());
-		avatar.trackingTransforms.resize(avatar.model.nodes.size());
 		avatar.trackingMtx.resize(avatar.model.nodes.size());
 
 		Transform entityTransform;
@@ -153,13 +151,14 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				if (!avatar.humanoid.has(bone)) continue;
 				const Node& node = nodeReg.get(avatar.humanoid.bones[(size_t)bone]);
 				const Mtx& global = avatar.globalMtx[node.id];
-				const Transform& globalTRS = avatar.globalTransforms[node.id];
+				const vec3f globalPos = global.pos();
+				const Quat globalRot = global.rot();
 				const Mtx& skinMtx = allJointMtx[node.skinIndex][node.jointIndex];
 				const vec3f skinPos = skinMtx.pos();
 				const Mtx bindMtx = Mtx::inverse(avatar.model.skins[node.skinIndex].invBind[node.jointIndex]);
 				const vec3f bindJointPos = bindMtx.pos();
 				const vec3f skinnedJointPos = {bx::mulH(bindJointPos, skinMtx.data())};
-				const vec3f skinError = skinnedJointPos - global.pos();
+				const vec3f skinError = skinnedJointPos - globalPos;
 				printf(
 					"MOTION draw bone=%d "
 					"globalPos=(%.5f,%.5f,%.5f) "
@@ -169,8 +168,8 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 					"skinnedJoint=(%.5f,%.5f,%.5f) "
 					"skinError=(%.6f,%.6f,%.6f)\\n",
 					static_cast<int>(bone),
-					globalTRS.pos.x,globalTRS.pos.y,globalTRS.pos.z,
-					globalTRS.rot.x,globalTRS.rot.y,globalTRS.rot.z,globalTRS.rot.w,
+					globalPos.x,globalPos.y,globalPos.z,
+					globalRot.x,globalRot.y,globalRot.z,globalRot.w,
 					skinPos.x,skinPos.y,skinPos.z,
 					bindJointPos.x,bindJointPos.y,bindJointPos.z,
 					skinnedJointPos.x,skinnedJointPos.y,skinnedJointPos.z,

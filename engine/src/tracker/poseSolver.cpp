@@ -132,15 +132,15 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 		NodeHandle& childHdl = avatar.humanoid.bones[(size_t)childBone];
 
 		bones[(size_t)cnct.bone].restDir =
-			( avatar.trackingTransforms[nodeReg.getId(childHdl)].pos
-			- avatar.trackingTransforms[nodeReg.getId(nodeHdl)].pos
+			( avatar.trackingMtx[nodeReg.getId(childHdl)].pos()
+			- avatar.trackingMtx[nodeReg.getId(nodeHdl)].pos()
 			).normalized();
 
 		// このボーン自身のバインドポーズでのグローバル回転をそのまま保存する。
-		// trackingTransforms は calcGlobal() で親→子の順にローカルTRSを合成した
-		// 結果なので、.rot にはこのボーンまでの回転がすべて含まれている。
+		// trackingMtx は calcGlobal() で親→子の順にローカルTRSを合成した
+		// 結果なので、.rot() にはこのボーンまでの回転がすべて含まれている。
 		bones[(size_t)cnct.bone].globalBindRot =
-			avatar.trackingTransforms[nodeReg.getId(nodeHdl)].rot;
+			avatar.trackingMtx[nodeReg.getId(nodeHdl)].rot();
 
 		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
 		// 子ボーンの向き)。実際のスキニングパイプラインが使う値そのもの。
@@ -164,7 +164,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 	// このフレームで新たに計算したボーンのグローバル回転(トラッキング空間)を
 	// キャッシュしておく。leftLowerArm の親は leftUpperArm であり、
 	// upperBody_list は親→子の順で並んでいるため、子を解く時点では
-	// avatar.trackingTransforms はまだ「前フレーム」の値のまま(このsolve()の後で
+	// avatar.trackingMtx はまだ「前フレーム」の値のまま(このsolve()の後で
 	// avatarSystem.update()が再計算する)。stale な値を親の回転として使うと
 	// 特に手首側でズレ・破綻が起きるため、直前に計算した値を優先して使う。
 	std::array<Quat, static_cast<size_t>(HBT::Count)> solvedGlobalRot{};
@@ -190,7 +190,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		Quat parentGlobalRot =
 			hasSolvedGlobalRot[(size_t)parentBone]
 				? solvedGlobalRot[(size_t)parentBone]
-				: avatar.trackingTransforms[nodeReg.getId(parentHdl)].rot;
+				: avatar.trackingMtx[nodeReg.getId(parentHdl)].rot();
 
 		// restDir/currentDir はどちらもワールド(トラッキング)空間のベクトルなので、
 		// fromTo() で得られる差分回転もワールド空間の回転になる。
@@ -258,10 +258,10 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		}
 
 		vec3f parentPos =
-			avatar.trackingTransforms[nodeReg.getId(parentHdl)].pos;
+			avatar.trackingMtx[nodeReg.getId(parentHdl)].pos();
 
 		vec3f childPos =
-			avatar.trackingTransforms[node.id].pos;
+			avatar.trackingMtx[node.id].pos();
 
 		vec3f debug_restDir =
 			(childPos - parentPos).normalized();
@@ -287,11 +287,14 @@ void PoseSolver::traceAfterGlobalRebuild() const {
 		if (!bone.wasSolved) continue;
 		NodeHandle nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
 		NodeHandle childHdl = avatar.humanoid.bones[(size_t)childBoneOf(cnct.bone)];
-		const Transform& global = avatar.trackingTransforms[nodeReg.getId(nodeHdl)];
-		const Transform& childGlobal = avatar.trackingTransforms[nodeReg.getId(childHdl)];
+		const Mtx& global = avatar.trackingMtx[nodeReg.getId(nodeHdl)];
+		const Mtx& childGlobal = avatar.trackingMtx[nodeReg.getId(childHdl)];
 		const Node& node = nodeReg.get(nodeHdl);
-		const vec3f actualDir = (childGlobal.pos - global.pos).normalized();
-		printf("MOTION global bone=%d localNow=(%.5f,%.5f,%.5f,%.5f) globalRot=(%.5f,%.5f,%.5f,%.5f) actualDir=(%.5f,%.5f,%.5f) targetDot=%.6f pos=(%.5f,%.5f,%.5f) childPos=(%.5f,%.5f,%.5f)\\n", static_cast<int>(cnct.bone), node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, global.rot.x,global.rot.y,global.rot.z,global.rot.w, actualDir.x,actualDir.y,actualDir.z, bx::dot(actualDir,bone.lastTargetDir), global.pos.x,global.pos.y,global.pos.z, childGlobal.pos.x,childGlobal.pos.y,childGlobal.pos.z);
+		const vec3f globalPos = global.pos();
+		const vec3f childGlobalPos = childGlobal.pos();
+		const Quat globalRot = global.rot();
+		const vec3f actualDir = (childGlobalPos - globalPos).normalized();
+		printf("MOTION global bone=%d localNow=(%.5f,%.5f,%.5f,%.5f) globalRot=(%.5f,%.5f,%.5f,%.5f) actualDir=(%.5f,%.5f,%.5f) targetDot=%.6f pos=(%.5f,%.5f,%.5f) childPos=(%.5f,%.5f,%.5f)\\n", static_cast<int>(cnct.bone), node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, globalRot.x,globalRot.y,globalRot.z,globalRot.w, actualDir.x,actualDir.y,actualDir.z, bx::dot(actualDir,bone.lastTargetDir), globalPos.x,globalPos.y,globalPos.z, childGlobalPos.x,childGlobalPos.y,childGlobalPos.z);
 	}
 }
 

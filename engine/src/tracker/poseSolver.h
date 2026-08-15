@@ -19,7 +19,7 @@ struct BoneState {
     vec3f restDir;
 
 	// このボーン自身の「バインドポーズでのグローバル回転」(トラッキング空間)。
-	// PoseSolver構築時に一度だけ avatar.trackingTransforms から取得する。
+	// PoseSolver構築時に一度だけ avatar.trackingMtx から取得する。
 	// ローカル回転(node.trs.rotのオリジナル値)ではなく、
 	// 親の回転も含めて合成済みのグローバル回転であることが重要。
 	// (親ボーン自身もPoseSolverで動的に回転する場合、bind時の親回転と

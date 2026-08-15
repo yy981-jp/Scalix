@@ -16,15 +16,13 @@ struct Avatar {
 	Humanoid humanoid;
 
 	// Nodes' global transforms. `mtx` is the rendering cache of each TRS.
-	std::vector<Transform> globalTransforms;
 	std::vector<Mtx> globalMtx;
 
-	// globalTransformsと同じ階層構造だが、entityTransformのyaw/posを除いて計算したもの。
+	// globalMtxと同じ階層構造だが、entityTransformのyaw/posを除いて計算したもの。
 	// モーションキャプチャの入力(カメラ空間、アバターのワールド上の向きとは無関係)を
-	// 親ボーン空間に変換する際はこちらを使う。globalTransformsを使うと、アバターが
+	// 親ボーン空間に変換する際はこちらを使う。globalMtxを使うと、アバターが
 	// 振り向く(yawが変わる)たびにトラッキングの基準がずれ、本来ローカルなはずの
 	// 動きがワールド軸に引きずられてしまう(PoseSolver参照)。
-	std::vector<Transform> trackingTransforms;
 	std::vector<Mtx> trackingMtx;
 	
 
