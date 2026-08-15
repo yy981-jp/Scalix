@@ -7,6 +7,7 @@
 #include <def/quat.h>
 #include <def/str.h>
 #include <def/transform.h>
+#include <def/mtx.h>
 
 #include <anim/format.h>
 #include <core/nodeRegistry.h>
@@ -31,6 +32,7 @@ struct Node {
 	// rot: Quat  -- identity quaternion
 	// scale: vec3f -- {1,1,1}
 	Transform trs;
+	Mtx mtx;
 
 	Node() {
 		trs.scale = {1,1,1};

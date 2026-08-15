@@ -1,5 +1,5 @@
 #include <def/transform.h>
-
+/*
 
 Transform::Transform() : pos{}, rot{}, scale{1.0f, 1.0f, 1.0f} {
 	rebuildMatrix();
@@ -27,7 +27,7 @@ Transform Transform::operator*(const Transform& rhs) const {
 }
 
 void Transform::rebuildMatrix() {
-	float t[16], r[16], s[16], tmp[16];
+	float t[16], r[16], s[16], tmp[16], tmp2[16];
 
 	bx::mtxIdentity(t);
 	bx::mtxIdentity(r);
@@ -43,6 +43,5 @@ void Transform::rebuildMatrix() {
 
 	bx::mtxMul(tmp, s, r);	   // R * S
 	bx::mtxMul(mtx.data(), tmp, t);	 // (S * R) * T
-
-	
 }
+*/

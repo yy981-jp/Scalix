@@ -1,3 +1,4 @@
+#include "def/transform.h"
 #include <core/avatarSystem.h>
 
 #include <gltf/loader.h>
@@ -32,8 +33,8 @@ void AvatarSystem::loadData(const std::vector<std::string> path) {
 	}
 }
 
-void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Transform>& out,
-				Avatar& avatar, const Transform& entityTransform) {
+void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
+				Avatar& avatar, const Mtx& entityMtx) {
 	if (idx < 0 || idx >= avatar.model.nodes.size()) {
 		printf("invalid idx: %d\n", idx);
 		return;
@@ -41,16 +42,19 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Transform>& 
 	if (calculated[idx]) return;
 
 	auto& node = avatar.model.nodes[idx];
-	node.trs.rebuildMatrix();
+	// node.trs.rebuildMatrix();
+	node.mtx = Mtx::fromTRS(node.trs);
+
+
 
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent.isValid()) {
 		NodeId parent = nodeReg.getId(node.parent);
-		calcGlobal(parent, calculated, out, avatar, entityTransform);
-		out[idx] = out[parent] * node.trs;
+		calcGlobal(parent, calculated, out, avatar, entityMtx);
+		out[idx] = out[parent] * node.mtx;
 	} else {
 		// bx::mtxMul の従来の積順と合わせ、ルートは local * entity。
-		out[idx] = node.trs * entityTransform;
+		out[idx] = node.mtx * entityMtx;
 	}
 
 	calculated[idx] = true;
@@ -70,14 +74,18 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
 		avatar.globalTransforms.resize(avatar.model.nodes.size());
+		avatar.globalMtx.resize(avatar.model.nodes.size());
 		avatar.trackingTransforms.resize(avatar.model.nodes.size());
+		avatar.trackingMtx.resize(avatar.model.nodes.size());
 
 		Transform entityTransform;
 		entityTransform.pos = avatar.pos;
 		entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
 		// glTF座標系からのX軸反転もEntityのTRSとして扱う。
 		entityTransform.scale = avatar.scale;
-		entityTransform.rebuildMatrix();
+		Mtx entityMtx = Mtx::fromTRS(entityTransform);
+
+		// entityTransform.rebuildMatrix();
 
 		// トラッキング(PoseSolver)用のentityTransform。
 		// モーションキャプチャの入力はカメラ空間の相対ベクトルであり、
@@ -86,20 +94,21 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		// 補正であって向きではないので、そのまま維持する。
 		Transform trackingEntityTransform;
 		trackingEntityTransform.scale = entityTransform.scale;
-		trackingEntityTransform.rebuildMatrix();
+		Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
+		// trackingEntityTransform.rebuildMatrix();
 
 		std::vector<bool> calculated;
 		calculated.resize(avatar.model.nodes.size(), false);
 
 		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, calculated, avatar.globalTransforms, avatar, entityTransform);
+			calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
 		}
 
 		std::vector<bool> trackingCalculated;
 		trackingCalculated.resize(avatar.model.nodes.size(), false);
 
 		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, trackingCalculated, avatar.trackingTransforms, avatar, trackingEntityTransform);
+			calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
 		}
 		if (ctx.poseSolver != nullptr) ctx.poseSolver->traceAfterGlobalRebuild();
 
@@ -129,11 +138,13 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				NodeId nodeIdx = skin.joints[i];
 
 				// 順序検証済み
-				bx::mtxMul(
-					jointMtx[i].data(),
-					skin.invBind[i].data(),
-					avatar.globalTransforms[nodeIdx].mtx.data()
-				);
+				// bx::mtxMul(
+				// 	jointMtx[i].data(),
+				// 	skin.invBind[i].data(),
+				// 	avatar.globalMtx[nodeIdx].data()
+				// );
+
+				jointMtx[i] = avatar.globalMtx[nodeIdx] * skin.invBind[i];
 			}
 		}
 
@@ -141,14 +152,30 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 			for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
 				if (!avatar.humanoid.has(bone)) continue;
 				const Node& node = nodeReg.get(avatar.humanoid.bones[(size_t)bone]);
-				const Transform& global = avatar.globalTransforms[node.id];
+				const Mtx& global = avatar.globalMtx[node.id];
+				const Transform& globalTRS = avatar.globalTransforms[node.id];
 				const Mtx& skinMtx = allJointMtx[node.skinIndex][node.jointIndex];
 				const vec3f skinPos = skinMtx.pos();
 				const Mtx bindMtx = Mtx::inverse(avatar.model.skins[node.skinIndex].invBind[node.jointIndex]);
 				const vec3f bindJointPos = bindMtx.pos();
 				const vec3f skinnedJointPos = {bx::mulH(bindJointPos, skinMtx.data())};
-				const vec3f skinError = skinnedJointPos - global.mtx.pos();
-				printf("MOTION draw bone=%d globalPos=(%.5f,%.5f,%.5f) globalRot=(%.5f,%.5f,%.5f,%.5f) skinTranslation=(%.5f,%.5f,%.5f) bindJoint=(%.5f,%.5f,%.5f) skinnedJoint=(%.5f,%.5f,%.5f) skinError=(%.6f,%.6f,%.6f)\\n", static_cast<int>(bone), global.pos.x,global.pos.y,global.pos.z, global.rot.x,global.rot.y,global.rot.z,global.rot.w, skinPos.x,skinPos.y,skinPos.z, bindJointPos.x,bindJointPos.y,bindJointPos.z, skinnedJointPos.x,skinnedJointPos.y,skinnedJointPos.z, skinError.x,skinError.y,skinError.z);
+				const vec3f skinError = skinnedJointPos - global.pos();
+				printf(
+					"MOTION draw bone=%d "
+					"globalPos=(%.5f,%.5f,%.5f) "
+					"globalRot=(%.5f,%.5f,%.5f,%.5f) "
+					"skinTranslation=(%.5f,%.5f,%.5f) "
+					"bindJoint=(%.5f,%.5f,%.5f) "
+					"skinnedJoint=(%.5f,%.5f,%.5f) "
+					"skinError=(%.6f,%.6f,%.6f)\\n",
+					static_cast<int>(bone),
+					globalTRS.pos.x,globalTRS.pos.y,globalTRS.pos.z,
+					globalTRS.rot.x,globalTRS.rot.y,globalTRS.rot.z,globalTRS.rot.w,
+					skinPos.x,skinPos.y,skinPos.z,
+					bindJointPos.x,bindJointPos.y,bindJointPos.z,
+					skinnedJointPos.x,skinnedJointPos.y,skinnedJointPos.z,
+					skinError.x,skinError.y,skinError.z
+				);
 			}
 		}
 

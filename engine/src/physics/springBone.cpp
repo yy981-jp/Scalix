@@ -10,7 +10,7 @@ SpringBoneChain::SpringBoneChain(const std::vector<NodeHandle>& boneIndex):
 	// Initialize positions from nodes
 	for (size_t i = 0; i < bones.size(); i++) {
 		Avatar* ava = nodeReg.getAvatar(boneIndex[i]);
-		const auto& mtx = ava->globalTransforms[nodeReg.getId(boneIndex[i])].mtx;
+		const auto& mtx = ava->globalMtx[nodeReg.getId(boneIndex[i])];
 
 		bones[i].currPos = mtx.pos();
 		bones[i].prevPos = bones[i].currPos;
@@ -32,7 +32,7 @@ void SpringBoneChain::update(float dt) {
 
 	// Keep the root anchored to its animated world-space position.
 	Avatar* rootAvatar = nodeReg.getAvatar(boneIndex[0]);
-	const auto& rootMtx = rootAvatar->globalTransforms[nodeReg.getId(boneIndex[0])].mtx;
+	const auto& rootMtx = rootAvatar->globalMtx[nodeReg.getId(boneIndex[0])];
 	bones[0].currPos = rootMtx.pos();
 	bones[0].prevPos = bones[0].currPos;
 
@@ -63,7 +63,7 @@ void SpringBoneChain::update(float dt) {
 		// Convert the global simulation position back to the parent's local space.
 		Avatar* parentAvatar = nodeReg.getAvatar(boneIndex[i - 1]);
 		Mtx parentMtx =
-			parentAvatar->globalTransforms[nodeReg.getId(boneIndex[i - 1])].mtx;
+			parentAvatar->globalMtx[nodeReg.getId(boneIndex[i - 1])];
 		parentMtx.setPos(parent.currPos);
 
 		Mtx invParentMtx;
