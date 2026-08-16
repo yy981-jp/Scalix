@@ -184,29 +184,29 @@ void Engine::gameInit() {
 
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
 
-	Quat q = Quat::fromAxisAngle(
-		{0, 1, 0},
-		bx::kPi * 0.5f
-	);
+	// Quat q = Quat::fromAxisAngle(
+	// 	{0, 1, 0},
+	// 	bx::kPi * 0.5f
+	// );
 
-	Transform trs;
-	trs.pos = {0,0,0};
-	trs.rot = q;
-	trs.scale = {1,1,1};
+	// Transform trs;
+	// trs.pos = {0,0,0};
+	// trs.rot = q;
+	// trs.scale = {1,1,1};
 
-	Mtx m = Mtx::fromTRS(trs);
+	// Mtx m = Mtx::fromTRS(trs);
 
-	Quat q2 = m.rot();
+	// Quat q2 = m.rot();
 
-	printf(
-		"q  = %.5f %.5f %.5f %.5f\n",
-		q.x,q.y,q.z,q.w
-	);
+	// printf(
+	// 	"q  = %.5f %.5f %.5f %.5f\n",
+	// 	q.x,q.y,q.z,q.w
+	// );
 
-	printf(
-		"q2 = %.5f %.5f %.5f %.5f\n",
-		q2.x,q2.y,q2.z,q2.w
-	);
+	// printf(
+	// 	"q2 = %.5f %.5f %.5f %.5f\n",
+	// 	q2.x,q2.y,q2.z,q2.w
+	// );
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {

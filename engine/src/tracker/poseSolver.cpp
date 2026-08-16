@@ -1,5 +1,6 @@
 #include "def/node.h"
 #include "util/math.h"
+#include <bx/math.h>
 #include <tracker/pose.h>
 #include <tracker/poseSolver.h>
 #include <tracker/motionDebug.h>
@@ -139,8 +140,8 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 		// このボーン自身のバインドポーズでのグローバル回転をそのまま保存する。
 		// trackingMtx は calcGlobal() で親→子の順にローカルTRSを合成した
 		// 結果なので、.rot() にはこのボーンまでの回転がすべて含まれている。
-		bones[(size_t)cnct.bone].globalBindRot =
-			avatar.trackingMtx[nodeReg.getId(nodeHdl)].rot();
+		Quat rot = avatar.trackingMtx[nodeReg.getId(nodeHdl)].rot();
+		bones[(size_t)cnct.bone].globalBindRot = rot/* * Quat::fromAxisAngle({0,1,0}, deg2rad(180))*/;
 
 		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
 		// 子ボーンの向き)。実際のスキニングパイプラインが使う値そのもの。
@@ -199,6 +200,9 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		Quat worldDelta = Quat::fromTo(bone.restDir, currentDir);
 		Quat newGlobalRot = worldDelta * bone.globalBindRot;
 
+		debug.drawQuat(avatar.globalMtx[node.id].pos(), newGlobalRot, 0.5);
+
+
 		// node.trs.rot は親ボーンのローカル空間での回転なので、
 		// 親ボーンの「現在の」グローバル回転を割って(逆回転をかけて)ローカルに変換する。
 		// ※ここで使う parentGlobalRot は必ず「現在」の値でなければならない。
@@ -217,22 +221,47 @@ void PoseSolver::solve(const PoseFrame& frame) {
 			// const vec3f solvedDir = newGlobalRot * bone.childLocalDir;
 			// printf("MOTION solve bone=%d target=(%.5f,%.5f,%.5f) rest=(%.5f,%.5f,%.5f) bindGlobal=(%.5f,%.5f,%.5f,%.5f) parentGlobal=(%.5f,%.5f,%.5f,%.5f) delta=(%.5f,%.5f,%.5f,%.5f) solvedGlobal=(%.5f,%.5f,%.5f,%.5f) local=(%.5f,%.5f,%.5f,%.5f) solvedDir=(%.5f,%.5f,%.5f) dot=%.6f finite=%d\n", static_cast<int>(cnct.bone), currentDir.x,currentDir.y,currentDir.z, bone.restDir.x,bone.restDir.y,bone.restDir.z, bone.globalBindRot.x,bone.globalBindRot.y,bone.globalBindRot.z,bone.globalBindRot.w, parentGlobalRot.x,parentGlobalRot.y,parentGlobalRot.z,parentGlobalRot.w, worldDelta.x,worldDelta.y,worldDelta.z,worldDelta.w, newGlobalRot.x,newGlobalRot.y,newGlobalRot.z,newGlobalRot.w, node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, solvedDir.x,solvedDir.y,solvedDir.z, bx::dot(solvedDir,currentDir), finiteQuat(worldDelta) && finiteQuat(newGlobalRot) && finiteQuat(node.trs.rot));
 
-			vec3f restFromQuat =
-			bones[(size_t)cnct.bone].globalBindRot *
-			bones[(size_t)cnct.bone].childLocalDir;
+			// vec3f restFromQuat =
+			// bones[(size_t)cnct.bone].globalBindRot *
+			// bones[(size_t)cnct.bone].childLocalDir;
 
-			printf(
-				"bindDir bone=%d rest=(%.5f %.5f %.5f) quatDir=(%.5f %.5f %.5f) dot=%.6f\n",
-				static_cast<int>(cnct.bone),
-				bones[(size_t)cnct.bone].restDir.x,
-				bones[(size_t)cnct.bone].restDir.y,
-				bones[(size_t)cnct.bone].restDir.z,
-				restFromQuat.x,
-				restFromQuat.y,
-				restFromQuat.z,
-				bx::dot(bones[(size_t)cnct.bone].restDir, restFromQuat)
-			);
+			// printf(
+			// 	"bindDir bone=%d rest=(%.5f %.5f %.5f) quatDir=(%.5f %.5f %.5f) dot=%.6f\n",
+			// 	static_cast<int>(cnct.bone),
+			// 	bones[(size_t)cnct.bone].restDir.x,
+			// 	bones[(size_t)cnct.bone].restDir.y,
+			// 	bones[(size_t)cnct.bone].restDir.z,
+			// 	restFromQuat.x,
+			// 	restFromQuat.y,
+			// 	restFromQuat.z,
+			// 	bx::dot(bones[(size_t)cnct.bone].restDir, restFromQuat)
+			// );
+
+			// const auto& A = newGlobalRot;
+			// const auto& B = parentGlobalRot * node.trs.rot;
+			// const auto& C = avatar.trackingMtx[node.id].rot();
+
+			// printf(
+			// 	"dot AB: %.5f, "
+			// 	"dot AC: %.5f, "
+			// 	"dot BC: %.5f\n",
+			// 	bx::dot(A,B),
+			// 	bx::dot(A,C),
+			// 	bx::dot(B,C)
+			// );
 		}
+
+		// const Mtx& global = avatar.globalMtx[node.id];
+		// const Mtx& tracking = avatar.trackingMtx[node.id];
+
+		// printf(
+		// 	"bone=%d "
+		// 	"globalRot=(%.5f %.5f %.5f %.5f) "
+		// 	"trackingRot=(%.5f %.5f %.5f %.5f)\n",
+		// 	(int)cnct.bone,
+		// 	global.rot().x, global.rot().y, global.rot().z, global.rot().w,
+		// 	tracking.rot().x, tracking.rot().y, tracking.rot().z, tracking.rot().w
+		// );
 
 		solvedGlobalRot[(size_t)cnct.bone] = newGlobalRot;
 		hasSolvedGlobalRot[(size_t)cnct.bone] = true;
@@ -297,6 +326,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 }
 
 void PoseSolver::traceAfterGlobalRebuild() const {
+	return;
 	if (!motionTraceEnabled()) return;
 	for (const auto& cnct : upperBody_list) {
 		const BoneState& bone = bones[(size_t)cnct.bone];

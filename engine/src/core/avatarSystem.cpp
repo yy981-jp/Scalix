@@ -208,6 +208,39 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 					continue;
 				}
 				
+
+				// const Mtx& global = avatar.globalMtx[node.id];
+				// const Mtx& tracking = avatar.trackingMtx[node.id];
+
+				// printf(
+				// 	"bone=%d "
+				// 	"globalRot=(%.5f %.5f %.5f %.5f) "
+				// 	"trackingRot=(%.5f %.5f %.5f %.5f)\n",
+				// 	(int)node.id,
+				// 	global.rot().x, global.rot().y, global.rot().z, global.rot().w,
+				// 	tracking.rot().x, tracking.rot().y, tracking.rot().z, tracking.rot().w
+				// );
+
+				// if (node.skinIndex < 0 ||
+				// 	node.jointIndex < 0) {
+				// 	continue;
+				// }
+
+				// const Mtx& skinMtx =
+				// 	allJointMtx[node.skinIndex][node.jointIndex];
+
+				// Quat skinRot = skinMtx.rot();
+
+				// printf(
+				// 	"bone=%d skinRot=(%.5f %.5f %.5f %.5f)\n",
+				// 	(int)node.id,
+				// 	skinRot.x,
+				// 	skinRot.y,
+				// 	skinRot.z,
+				// 	skinRot.w
+				// );
+
+
 				bgfx::setUniform(u_bones, palette.data(), palette.size());
 
 				// ===== transform =====

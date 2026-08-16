@@ -2,6 +2,7 @@
 
 #include <bgfx/bgfx.h>
 #include <def/vec3.h>
+#include <def/quat.h>
 #include <cstdint>
 #include <vector>
 
@@ -11,6 +12,7 @@ struct DebugDraw {
 	void init();
 	void drawLine(const vec3f& a, const vec3f& b, uint32_t abgr = 0xffffffffu);
 	void drawCross(const vec3f& position, float size, uint32_t abgr = 0xffffffffu);
+	void drawQuat(const vec3f& position, const Quat& rotation, float size);
 	void render(bgfx::ProgramHandle program);
 	void reset();
 

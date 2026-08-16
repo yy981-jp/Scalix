@@ -33,8 +33,7 @@ namespace {
 // 3x3 部分の各行は「スケール量 * 回転後の基底ベクトル」になっている。
 // スケールを取り除く(=各行を正規化する)ことで純粋な回転行列を復元し、
 // それを四元数に変換する(Shepperd/標準的なmatrix->quaternion手法)。
-void decomposeRotScale(const float* m, bx::Vec3& outScale, bx::Quaternion& outRot)
-{
+void decomposeRotScale(const float* m, bx::Vec3& outScale, bx::Quaternion& outRot) {
     // Column-major layout: column c occupies m[c*4 .. c*4+3]
     // column 0 = X axis * scaleX
     // column 1 = Y axis * scaleY
@@ -53,8 +52,7 @@ void decomposeRotScale(const float* m, bx::Vec3& outScale, bx::Quaternion& outRo
         - m[4] * (m[1] * m[10] - m[2] * m[9])
         + m[8] * (m[1] * m[6]  - m[2] * m[5]);
 
-    if (det < 0.0f)
-    {
+    if (det < 0.0f) {
         sx = -sx;
     }
 
@@ -74,32 +72,25 @@ void decomposeRotScale(const float* m, bx::Vec3& outScale, bx::Quaternion& outRo
     float trace = r00 + r11 + r22;
     float qx, qy, qz, qw;
 
-    if (trace > 0.0f)
-    {
+    if (trace > 0.0f) {
         float s = 0.5f / bx::sqrt(trace + 1.0f);
         qw = 0.25f / s;
         qx = (r21 - r12) * s;
         qy = (r02 - r20) * s;
         qz = (r10 - r01) * s;
-    }
-    else if (r00 > r11 && r00 > r22)
-    {
+    } else if (r00 > r11 && r00 > r22) {
         float s = 2.0f * bx::sqrt(1.0f + r00 - r11 - r22);
         qw = (r21 - r12) / s;
         qx = 0.25f * s;
         qy = (r01 + r10) / s;
         qz = (r02 + r20) / s;
-    }
-    else if (r11 > r22)
-    {
+    } else if (r11 > r22) {
         float s = 2.0f * bx::sqrt(1.0f + r11 - r00 - r22);
         qw = (r02 - r20) / s;
         qx = (r01 + r10) / s;
         qy = 0.25f * s;
         qz = (r12 + r21) / s;
-    }
-    else
-    {
+    } else {
         float s = 2.0f * bx::sqrt(1.0f + r22 - r00 - r11);
         qw = (r10 - r01) / s;
         qx = (r02 + r20) / s;
