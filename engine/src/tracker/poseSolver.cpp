@@ -213,9 +213,25 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		bone.wasSolved = true;
 
 		if (motionTraceEnabled()) {
-			auto finiteQuat = [](const Quat& q) { return std::isfinite(q.x) && std::isfinite(q.y) && std::isfinite(q.z) && std::isfinite(q.w); };
-			const vec3f solvedDir = newGlobalRot * bone.childLocalDir;
-			printf("MOTION solve bone=%d target=(%.5f,%.5f,%.5f) rest=(%.5f,%.5f,%.5f) bindGlobal=(%.5f,%.5f,%.5f,%.5f) parentGlobal=(%.5f,%.5f,%.5f,%.5f) delta=(%.5f,%.5f,%.5f,%.5f) solvedGlobal=(%.5f,%.5f,%.5f,%.5f) local=(%.5f,%.5f,%.5f,%.5f) solvedDir=(%.5f,%.5f,%.5f) dot=%.6f finite=%d\\n", static_cast<int>(cnct.bone), currentDir.x,currentDir.y,currentDir.z, bone.restDir.x,bone.restDir.y,bone.restDir.z, bone.globalBindRot.x,bone.globalBindRot.y,bone.globalBindRot.z,bone.globalBindRot.w, parentGlobalRot.x,parentGlobalRot.y,parentGlobalRot.z,parentGlobalRot.w, worldDelta.x,worldDelta.y,worldDelta.z,worldDelta.w, newGlobalRot.x,newGlobalRot.y,newGlobalRot.z,newGlobalRot.w, node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, solvedDir.x,solvedDir.y,solvedDir.z, bx::dot(solvedDir,currentDir), finiteQuat(worldDelta) && finiteQuat(newGlobalRot) && finiteQuat(node.trs.rot));
+			// auto finiteQuat = [](const Quat& q) { return std::isfinite(q.x) && std::isfinite(q.y) && std::isfinite(q.z) && std::isfinite(q.w); };
+			// const vec3f solvedDir = newGlobalRot * bone.childLocalDir;
+			// printf("MOTION solve bone=%d target=(%.5f,%.5f,%.5f) rest=(%.5f,%.5f,%.5f) bindGlobal=(%.5f,%.5f,%.5f,%.5f) parentGlobal=(%.5f,%.5f,%.5f,%.5f) delta=(%.5f,%.5f,%.5f,%.5f) solvedGlobal=(%.5f,%.5f,%.5f,%.5f) local=(%.5f,%.5f,%.5f,%.5f) solvedDir=(%.5f,%.5f,%.5f) dot=%.6f finite=%d\n", static_cast<int>(cnct.bone), currentDir.x,currentDir.y,currentDir.z, bone.restDir.x,bone.restDir.y,bone.restDir.z, bone.globalBindRot.x,bone.globalBindRot.y,bone.globalBindRot.z,bone.globalBindRot.w, parentGlobalRot.x,parentGlobalRot.y,parentGlobalRot.z,parentGlobalRot.w, worldDelta.x,worldDelta.y,worldDelta.z,worldDelta.w, newGlobalRot.x,newGlobalRot.y,newGlobalRot.z,newGlobalRot.w, node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, solvedDir.x,solvedDir.y,solvedDir.z, bx::dot(solvedDir,currentDir), finiteQuat(worldDelta) && finiteQuat(newGlobalRot) && finiteQuat(node.trs.rot));
+
+			vec3f restFromQuat =
+			bones[(size_t)cnct.bone].globalBindRot *
+			bones[(size_t)cnct.bone].childLocalDir;
+
+			printf(
+				"bindDir bone=%d rest=(%.5f %.5f %.5f) quatDir=(%.5f %.5f %.5f) dot=%.6f\n",
+				static_cast<int>(cnct.bone),
+				bones[(size_t)cnct.bone].restDir.x,
+				bones[(size_t)cnct.bone].restDir.y,
+				bones[(size_t)cnct.bone].restDir.z,
+				restFromQuat.x,
+				restFromQuat.y,
+				restFromQuat.z,
+				bx::dot(bones[(size_t)cnct.bone].restDir, restFromQuat)
+			);
 		}
 
 		solvedGlobalRot[(size_t)cnct.bone] = newGlobalRot;

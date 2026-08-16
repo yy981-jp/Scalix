@@ -33,56 +33,81 @@ namespace {
 // 3x3 部分の各行は「スケール量 * 回転後の基底ベクトル」になっている。
 // スケールを取り除く(=各行を正規化する)ことで純粋な回転行列を復元し、
 // それを四元数に変換する(Shepperd/標準的なmatrix->quaternion手法)。
-void decomposeRotScale(const float* m, bx::Vec3& outScale, bx::Quaternion& outRot) {
-	bx::Vec3 row0{m[0], m[1], m[2]};
-	bx::Vec3 row1{m[4], m[5], m[6]};
-	bx::Vec3 row2{m[8], m[9], m[10]};
+void decomposeRotScale(const float* m, bx::Vec3& outScale, bx::Quaternion& outRot)
+{
+    // Column-major layout: column c occupies m[c*4 .. c*4+3]
+    // column 0 = X axis * scaleX
+    // column 1 = Y axis * scaleY
+    // column 2 = Z axis * scaleZ
+    bx::Vec3 col0 = { m[0],  m[1],  m[2]  };
+    bx::Vec3 col1 = { m[4],  m[5],  m[6]  };
+    bx::Vec3 col2 = { m[8],  m[9],  m[10] };
 
-	const float sx = bx::length(row0);
-	const float sy = bx::length(row1);
-	const float sz = bx::length(row2);
-	outScale = {sx, sy, sz};
+    float sx = bx::length(col0);
+    float sy = bx::length(col1);
+    float sz = bx::length(col2);
 
-	row0 = sx > bx::kNearZero ? bx::mul(row0, 1.0f / sx) : bx::Vec3{1.0f, 0.0f, 0.0f};
-	row1 = sy > bx::kNearZero ? bx::mul(row1, 1.0f / sy) : bx::Vec3{0.0f, 1.0f, 0.0f};
-	row2 = sz > bx::kNearZero ? bx::mul(row2, 1.0f / sz) : bx::Vec3{0.0f, 0.0f, 1.0f};
+    // Negative determinant -> one axis is mirrored (fold sign into scaleX)
+    float det =
+          m[0] * (m[5] * m[10] - m[6] * m[9])
+        - m[4] * (m[1] * m[10] - m[2] * m[9])
+        + m[8] * (m[1] * m[6]  - m[2] * m[5]);
 
-	const float trace = row0.x + row1.y + row2.z;
-	if (trace > 0.0f) {
-		const float s = bx::sqrt(trace + 1.0f) * 2.0f;
-		outRot.w = 0.25f * s;
-		// 標準的なShepperd法は qx=(m21-m12)/s だが、m21=row2.y, m12=row1.z なので
-		// (row2.y - row1.z)/s が正しい。符号が逆だとx/y/zだけが反転した
-		// 「共役四元数(=逆回転)」になってしまい、wはそのままなのでq≡-qの
-		// 符号反転(無害)では吸収できず、実際に逆方向の回転として現れる。
-		// trace>0は通常の(小さい)回転角でほぼ必ず通るブランチなので、
-		// この符号ミスがPoseSolverの「反応はするが向きがおかしい」原因だった。
-		outRot.x = (row2.y - row1.z) / s;
-		outRot.y = (row0.z - row2.x) / s;
-		outRot.z = (row1.x - row0.y) / s;
-	} else if (row0.x > row1.y && row0.x > row2.z) {
-		// 同様に qw=(m21-m12)/s = (row2.y-row1.z)/s が正しい向き。
-		// x/y/zは元々正しかったが、wだけ符号が逆だと(x,y,z,-w)は
-		// 「-1倍しても共役と一致しない」ため無害なq≡-qの符号反転では吸収できず、
-		// 実質 conjugate(q)(=逆回転)と同じ回転になってしまっていた。
-		const float s = bx::sqrt(1.0f + row0.x - row1.y - row2.z) * 2.0f;
-		outRot.w = (row2.y - row1.z) / s;
-		outRot.x = 0.25f * s;
-		outRot.y = (row1.x + row0.y) / s;
-		outRot.z = (row2.x + row0.z) / s;
-	} else if (row1.y > row2.z) {
-		const float s = bx::sqrt(1.0f + row1.y - row0.x - row2.z) * 2.0f;
-		outRot.w = (row0.z - row2.x) / s;
-		outRot.x = (row1.x + row0.y) / s;
-		outRot.y = 0.25f * s;
-		outRot.z = (row2.y + row1.z) / s;
-	} else {
-		const float s = bx::sqrt(1.0f + row2.z - row0.x - row1.y) * 2.0f;
-		outRot.w = (row1.x - row0.y) / s;
-		outRot.x = (row2.x + row0.z) / s;
-		outRot.y = (row2.y + row1.z) / s;
-		outRot.z = 0.25f * s;
-	}
+    if (det < 0.0f)
+    {
+        sx = -sx;
+    }
+
+    outScale = { sx, sy, sz };
+
+    // Normalize columns to isolate the pure rotation part
+    float invSx = 1.0f / sx;
+    float invSy = 1.0f / sy;
+    float invSz = 1.0f / sz;
+
+    // r[row][col], column-major indices
+    float r00 = col0.x * invSx, r10 = col0.y * invSx, r20 = col0.z * invSx;
+    float r01 = col1.x * invSy, r11 = col1.y * invSy, r21 = col1.z * invSy;
+    float r02 = col2.x * invSz, r12 = col2.y * invSz, r22 = col2.z * invSz;
+
+    // Trace-based matrix -> quaternion conversion
+    float trace = r00 + r11 + r22;
+    float qx, qy, qz, qw;
+
+    if (trace > 0.0f)
+    {
+        float s = 0.5f / bx::sqrt(trace + 1.0f);
+        qw = 0.25f / s;
+        qx = (r21 - r12) * s;
+        qy = (r02 - r20) * s;
+        qz = (r10 - r01) * s;
+    }
+    else if (r00 > r11 && r00 > r22)
+    {
+        float s = 2.0f * bx::sqrt(1.0f + r00 - r11 - r22);
+        qw = (r21 - r12) / s;
+        qx = 0.25f * s;
+        qy = (r01 + r10) / s;
+        qz = (r02 + r20) / s;
+    }
+    else if (r11 > r22)
+    {
+        float s = 2.0f * bx::sqrt(1.0f + r11 - r00 - r22);
+        qw = (r02 - r20) / s;
+        qx = (r01 + r10) / s;
+        qy = 0.25f * s;
+        qz = (r12 + r21) / s;
+    }
+    else
+    {
+        float s = 2.0f * bx::sqrt(1.0f + r22 - r00 - r11);
+        qw = (r10 - r01) / s;
+        qx = (r02 + r20) / s;
+        qy = (r12 + r21) / s;
+        qz = 0.25f * s;
+    }
+
+    outRot = { qx, qy, qz, qw };
 }
 }
 
