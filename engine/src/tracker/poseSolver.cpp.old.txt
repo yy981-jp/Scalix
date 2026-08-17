@@ -5,7 +5,8 @@
 #include <cmath>
 
 #include <core/nodeRegistry.h>
-#include <util/quatutil.h>
+#include <debug/debugdraw.h>
+// #include <util/quatutil.h>
 #include <util/fmutil.h>
 #include <def/str.h>
 
@@ -28,6 +29,66 @@ struct HumanoidConnection {
 	LandmarkId twistSecondary = LandmarkId::Count;
 };
 
+
+struct LandmarkConnection {
+	LandmarkId a;
+	LandmarkId b;
+};
+
+constexpr LandmarkConnection poseConnections[] = {
+    // 顔（目）
+    {LandmarkId::Nose, LandmarkId::LeftEyeInner},
+    {LandmarkId::LeftEyeInner, LandmarkId::LeftEye},
+    {LandmarkId::LeftEye, LandmarkId::LeftEyeOuter},
+    {LandmarkId::Nose, LandmarkId::RightEyeInner},
+    {LandmarkId::RightEyeInner, LandmarkId::RightEye},
+    {LandmarkId::RightEye, LandmarkId::RightEyeOuter},
+
+    // 顔（耳・口）
+    {LandmarkId::LeftEar, LandmarkId::MouthLeft},
+    {LandmarkId::RightEar, LandmarkId::MouthRight},
+    {LandmarkId::MouthLeft, LandmarkId::MouthRight},
+
+    // 上半身（両肩）
+    {LandmarkId::LeftShoulder, LandmarkId::RightShoulder},
+
+    // 腕・手（左）
+    {LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
+    {LandmarkId::LeftElbow, LandmarkId::LeftWrist},
+    {LandmarkId::LeftWrist, LandmarkId::LeftPinky},
+    {LandmarkId::LeftWrist, LandmarkId::LeftIndex},
+    {LandmarkId::LeftWrist, LandmarkId::LeftThumb},
+    {LandmarkId::LeftPinky, LandmarkId::LeftIndex},
+
+    // 腕・手（右）
+    {LandmarkId::RightShoulder, LandmarkId::RightElbow},
+    {LandmarkId::RightElbow, LandmarkId::RightWrist},
+    {LandmarkId::RightWrist, LandmarkId::RightPinky},
+    {LandmarkId::RightWrist, LandmarkId::RightIndex},
+    {LandmarkId::RightWrist, LandmarkId::RightThumb},
+    {LandmarkId::RightPinky, LandmarkId::RightIndex},
+
+    // 胴体（肩〜腰）
+    {LandmarkId::LeftShoulder, LandmarkId::LeftHip},
+    {LandmarkId::RightShoulder, LandmarkId::RightHip},
+    {LandmarkId::LeftHip, LandmarkId::RightHip},
+
+    // 脚・足（左）
+    {LandmarkId::LeftHip, LandmarkId::LeftKnee},
+    {LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
+    {LandmarkId::LeftAnkle, LandmarkId::LeftHeel},
+    {LandmarkId::LeftHeel, LandmarkId::LeftFootIndex},
+    {LandmarkId::LeftAnkle, LandmarkId::LeftFootIndex},
+
+    // 脚・足（右）
+    {LandmarkId::RightHip, LandmarkId::RightKnee},
+    {LandmarkId::RightKnee, LandmarkId::RightAnkle},
+    {LandmarkId::RightAnkle, LandmarkId::RightHeel},
+    {LandmarkId::RightHeel, LandmarkId::RightFootIndex},
+    {LandmarkId::RightAnkle, LandmarkId::RightFootIndex},
+};
+
+
 enum class HMCnsId {
 	upperBody,
 	lowerBody,
@@ -35,21 +96,21 @@ enum class HMCnsId {
 	Count
 };
 
-constexpr std::array upperBody_list = {
-	HumanoidConnection{HBT::arm_left_up, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
-	HumanoidConnection{HBT::arm_left_low, LandmarkId::LeftElbow, LandmarkId::LeftWrist, LandmarkId::LeftIndex},
-	HumanoidConnection{HBT::arm_right_up, LandmarkId::RightShoulder, LandmarkId::RightElbow},
-	HumanoidConnection{HBT::arm_right_low, LandmarkId::RightElbow, LandmarkId::RightWrist, LandmarkId::RightIndex},
+const std::vector<HumanoidConnection> upperBody_list = {
+	HumanoidConnection{HBT::leftUpperArm, LandmarkId::LeftShoulder, LandmarkId::LeftElbow},
+	// HumanoidConnection{HBT::leftLowerArm, LandmarkId::LeftElbow, LandmarkId::LeftWrist},
+	// HumanoidConnection{HBT::rightUpperArm, LandmarkId::RightShoulder, LandmarkId::RightElbow},
+	// HumanoidConnection{HBT::rightLowerArm, LandmarkId::RightElbow, LandmarkId::RightWrist},
 };
 
-constexpr std::array lowerBody_list = {
-	HumanoidConnection{HBT::leg_left_up, LandmarkId::LeftHip, LandmarkId::LeftKnee},
-	HumanoidConnection{HBT::leg_left_low, LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
-	HumanoidConnection{HBT::leg_right_up, LandmarkId::RightHip, LandmarkId::RightKnee},
-	HumanoidConnection{HBT::leg_right_low, LandmarkId::RightKnee, LandmarkId::RightAnkle},
+const std::vector<HumanoidConnection> lowerBody_list = {
+	HumanoidConnection{HBT::leftUpperLeg, LandmarkId::LeftHip, LandmarkId::LeftKnee},
+	HumanoidConnection{HBT::leftLowerLeg, LandmarkId::LeftKnee, LandmarkId::LeftAnkle},
+	HumanoidConnection{HBT::rightUpperLeg, LandmarkId::RightHip, LandmarkId::RightKnee},
+	HumanoidConnection{HBT::rightLowerLeg, LandmarkId::RightKnee, LandmarkId::RightAnkle},
 };
 
-constexpr std::array humanoidConnections = {
+const std::vector<std::vector<HumanoidConnection>> humanoidConnections = {
 	upperBody_list,
 	lowerBody_list,
 };
@@ -71,7 +132,7 @@ vec3f position(const Avatar& avatar, NodeHandle node) {
 	// globalTransformsを使うと、アバターが振り向くたびにこの後の
 	// directionInParentSpace()の基準もずれてしまう。
 	const auto& mtx = avatar.trackingTransforms[nodeReg.getId(node)].mtx;
-	return {mtx[12], mtx[13], mtx[14]};
+	return mtx.pos();
 }
 
 vec3f directionInParentSpace(const Avatar& avatar, NodeHandle node, const vec3f& direction) {
@@ -184,8 +245,8 @@ void PoseSolver::smoothAndRepair(PoseFrame& frame) {
 
 void PoseSolver::constrainBoneLengths(PoseFrame& frame) {
 	for (PoseBone& bone : bones) {
-		PoseLandmark& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)];
-		PoseLandmark& child = frame.landmarks[landmarkIndex(bone.landmarks.child)];
+		PoseLandmark& parent = frame.landmarks[static_cast<size_t>(bone.landmarks.parent)];
+		PoseLandmark& child = frame.landmarks[static_cast<size_t>(bone.landmarks.child)];
 		vec3f observed = child.pos - parent.pos;
 		float observedLength = bx::length(observed);
 		if (parent.visibility >= minimumVisibility &&
@@ -205,12 +266,30 @@ void PoseSolver::constrainBoneLengths(PoseFrame& frame) {
 	}
 }
 
+
+void debug_(const PoseFrame& frame) {
+	for (auto& lm : frame.landmarks) {
+		if (lm.visibility < 0.5) continue;
+		debug.drawCross(lm.pos + vec3f{0,2,0}, 0.01f, 0xffff0000u);
+	}
+
+	for (const auto& c : poseConnections) {
+		debug.drawLine(
+			frame.landmarks[static_cast<size_t>(c.a)].pos + vec3f{0,2,0},
+			frame.landmarks[static_cast<size_t>(c.b)].pos + vec3f{0,2,0}
+		);
+	}
+}
+
+
 void PoseSolver::calibrate(const PoseFrame& frame) {
+	debug_(frame);
+
 	bool allOk = true;
 
 	for (PoseBone& bone : bones) {
-		const PoseLandmark& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)];
-		const PoseLandmark& child = frame.landmarks[landmarkIndex(bone.landmarks.child)];
+		const PoseLandmark& parent = frame.landmarks[static_cast<size_t>(bone.landmarks.parent)];
+		const PoseLandmark& child = frame.landmarks[static_cast<size_t>(bone.landmarks.child)];
 
 		if (parent.visibility < minimumVisibility || child.visibility < minimumVisibility) {
 			allOk = false;
@@ -230,7 +309,7 @@ void PoseSolver::calibrate(const PoseFrame& frame) {
 		// (allOkには影響させない。指のトラッキングが不安定なだけで全体の
 		// キャリブレーションをやり直させるのは過剰なため)。
 		if (bone.twistLandmark != LandmarkId::Count) {
-			const PoseLandmark& twistLm = frame.landmarks[landmarkIndex(bone.twistLandmark)];
+			const PoseLandmark& twistLm = frame.landmarks[static_cast<size_t>(bone.twistLandmark)];
 			if (twistLm.visibility >= minimumVisibility) {
 				vec3f twistVec = twistLm.pos - child.pos;
 				twistVec = directionInParentSpace(avatar, bone.node, twistVec);
@@ -259,8 +338,8 @@ void PoseSolver::solve(const PoseFrame& input) {
 	if (needsCalibration) calibrate(frame);
 
 	for (const PoseBone& bone : bones) {
-		const vec3f& parent = frame.landmarks[landmarkIndex(bone.landmarks.parent)].pos;
-		const vec3f& child = frame.landmarks[landmarkIndex(bone.landmarks.child)].pos;
+		const vec3f& parent = frame.landmarks[static_cast<size_t>(bone.landmarks.parent)].pos;
+		const vec3f& child = frame.landmarks[static_cast<size_t>(bone.landmarks.child)].pos;
 		vec3f currentDirection = child - parent;
 		if (!hasDirection(currentDirection)) continue;
 		currentDirection = directionInParentSpace(avatar, bone.node, currentDirection);
@@ -281,7 +360,7 @@ void PoseSolver::solve(const PoseFrame& input) {
 		// 垂直な参照ベクトルを使い、その垂直成分がキャリブレーション時から
 		// どれだけ回転したかを求めて追加で合成する。
 		if (bone.twistCalibrated) {
-			const PoseLandmark& twistLm = frame.landmarks[landmarkIndex(bone.twistLandmark)];
+			const PoseLandmark& twistLm = frame.landmarks[static_cast<size_t>(bone.twistLandmark)];
 			if (twistLm.visibility >= minimumVisibility) {
 				vec3f twistVec = twistLm.pos - child;
 				twistVec = directionInParentSpace(avatar, bone.node, twistVec);

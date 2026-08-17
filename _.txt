@@ -122,6 +122,7 @@ boneMtx（= palette）
 そろそろ腕を動かす手段を作りたい!
 
 imgui-bgfx連携を作る
+	-> あればいいんだろうけどかなりしんどかった
 
 そのうちGameからEngineを分離させるべきかもな
 
@@ -148,6 +149,35 @@ AnimRtFmt::endは一体どうなってる unityから抽出するんじゃない
 
 cameraから見て手前がZ-
 水平面に垂直に(minecraftと同じように)上向きがY+
-カメラから見て右がX+, 水平面上でZ軸を90度回転させたとも表現できる
+カメラから見て左がX+, 水平面上でZ軸を90度回転させたとも表現できる
+カメラは後ろから映している状態(前からかも)
+(右手座標系に修正済み - e6aa8ae86204df447032bcc2e43fc1cfe3f25dda)
 
 pose_world_landmark使用
+
+
+sxtr-debug:
+	bone.restDir, currentDirは正常
+	worldDelta, bone.globalBindRot, bone.childLocalDir もどうやら正常そう(多分)
+
+---
+今は、
+node.mtx = Mtx::fromTRS(node.trs);
+した後に、
+node.mtx.rot()
+すると、
+
+(x,y,z,w)
+↓
+(-x,-y,-z,w)
+
+になる。
+
+おそらく
+matrixRot = inverse(trsRot)
+になってしまっている
+
+
+Mtx::fromTRSのinveseが原因でloaderの共役外したら正常に動いた
+よｓｓｓｓっしゃああああああああ!!!!! 200時間のデバッグ地獄がやっと報われた!!!!!
+あとは操作がいろいろ反転しちゃってるから修正して完全解決

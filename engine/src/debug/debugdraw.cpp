@@ -28,11 +28,26 @@ void DebugDraw::drawCross(const vec3f& position, float size, uint32_t abgr) {
 	const vec3f y{0.0f, size, 0.0f};
 	const vec3f z{0.0f, 0.0f, size};
 
-drawLine(position - x, position + x, abgr);
+	drawLine(position - x, position + x, abgr);
+	drawLine(position - y, position + y, abgr);
+	drawLine(position - z, position + z, abgr);
+}
 
-drawLine(position - y, position + y, abgr);
+void DebugDraw::drawQuat(const vec3f& position, const Quat& rotation, float size) {
+	auto rotate = [&rotation](const vec3f& v) -> vec3f {
+		// v' = v + 2 * cross(qv, cross(qv, v) + w*v)
+		const vec3f qv{rotation.x, rotation.y, rotation.z};
+		const vec3f t = vec3f::cross(qv, v) * 2.0f;
+		return v + t * rotation.w + vec3f::cross(qv, t);
+	};
 
-drawLine(position - z, position + z, abgr);
+	const vec3f x = rotate(vec3f{size, 0.0f, 0.0f});
+	const vec3f y = rotate(vec3f{0.0f, size, 0.0f});
+	const vec3f z = rotate(vec3f{0.0f, 0.0f, size});
+
+	drawLine(position, position + x, 0xff0000ff); // X: 赤
+	drawLine(position, position + y, 0xff00ff00); // Y: 緑
+	drawLine(position, position + z, 0xffff0000); // Z: 青
 }
 
 void DebugDraw::render(bgfx::ProgramHandle program) {

@@ -4,42 +4,38 @@
 #include <bx/bx.h>
 #include <bx/math.h>
 
-#include <def/vec3.h>
+#include <def/quat.h>
+#include <def/transform.h>
+// #include <def/vec3.h>
 
 
 class Mtx {
 	std::array<float, 16> m_data;
 
 public:
-	Mtx() {
-		m_data.fill(0.f);
-	}
+	Mtx();
 
-	float* data() {return m_data.data(); }
-	const float* data() const {return m_data.data(); }
+	float* data();
+	const float* data() const;
 
-	Mtx operator*(const Mtx& other) {
-		Mtx res;
-		bx::mtxMul(res.data(), other.data(), data());
-		return res;
-	}
+	Mtx operator*(const Mtx& other);
 
-	void setPos(const vec3f& pos) {
-		m_data[12] = pos.x;
-		m_data[13] = pos.y;
-		m_data[14] = pos.z;
-	}
-	void setScale(const vec3f& scale) {
-		m_data[0] = scale.x;
-		m_data[5] = scale.y;
-		m_data[10] = scale.z;
-	}
-	vec3f pos() { return {m_data[12], m_data[13], m_data[14]}; }
-	const vec3f pos() const { return {m_data[12], m_data[13], m_data[14]}; }
+	void setPos(const vec3f& pos);
+	void setScale(const vec3f& scale);
+	vec3f pos();
+	const vec3f pos() const;
 
-	static Mtx inverse(const Mtx& target) {
-		Mtx res;
-		bx::mtxInverse(res.data(), target.data());
-		return res;
-	}
+	// bx::mtxDecompose でスケール/回転/平行移動を分解して回転(Quat)を取り出す。
+	// PoseSolver などトラッキング側は Mtx ではなく回転そのものを必要とするため、
+	// trackingMtx から都度これを使って取得する。
+	Quat rot() const;
+	vec3f scale() const;
+
+	// Transform(pos/rot/scale)への変換。globalTransforms/trackingTransforms を廃止し
+	// globalMtx/trackingMtx を単一のソースオブトゥルースにするためのヘルパー。
+	Transform toTransform() const;
+
+	static Mtx fromTRS(const Transform& trs);
+
+	static Mtx inverse(const Mtx& target);
 };

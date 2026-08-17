@@ -39,13 +39,13 @@ void Avatar::update(GameContext& ctx, float dt) {
 	}
 	if (has(ctx.keyStat, KCode::A)) {
 		walking = true;
-		pos.x -= rx * aplSpeed * rlMove;
-		pos.z -= rz * aplSpeed * rlMove;
+		pos.x += rx * aplSpeed * rlMove;
+		pos.z += rz * aplSpeed * rlMove;
 	}
 	if (has(ctx.keyStat, KCode::D)) {
 		walking = true;
-		pos.x += rx * aplSpeed * rlMove;
-		pos.z += rz * aplSpeed * rlMove;
+		pos.x -= rx * aplSpeed * rlMove;
+		pos.z -= rz * aplSpeed * rlMove;
 	}
 
 	// if (has(ctx.keyStat, KCode::T))
@@ -62,8 +62,8 @@ void Avatar::update(GameContext& ctx, float dt) {
 	else if (has(ctx.keyStat, KCode::n1)) ctx.cam_type = CameraType::_1;
 
 	const float yawDelta = ctx.mStat.relPos.x * sensitivity;
-	head.yaw   += yawDelta;
-	head.pitch -= ctx.mStat.relPos.y * sensitivity;
+	head.yaw   -= yawDelta;
+	head.pitch += ctx.mStat.relPos.y * sensitivity;
 
 	// 制限
 	if (head.pitch >  headPitchLimit) head.pitch =  headPitchLimit;
@@ -77,7 +77,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 		clampedHeadYaw = -headYawLimit;
 	}
 	if (head.yaw != clampedHeadYaw) {
-		yaw -= head.yaw - clampedHeadYaw;
+		yaw += head.yaw - clampedHeadYaw;
 		head.yaw = clampedHeadYaw;
 	}
 
@@ -99,6 +99,10 @@ void Avatar::update(GameContext& ctx, float dt) {
 
 		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
+	
+	// printf("ava.pos: %.3f %.3f %.3f\n"
+	// 		, pos.x, pos.y, pos.z
+	// );
 }
 
 
@@ -113,7 +117,7 @@ void Avatar::draw(Camera& cam) {
 
 	// globalTransform のTRS成分は非一様スケール／鏡映を完全には表せないため、
 	// 描画と同じグローバル行列から視点の位置・向きを取得する。
-	const auto& headMtx = globalTransforms[headIdx].mtx;
+	const auto& headMtx = globalMtx[headIdx];
 	const vec3f lookDir{bx::normalize(bx::mulXyz0({0.0f, 0.0f, 1.0f}, headMtx.data()))};
 
 

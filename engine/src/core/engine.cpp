@@ -1,3 +1,5 @@
+#include "def/transform.h"
+#include "physics/springBone.h"
 #include <core/engine.h>
 
 #include <gfx/shader.h>
@@ -105,7 +107,7 @@ void Engine::update(float dt) {
 	if (has(keyStat,KCode::Esc)) running = false;
 
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -5},{0.0f, 0.7f, 0});
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, 5},{0.0f, 0.7f, 0});
 	springBoneSystem.update(dt);
 
 	PoseFrame frame;
@@ -167,6 +169,10 @@ void Engine::gameInit() {
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
 
+	// for (const NodeHandle& nh: nodeReg.get(nodeReg.findFromAvaId(0, 176)).children ) {
+	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
+	// }
+
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,105)) )); // back c l
@@ -177,6 +183,30 @@ void Engine::gameInit() {
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,101)) )); // back b
 
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
+
+	// Quat q = Quat::fromAxisAngle(
+	// 	{0, 1, 0},
+	// 	bx::kPi * 0.5f
+	// );
+
+	// Transform trs;
+	// trs.pos = {0,0,0};
+	// trs.rot = q;
+	// trs.scale = {1,1,1};
+
+	// Mtx m = Mtx::fromTRS(trs);
+
+	// Quat q2 = m.rot();
+
+	// printf(
+	// 	"q  = %.5f %.5f %.5f %.5f\n",
+	// 	q.x,q.y,q.z,q.w
+	// );
+
+	// printf(
+	// 	"q2 = %.5f %.5f %.5f %.5f\n",
+	// 	q2.x,q2.y,q2.z,q2.w
+	// );
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
