@@ -123,15 +123,15 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		bone.lastTargetDir = currentDir;
 		bone.lastSolvedGlobalRot = newGlobalRot;
 		bone.wasSolved = true;
-
-		if (motionTraceEnabled()) {
-
-		}
+		
+		const auto check2 = parentGlobalRot * node.trs.rot;
 
 		solvedGlobalRot[(size_t)cnct.bone] = newGlobalRot;
 		hasSolvedGlobalRot[(size_t)cnct.bone] = true;
 
 
+
+		const auto& check = bone.globalBindRot * bone.childLocalDir;
 
 
 		// ===== Debug Draw =====
@@ -143,32 +143,56 @@ void PoseSolver::solve(const PoseFrame& frame) {
 			origin + (solvedGlobalRot[(size_t)cnct.bone] * bone.childLocalDir) * 0.3f,
 			0xff00ffff // 黄色
 		);
-		// puts("==============================");
-		
-		// const auto& test = node.trs.rot;
-		// printf("restDir: %.3f %.3f %.3f %.3f\n"
-		// 		, test.w, test.x, test.y, test.z
-		// );
+
+		debug.drawLine(
+			avatar.trackingMtx[node.id].pos(),
+			avatar.trackingMtx[node.id].pos() + bone.restDir * 0.3f,
+			0xffffff00 // 水色?
+		);
+
 	}
 }
 
 void PoseSolver::traceAfterGlobalRebuild() const {
-	return;
-	if (!motionTraceEnabled()) return;
-	for (const auto& cnct : upperBody_list) {
-		const BoneState& bone = bones[(size_t)cnct.bone];
-		if (!bone.wasSolved) continue;
-		NodeHandle nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
-		NodeHandle childHdl = avatar.humanoid.bones[(size_t)childBoneOf(cnct.bone)];
-		const Mtx& global = avatar.trackingMtx[nodeReg.getId(nodeHdl)];
-		const Mtx& childGlobal = avatar.trackingMtx[nodeReg.getId(childHdl)];
-		const Node& node = nodeReg.get(nodeHdl);
-		const vec3f globalPos = global.pos();
-		const vec3f childGlobalPos = childGlobal.pos();
-		const Quat globalRot = global.rot();
-		const vec3f actualDir = (childGlobalPos - globalPos).normalized();
-		printf("MOTION global bone=%d localNow=(%.5f,%.5f,%.5f,%.5f) globalRot=(%.5f,%.5f,%.5f,%.5f) actualDir=(%.5f,%.5f,%.5f) targetDot=%.6f pos=(%.5f,%.5f,%.5f) childPos=(%.5f,%.5f,%.5f)\\n", static_cast<int>(cnct.bone), node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w, globalRot.x,globalRot.y,globalRot.z,globalRot.w, actualDir.x,actualDir.y,actualDir.z, bx::dot(actualDir,bone.lastTargetDir), globalPos.x,globalPos.y,globalPos.z, childGlobalPos.x,childGlobalPos.y,childGlobalPos.z);
-	}
+	// if (!motionTraceEnabled()) return;
+	// for (const auto& cnct : upperBody_list) {
+	// 	const BoneState& bone = bones[(size_t)cnct.bone];
+	// 	if (!bone.wasSolved) continue;
+	// 	NodeHandle nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
+	// 	NodeHandle childHdl = avatar.humanoid.bones[(size_t)childBoneOf(cnct.bone)];
+	// 	const Mtx& global = avatar.trackingMtx[nodeReg.getId(nodeHdl)];
+	// 	const Mtx& childGlobal = avatar.trackingMtx[nodeReg.getId(childHdl)];
+	// 	const Node& node = nodeReg.get(nodeHdl);
+	// 	const vec3f globalPos = global.pos();
+	// 	const vec3f childGlobalPos = childGlobal.pos();
+	// 	const Quat globalRot = global.rot();
+	// 	const vec3f actualDir = (childGlobalPos - globalPos).normalized();
+	// 	HBT parentBone = Humanoid::parentTable[(size_t)cnct.bone];
+	// 	NodeHandle parentHdl = avatar.humanoid.bones[(size_t)parentBone];
+
+	// 	const Quat actualParentGlobalRot = avatar.trackingMtx[nodeReg.getId(parentHdl)].rot();
+	// 	const Quat expectedGlobalRot = actualParentGlobalRot * node.trs.rot;
+		
+	// 	printf(
+	// 		"MOTION global bone=%d "
+	// 		"localNow=(%.5f,%.5f,%.5f,%.5f) "
+	// 		"globalRot=(%.5f,%.5f,%.5f,%.5f) "
+	// 		"actualDir=(%.5f,%.5f,%.5f) "
+	// 		"actualParentGlobalRot=(%.5f,%.5f,%.5f) "
+	// 		"expectedGlobalRot=(%.5f,%.5f,%.5f) "
+	// 		"targetDot=%.6f pos=(%.5f,%.5f,%.5f) "
+	// 		"childPos=(%.5f,%.5f,%.5f)\n",
+	// 		static_cast<int>(cnct.bone),
+	// 		node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w,
+	// 		globalRot.x,globalRot.y,globalRot.z,globalRot.w,
+	// 		actualDir.x,actualDir.y,actualDir.z,
+	// 		actualParentGlobalRot.x,actualParentGlobalRot.y,actualParentGlobalRot.z,
+	// 		expectedGlobalRot.x,expectedGlobalRot.y,expectedGlobalRot.z,
+	// 		bx::dot(actualDir,bone.lastTargetDir),
+	// 		globalPos.x,globalPos.y,globalPos.z,
+	// 		childGlobalPos.x,childGlobalPos.y,childGlobalPos.z
+	// 	);
+	// }
 }
 
 

@@ -154,3 +154,25 @@ cameraから見て手前がZ-
 (右手座標系に修正済み - e6aa8ae86204df447032bcc2e43fc1cfe3f25dda)
 
 pose_world_landmark使用
+
+
+sxtr-debug:
+	bone.restDir, currentDirは正常
+	worldDelta, bone.globalBindRot, bone.childLocalDir もどうやら正常そう(多分)
+
+---
+今は、
+node.mtx = Mtx::fromTRS(node.trs);
+した後に、
+node.mtx.rot()
+すると、
+
+(x,y,z,w)
+↓
+(-x,-y,-z,w)
+
+になる。
+
+おそらく
+matrixRot = inverse(trsRot)
+になってしまっている

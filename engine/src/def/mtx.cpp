@@ -28,79 +28,93 @@ vec3f Mtx::pos() { return {m_data[12], m_data[13], m_data[14]}; }
 const vec3f Mtx::pos() const { return {m_data[12], m_data[13], m_data[14]}; }
 
 namespace {
-// この Mtx は row-vector 規約 (v' = v * M) で、row0-2 が基底ベクトル、
-// row3 (m[12..14]) が平行移動。fromTRS() は S * R * T の順で合成しているため、
-// 3x3 部分の各行は「スケール量 * 回転後の基底ベクトル」になっている。
-// スケールを取り除く(=各行を正規化する)ことで純粋な回転行列を復元し、
-// それを四元数に変換する(Shepperd/標準的なmatrix->quaternion手法)。
-void decomposeRotScale(const float* m, bx::Vec3& outScale, bx::Quaternion& outRot) {
-    // Column-major layout: column c occupies m[c*4 .. c*4+3]
-    // column 0 = X axis * scaleX
-    // column 1 = Y axis * scaleY
-    // column 2 = Z axis * scaleZ
-    bx::Vec3 col0 = { m[0],  m[1],  m[2]  };
-    bx::Vec3 col1 = { m[4],  m[5],  m[6]  };
-    bx::Vec3 col2 = { m[8],  m[9],  m[10] };
 
-    float sx = bx::length(col0);
-    float sy = bx::length(col1);
-    float sz = bx::length(col2);
+void decomposeRotScale(
+	const float* m,
+	bx::Vec3& outScale,
+	bx::Quaternion& outRot)
+{
+	// row-vector convention:
+	// S * R * T では、回転基底は rows に入っている。
+	bx::Vec3 row0 = { m[0], m[4], m[8]  };
+	bx::Vec3 row1 = { m[1], m[5], m[9]  };
+	bx::Vec3 row2 = { m[2], m[6], m[10] };
 
-    // Negative determinant -> one axis is mirrored (fold sign into scaleX)
-    float det =
-          m[0] * (m[5] * m[10] - m[6] * m[9])
-        - m[4] * (m[1] * m[10] - m[2] * m[9])
-        + m[8] * (m[1] * m[6]  - m[2] * m[5]);
+	float sx = bx::length(row0);
+	float sy = bx::length(row1);
+	float sz = bx::length(row2);
 
-    if (det < 0.0f) {
-        sx = -sx;
-    }
+	if (sx < 1e-8f || sy < 1e-8f || sz < 1e-8f) {
+		outScale = { sx, sy, sz };
+		outRot = { 0.0f, 0.0f, 0.0f, 1.0f };
+		return;
+	}
 
-    outScale = { sx, sy, sz };
+	float det =
+		  m[0] * (m[5] * m[10] - m[6] * m[9])
+		- m[4] * (m[1] * m[10] - m[2] * m[9])
+		+ m[8] * (m[1] * m[6] - m[2] * m[5]);
 
-    // Normalize columns to isolate the pure rotation part
-    float invSx = 1.0f / sx;
-    float invSy = 1.0f / sy;
-    float invSz = 1.0f / sz;
+	if (det < 0.0f) {
+		sx = -sx;
+	}
 
-    // r[row][col], column-major indices
-    float r00 = col0.x * invSx, r10 = col0.y * invSx, r20 = col0.z * invSx;
-    float r01 = col1.x * invSy, r11 = col1.y * invSy, r21 = col1.z * invSy;
-    float r02 = col2.x * invSz, r12 = col2.y * invSz, r22 = col2.z * invSz;
+	outScale = { sx, sy, sz };
 
-    // Trace-based matrix -> quaternion conversion
-    float trace = r00 + r11 + r22;
-    float qx, qy, qz, qw;
+	const float invSx = 1.0f / sx;
+	const float invSy = 1.0f / sy;
+	const float invSz = 1.0f / sz;
 
-    if (trace > 0.0f) {
-        float s = 0.5f / bx::sqrt(trace + 1.0f);
-        qw = 0.25f / s;
-        qx = (r21 - r12) * s;
-        qy = (r02 - r20) * s;
-        qz = (r10 - r01) * s;
-    } else if (r00 > r11 && r00 > r22) {
-        float s = 2.0f * bx::sqrt(1.0f + r00 - r11 - r22);
-        qw = (r21 - r12) / s;
-        qx = 0.25f * s;
-        qy = (r01 + r10) / s;
-        qz = (r02 + r20) / s;
-    } else if (r11 > r22) {
-        float s = 2.0f * bx::sqrt(1.0f + r11 - r00 - r22);
-        qw = (r02 - r20) / s;
-        qx = (r01 + r10) / s;
-        qy = 0.25f * s;
-        qz = (r12 + r21) / s;
-    } else {
-        float s = 2.0f * bx::sqrt(1.0f + r22 - r00 - r11);
-        qw = (r10 - r01) / s;
-        qx = (r02 + r20) / s;
-        qy = (r12 + r21) / s;
-        qz = 0.25f * s;
-    }
+	const float r00 = row0.x * invSx;
+	const float r01 = row0.y * invSx;
+	const float r02 = row0.z * invSx;
 
-    outRot = { qx, qy, qz, qw };
+	const float r10 = row1.x * invSy;
+	const float r11 = row1.y * invSy;
+	const float r12 = row1.z * invSy;
+
+	const float r20 = row2.x * invSz;
+	const float r21 = row2.y * invSz;
+	const float r22 = row2.z * invSz;
+
+	float trace = r00 + r11 + r22;
+
+	float qx, qy, qz, qw;
+
+	if (trace > 0.0f) {
+		const float s = 0.5f / bx::sqrt(trace + 1.0f);
+		qw = 0.25f / s;
+		qx = (r21 - r12) * s;
+		qy = (r02 - r20) * s;
+		qz = (r10 - r01) * s;
+	}
+	else if (r00 > r11 && r00 > r22) {
+		const float s = 2.0f * bx::sqrt(1.0f + r00 - r11 - r22);
+		qw = (r21 - r12) / s;
+		qx = 0.25f * s;
+		qy = (r01 + r10) / s;
+		qz = (r02 + r20) / s;
+	}
+	else if (r11 > r22) {
+		const float s = 2.0f * bx::sqrt(1.0f + r11 - r00 - r22);
+		qw = (r02 - r20) / s;
+		qx = (r01 + r10) / s;
+		qy = 0.25f * s;
+		qz = (r12 + r21) / s;
+	}
+	else {
+		const float s = 2.0f * bx::sqrt(1.0f + r22 - r00 - r11);
+		qw = (r10 - r01) / s;
+		qx = (r02 + r20) / s;
+		qy = (r12 + r21) / s;
+		qz = 0.25f * s;
+	}
+
+	outRot = { qx, qy, qz, qw };
 }
+
 }
+
 
 Quat Mtx::rot() const {
 	bx::Vec3 scale{1.0f, 1.0f, 1.0f};
@@ -129,25 +143,29 @@ Transform Mtx::toTransform() const {
 }
 
 Mtx Mtx::fromTRS(const Transform& trs) {
-	float t[16], r[16], s[16], tmp[16], tmp2[16];
+    float t[16], r[16], s[16], tmp[16];
 
-	bx::mtxIdentity(t);
-	bx::mtxIdentity(r);
-	bx::mtxIdentity(s);
+    bx::mtxIdentity(t);
+    bx::mtxIdentity(r);
+    bx::mtxIdentity(s);
 
-	t[12] = trs.pos.x;  t[13] = trs.pos.y;  t[14] = trs.pos.z;
+    t[12] = trs.pos.x;
+    t[13] = trs.pos.y;
+    t[14] = trs.pos.z;
 
-	// if (hasRot) {
-	bx::mtxFromQuaternion(r, trs.rot);
-	// }
+    Quat q = Quat::inverse(trs.rot);
 
-	s[0] = trs.scale.x;  s[5] = trs.scale.y;  s[10] = trs.scale.z;
+    bx::mtxFromQuaternion(r, q);
 
+    s[0] = trs.scale.x;
+    s[5] = trs.scale.y;
+    s[10] = trs.scale.z;
 
-	Mtx mtx;
-	bx::mtxMul(tmp, s, r);	   // R * S
-	bx::mtxMul(mtx.data(), tmp, t);	 // (S * R) * T
-	return mtx;
+    Mtx mtx;
+    bx::mtxMul(tmp, s, r);
+    bx::mtxMul(mtx.data(), tmp, t);
+
+    return mtx;
 }
 
 Mtx Mtx::inverse(const Mtx& target) {

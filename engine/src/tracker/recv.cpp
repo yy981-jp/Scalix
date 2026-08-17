@@ -47,9 +47,9 @@ bool Recv::tick(PoseFrame& out) {
 			},
 			.visibility = landmark.visibility(),
 		};
-		if (motionTraceEnabled() && (!std::isfinite(landmark.x()) || !std::isfinite(landmark.y()) || !std::isfinite(landmark.z()))) {
-			printf("MOTION recv=%llu INVALID_LANDMARK index=%zu raw=(%g,%g,%g)\\n", receivedFrame, i, landmark.x(), landmark.y(), landmark.z());
-		}
+		// if (motionTraceEnabled() && (!std::isfinite(landmark.x()) || !std::isfinite(landmark.y()) || !std::isfinite(landmark.z()))) {
+		// 	printf("MOTION recv=%llu INVALID_LANDMARK index=%zu raw=(%g,%g,%g)\\n", receivedFrame, i, landmark.x(), landmark.y(), landmark.z());
+		// }
 	}
 
 	// if (motionTraceEnabled()) {
