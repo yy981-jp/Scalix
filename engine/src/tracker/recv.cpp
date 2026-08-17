@@ -52,12 +52,12 @@ bool Recv::tick(PoseFrame& out) {
 		}
 	}
 
-	if (motionTraceEnabled()) {
-		const auto& s = frame.landmarks(static_cast<int>(LandmarkId::LeftShoulder));
-		const auto& e = frame.landmarks(static_cast<int>(LandmarkId::LeftElbow));
-		const auto& w = frame.landmarks(static_cast<int>(LandmarkId::LeftWrist));
-		printf("MOTION recv=%llu raw S=(%.5f,%.5f,%.5f;v=%.3f) E=(%.5f,%.5f,%.5f;v=%.3f) W=(%.5f,%.5f,%.5f;v=%.3f) scalix S=(%.5f,%.5f,%.5f) E=(%.5f,%.5f,%.5f) W=(%.5f,%.5f,%.5f)\\n", receivedFrame, s.x(),s.y(),s.z(),s.visibility(), e.x(),e.y(),e.z(),e.visibility(), w.x(),w.y(),w.z(),w.visibility(), out.landmarks[(size_t)LandmarkId::LeftShoulder].pos.x,out.landmarks[(size_t)LandmarkId::LeftShoulder].pos.y,out.landmarks[(size_t)LandmarkId::LeftShoulder].pos.z, out.landmarks[(size_t)LandmarkId::LeftElbow].pos.x,out.landmarks[(size_t)LandmarkId::LeftElbow].pos.y,out.landmarks[(size_t)LandmarkId::LeftElbow].pos.z, out.landmarks[(size_t)LandmarkId::LeftWrist].pos.x,out.landmarks[(size_t)LandmarkId::LeftWrist].pos.y,out.landmarks[(size_t)LandmarkId::LeftWrist].pos.z);
-	}
+	// if (motionTraceEnabled()) {
+	// 	const auto& s = frame.landmarks(static_cast<int>(LandmarkId::LeftShoulder));
+	// 	const auto& e = frame.landmarks(static_cast<int>(LandmarkId::LeftElbow));
+	// 	const auto& w = frame.landmarks(static_cast<int>(LandmarkId::LeftWrist));
+	// 	printf("MOTION recv=%llu raw S=(%.5f,%.5f,%.5f;v=%.3f) E=(%.5f,%.5f,%.5f;v=%.3f) W=(%.5f,%.5f,%.5f;v=%.3f) scalix S=(%.5f,%.5f,%.5f) E=(%.5f,%.5f,%.5f) W=(%.5f,%.5f,%.5f)\\n", receivedFrame, s.x(),s.y(),s.z(),s.visibility(), e.x(),e.y(),e.z(),e.visibility(), w.x(),w.y(),w.z(),w.visibility(), out.landmarks[(size_t)LandmarkId::LeftShoulder].pos.x,out.landmarks[(size_t)LandmarkId::LeftShoulder].pos.y,out.landmarks[(size_t)LandmarkId::LeftShoulder].pos.z, out.landmarks[(size_t)LandmarkId::LeftElbow].pos.x,out.landmarks[(size_t)LandmarkId::LeftElbow].pos.y,out.landmarks[(size_t)LandmarkId::LeftElbow].pos.z, out.landmarks[(size_t)LandmarkId::LeftWrist].pos.x,out.landmarks[(size_t)LandmarkId::LeftWrist].pos.y,out.landmarks[(size_t)LandmarkId::LeftWrist].pos.z);
+	// }
 
 	return true;
 }
