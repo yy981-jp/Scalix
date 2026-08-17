@@ -25,4 +25,4 @@ while True:
 		(HOST, PORT)
 	)
 
-	time.sleep(1.0 / 30.0)
+	time.sleep(1.0 / 60.0)

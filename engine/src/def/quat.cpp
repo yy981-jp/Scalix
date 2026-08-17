@@ -122,32 +122,45 @@ Quat Quat::fromAxisAngle(const vec3f& axis, float rad) {
 }
 
 Quat Quat::fromTo(vec3f from, vec3f to) {
-	from.normalize();
-	to.normalize();
+    from = bx::normalize(from);
+    to   = bx::normalize(to);
 
-	float dot = bx::dot(from, to);
+    float dot = bx::dot(from, to);
 
-	// ほぼ同じ方向
-	if (dot > 0.9999f) return {0,0,0,1};
+    if (dot > 0.9999f)
+        return {0, 0, 0, 1};
 
-	// 逆向き
-	if (dot < -0.9999f) {
-		// 適当な直交軸を作る
-		vec3f axis = bx::cross({1,0,0}, from);
-		if (bx::length(axis) < 0.0001f)
-			axis = bx::cross({0,1,0}, from);
+    if (dot < -0.9999f) {
+        vec3f axis = bx::cross({1, 0, 0}, from);
 
-		axis = bx::normalize(axis);
-		return fromAxisAngle(axis, bx::kPi);
-	}
+        if (bx::length(axis) < 0.0001f)
+            axis = bx::cross({0, 1, 0}, from);
 
-	vec3f axis = bx::cross(from, to);
-	axis = bx::normalize(axis);
+        axis = bx::normalize(axis);
+        return fromAxisAngle(axis, bx::kPi);
+    }
 
-	float angle = acosf(dot);
+    vec3f axis = bx::cross(from, to);
 
-	Quat res = fromAxisAngle(axis, angle);
-	res.normalize();
+    float s = sqrtf(2.0f * (1.0f + dot));
 
-	return res;
+    Quat res{
+        axis.x / s,
+        axis.y / s,
+        axis.z / s,
+        s * 0.5f
+    };
+
+    res.normalize();
+    return res;
+}
+
+
+Quat Quat::inverse(const Quat& target) {
+	return {
+		-target.x,
+		-target.y,
+		-target.z,
+		target.w
+	};
 }

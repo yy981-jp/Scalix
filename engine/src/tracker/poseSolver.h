@@ -17,7 +17,25 @@ namespace PoseSolverMode {
 
 struct BoneState {
     vec3f restDir;
-	Quat bindRot;
+
+	// このボーン自身の「バインドポーズでのグローバル回転」(トラッキング空間)。
+	// PoseSolver構築時に一度だけ avatar.trackingMtx から取得する。
+	// ローカル回転(node.trs.rotのオリジナル値)ではなく、
+	// 親の回転も含めて合成済みのグローバル回転であることが重要。
+	// (親ボーン自身もPoseSolverで動的に回転する場合、bind時の親回転と
+	// 現在の親回転は別物になるため、ローカル回転だけを保持して都度
+	// 現在の親回転とサンドイッチする方式では計算が破綻する)
+	Quat globalBindRot;
+
+	// スキニングで実際に使われる「子ボーンのローカル位置オフセット」の正規化方向。
+	// デバッグ描画で {0,0,1} 等の決め打ち軸を使うと、モデルのボーン軸の向き
+	// (Y軸方向がボーンの長軸、等)の思い込みに依存してしまい、
+	// 実際とズレていても気づけない。これを使えば実際のスキニングと同じ
+	// 計算過程(親のグローバル回転 × 子のローカルオフセット)で方向を出せる。
+	vec3f childLocalDir;
+	vec3f lastTargetDir;
+	Quat lastSolvedGlobalRot;
+	bool wasSolved = false;
 };
 
 class PoseSolver {
@@ -28,6 +46,7 @@ public:
 	explicit PoseSolver(Avatar& avatar);
 	
 	void solve(const PoseFrame& frame);
+	void traceAfterGlobalRebuild() const;
 
 	void debug_(const PoseFrame& frame);
 };
