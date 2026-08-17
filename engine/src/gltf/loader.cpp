@@ -284,9 +284,9 @@ void GltfLoaderImpl::parse() {
 		if (!tn.rotation.empty()) {
 			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
 			node.trs.rot = {
-				-(float)tn.rotation[0],
-				-(float)tn.rotation[1],
-				-(float)tn.rotation[2],
+				(float)tn.rotation[0],
+				(float)tn.rotation[1],
+				(float)tn.rotation[2],
 				(float)tn.rotation[3]
 			};
 		}

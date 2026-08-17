@@ -62,8 +62,8 @@ void Avatar::update(GameContext& ctx, float dt) {
 	else if (has(ctx.keyStat, KCode::n1)) ctx.cam_type = CameraType::_1;
 
 	const float yawDelta = ctx.mStat.relPos.x * sensitivity;
-	head.yaw   += yawDelta;
-	head.pitch -= ctx.mStat.relPos.y * sensitivity;
+	head.yaw   -= yawDelta;
+	head.pitch += ctx.mStat.relPos.y * sensitivity;
 
 	// 制限
 	if (head.pitch >  headPitchLimit) head.pitch =  headPitchLimit;

@@ -108,7 +108,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		Quat worldDelta = Quat::fromTo(bone.restDir, currentDir);
 		Quat newGlobalRot = worldDelta * bone.globalBindRot;
 
-		debug.drawQuat(avatar.globalMtx[node.id].pos(), newGlobalRot, 0.5);
+		// debug.drawQuat(avatar.globalMtx[node.id].pos(), newGlobalRot, 0.5);
 
 
 		// node.trs.rot は親ボーンのローカル空間での回転なので、
@@ -124,31 +124,31 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		bone.lastSolvedGlobalRot = newGlobalRot;
 		bone.wasSolved = true;
 		
-		const auto check2 = parentGlobalRot * node.trs.rot;
+		// const auto check2 = parentGlobalRot * node.trs.rot;
 
 		solvedGlobalRot[(size_t)cnct.bone] = newGlobalRot;
 		hasSolvedGlobalRot[(size_t)cnct.bone] = true;
 
 
 
-		const auto& check = bone.globalBindRot * bone.childLocalDir;
+		// const auto& check = bone.globalBindRot * bone.childLocalDir;
 
 
 		// ===== Debug Draw =====
 
-		vec3f origin = parent + vec3f{0, 2, 0};
+		// vec3f origin = parent + vec3f{0, 2, 0};
 
-		debug.drawLine(
-			origin,
-			origin + (solvedGlobalRot[(size_t)cnct.bone] * bone.childLocalDir) * 0.3f,
-			0xff00ffff // 黄色
-		);
+		// debug.drawLine(
+		// 	origin,
+		// 	origin + (solvedGlobalRot[(size_t)cnct.bone] * bone.childLocalDir) * 0.3f,
+		// 	0xff00ffff // 黄色
+		// );
 
-		debug.drawLine(
-			avatar.trackingMtx[node.id].pos(),
-			avatar.trackingMtx[node.id].pos() + bone.restDir * 0.3f,
-			0xffffff00 // 水色?
-		);
+		// debug.drawLine(
+		// 	avatar.trackingMtx[node.id].pos(),
+		// 	avatar.trackingMtx[node.id].pos() + bone.restDir * 0.3f,
+		// 	0xffffff00 // 水色?
+		// );
 
 	}
 }
