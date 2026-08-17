@@ -7,9 +7,6 @@
 [submodule "external/bimg"]
 	path = external/bimg
 	url = https://github.com/bkaradzic/bimg
-[submodule "external/bgfx.cmake"]
-	path = external/bgfx.cmake
-	url = https://github.com/bkaradzic/bgfx.cmake
 [submodule "external/tinygltf"]
 	path = external/tinygltf
 	url = git@github.com:yy981-jp/tinygltf.git
@@ -22,12 +19,6 @@
 [submodule "external/dear-imgui"]
 	path = external/dear-imgui
 	url = git@github.com:ocornut/imgui.git
-[submodule "external/stb"]
-	path = external/stb
-	url = git@github.com:nothings/stb.git
-[submodule "external/tinystl"]
-	path = external/tinystl
-	url = git@github.com:mendsley/tinystl.git
 [submodule "external/y9inc"]
 	path = external/y9inc
 	url = git@github.com:yy981-jp/tools.git
