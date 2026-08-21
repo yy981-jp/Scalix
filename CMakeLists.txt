@@ -10,6 +10,10 @@ include_directories(
 	${CMAKE_SOURCE_DIR}
 )
 
+# CMake modules
+include(cmake/Protobuf.cmake)
+include(cmake/Shaders.cmake)
+
 # Scalix
 add_subdirectory(engine)
 add_subdirectory(importer)
