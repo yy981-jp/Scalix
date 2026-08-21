@@ -25,23 +25,28 @@ jobs:
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-SDL2_image
 
-      - name: Cache external build
-        uses: actions/cache@v4
+      - name: Restore bgfx cache
+        id: bgfx-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
-            external/build_debug
-            external/build_release
-            external/install/debug
             external/install/release
-          key: external-${{ runner.os }}-${{ hashFiles('external/CMakeLists.txt', 'external/bgfx.cmake/**') }}
-          restore-keys: |
-            external-${{ runner.os }}-
+          key: bgfx-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('external/CMakeLists.txt', 'external/bgfx.cmake/**', 'external/bgfx/**', 'external/bx/**', 'external/bimg/**') }}
 
       - name: Build external
+        if: steps.bgfx-cache.outputs.cache-hit != 'true'
         shell: msys2 {0}
         run: |
           cmake -S external -B external/build -G Ninja
           cmake --build external/build --parallel
+
+      - name: Save bgfx cache
+        if: steps.bgfx-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            external/install/release
+          key: bgfx-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('external/CMakeLists.txt', 'external/bgfx.cmake/**', 'external/bgfx/**', 'external/bx/**', 'external/bimg/**') }}
 
       - name: Configure
         shell: msys2 {0}
@@ -52,3 +57,4 @@ jobs:
         shell: msys2 {0}
         run: |
           cmake --build build --parallel
+      
