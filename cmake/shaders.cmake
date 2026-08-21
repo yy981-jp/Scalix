@@ -1,6 +1,16 @@
+find_program(SHADERC_EXECUTABLE shaderc
+	HINTS
+		${CMAKE_SOURCE_DIR}/external/install/release/bin
+		${CMAKE_SOURCE_DIR}/external/install/debug/bin
+	REQUIRED
+)
+
+# Compiles engine/shaders/${NAME}/{vs,fs}.sc into runtime/{vs,fs}_${NAME}.bin
+# under the build directory, and exposes the outputs to the caller as
+# ${NAME}_SHADER_OUTPUTS so they can be wired up as a build dependency.
 function(compile_shader NAME)
 	set(SHADER_DIR
-		${CMAKE_SOURCE_DIR}/shaders/${NAME}
+		${CMAKE_SOURCE_DIR}/engine/shaders/${NAME}
 	)
 
 	set(VS_OUTPUT
@@ -43,4 +53,5 @@ function(compile_shader NAME)
 		VERBATIM
 	)
 
+	set(${NAME}_SHADER_OUTPUTS ${VS_OUTPUT} ${FS_OUTPUT} PARENT_SCOPE)
 endfunction()

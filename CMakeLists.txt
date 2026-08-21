@@ -11,8 +11,8 @@ include_directories(
 )
 
 # CMake modules
-include(cmake/Protobuf.cmake)
-include(cmake/Shaders.cmake)
+include(cmake/protobuf.cmake)
+include(cmake/shaders.cmake)
 
 # external
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/yaml-cpp)

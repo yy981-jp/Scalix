@@ -1,12 +1,27 @@
 # exec
-file(GLOB_RECURSE SOURCES src/*.cpp generated/*.c* ../shared/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp ../shared/*.cpp)
 
 # Windows icon
 if (WIN32)
     list(APPEND SOURCES ${CMAKE_SOURCE_DIR}/cmake/icon.rc)
 endif()
 
+# protobuf (generates engine/generated/*.pb.{cc,h} + tracker/generated/*_pb2.py*)
+generate_proto(pose)
+list(APPEND SOURCES ${pose_PROTO_SOURCES})
+
 add_executable(${PROJECT_NAME} ${SOURCES})
+
+# shaders (compiles engine/shaders/<name>/{vs,fs}.sc into build/runtime/*.bin)
+compile_shader(tex)
+compile_shader(grid)
+
+add_custom_target(${PROJECT_NAME}_shaders ALL
+    DEPENDS
+        ${tex_SHADER_OUTPUTS}
+        ${grid_SHADER_OUTPUTS}
+)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
 
 # external
