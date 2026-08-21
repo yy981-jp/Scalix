@@ -1,4 +1,7 @@
-build*/
+/build/
+external/build*/
+tracker/build/
+
 docs*/
 /assets/
 /runtime/

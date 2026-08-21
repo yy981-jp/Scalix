@@ -13,10 +13,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Calculate external cache key
-        id: external-key
-        uses: ./.github/actions/external-cache-key
-
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
@@ -28,27 +24,10 @@ jobs:
             mingw-w64-x86_64-ninja
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-SDL2_image
-
-      - name: Restore bgfx cache
-        id: bgfx-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: external/install/release
-          key: ${{ steps.external-key.outputs.key }}
+            mingw-w64-x86_64-protobuf
 
       - name: Build external
-        if: steps.bgfx-cache.outputs.cache-hit != 'true'
-        shell: msys2 {0}
-        run: |
-          cmake -S external -B external/build -G Ninja
-          cmake --build external/build --parallel
-
-      - name: Save bgfx cache
-        if: steps.bgfx-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: external/install/release
-          key: ${{ steps.external-key.outputs.key }}
+        uses: ./.github/actions/buildExternal
 
       - name: Configure
         shell: msys2 {0}
@@ -59,4 +38,3 @@ jobs:
         shell: msys2 {0}
         run: |
           cmake --build build --parallel
-      
