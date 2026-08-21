@@ -1,0 +1,39 @@
+name: Build External
+
+runs:
+  using: composite
+
+  steps:
+    - name: Calculate cache key
+      id: external-key
+      shell: bash
+      run: |
+        bgfx=$(git -C external/bgfx rev-parse HEAD)
+        bx=$(git -C external/bx rev-parse HEAD)
+        bimg=$(git -C external/bimg rev-parse HEAD)
+        bgfx_cmake=$(git -C external/bgfx.cmake rev-parse HEAD)
+
+        key="bgfx-${{ runner.os }}-${{ runner.arch }}-${bgfx}-${bx}-${bimg}-${bgfx_cmake}"
+
+        echo "key=$key" >> "$GITHUB_OUTPUT"
+
+    - name: Restore bgfx cache
+      id: bgfx-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: external/install/release
+        key: ${{ steps.external-key.outputs.key }}
+
+    - name: Build external
+      if: steps.bgfx-cache.outputs.cache-hit != 'true'
+      shell: msys2 {0}
+      run: |
+        cmake -S external -B external/build -G Ninja
+        cmake --build external/build --parallel
+
+    - name: Save bgfx cache
+      if: steps.bgfx-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: external/install/release
+        key: ${{ steps.external-key.outputs.key }}

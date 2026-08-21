@@ -59,7 +59,7 @@ colliderは一部の主要なboneに対してcapsuleで対応するか?
 この計算の分離は、ある程度基盤が完成してからでもいいかもしれない
 
 // ===== 最適化 =====
-GPUの活用をしていきたいがｍ例えばSpringBoneChainごとにComputeUnitに送るというのが考えられる
+GPUの活用をしていきたいが、例えばSpringBoneChainごとにComputeUnitに送るというのが考えられる
 ただ、計算コストと転送コストの関係から閾値を設定して、それを基準にCPU逐次,GPU並列を切り替えるようにしてもいいかもしれない
 localFKとか? つまり2種類のが途中まで同じだから計算の共通化
 
@@ -88,6 +88,8 @@ protobufを利用 udp
 avatarに対する操作をavatarデータ側ではなくsystem側で腕を動かせたりするような機能を充実させる
 worldのデータについては課題が残るが、機能についての実装も検討する必要がある ただ、現段階では現実的ではない
 worldはsystem内部では分割しつつも、連続した世界を作りたい そっちの方が現実味あるじゃん?
+クロスプラットフォームにする!!! 絶対に!!!
+	少なくともwin,mac,ubuntuあたりは必須
 
 port(プロジェクト固有番号) = 518**
 						(9+8+1=18, 5は利用可能なポート領域に合わせて適当につけた)
@@ -155,6 +157,17 @@ cameraから見て手前がZ-
 
 pose_world_landmark使用
 
+releaseSysをgithubactionsで作りたい
+build自体はできるが、sxtrのpy依存をどうすべきか
+dep-dllはSHTからシステムを転用できそう?
+
+
+
+
+
+
+
+
 
 sxtr-debug:
 	bone.restDir, currentDirは正常
@@ -181,3 +194,4 @@ matrixRot = inverse(trsRot)
 Mtx::fromTRSのinveseが原因でloaderの共役外したら正常に動いた
 よｓｓｓｓっしゃああああああああ!!!!! 200時間のデバッグ地獄がやっと報われた!!!!!
 あとは操作がいろいろ反転しちゃってるから修正して完全解決
+-> 解決済み (cc258b31b0706ba1df906ece28b7cdaf2aee4cf9)

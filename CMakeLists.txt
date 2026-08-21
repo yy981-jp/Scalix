@@ -10,6 +10,13 @@ include_directories(
 	${CMAKE_SOURCE_DIR}
 )
 
+# CMake modules
+include(cmake/protobuf.cmake)
+include(cmake/shaders.cmake)
+
+# external
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/yaml-cpp)
+
 # Scalix
 add_subdirectory(engine)
 add_subdirectory(importer)
