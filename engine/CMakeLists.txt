@@ -28,6 +28,15 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 # add_subdirectory(${CMAKE_SOURCE_DIR}/external/yaml-cpp)
 
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${CMAKE_SOURCE_DIR}/engine/src/gltf/tinygltf_impl.cpp
+        PROPERTIES
+            COMPILE_OPTIONS "-Wno-stringop-overflow"
+    )
+endif()
+
+
 # bgfx
 add_library(bgfx STATIC IMPORTED)
 set_target_properties(bgfx PROPERTIES
