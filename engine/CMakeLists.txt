@@ -2,7 +2,7 @@
 file(GLOB_RECURSE SOURCES src/*.cpp generated/*.c* ../shared/*.cpp)
 
 # Windows icon
-if(WIN32)
+if (WIN32)
     list(APPEND SOURCES ${CMAKE_SOURCE_DIR}/cmake/icon.rc)
 endif()
 
@@ -53,9 +53,18 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	bimg
 	${SDL2_LIBRARIES}
 	${SDL2_IMAGE_LIBRARIES}
-	ws2_32
 	protobuf::libprotobuf
 )
+
+if (WIN32)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE
+		_WIN32_WINNT=0x0A00 # win10,11
+	)
+	target_link_libraries(${PROJECT_NAME} PRIVATE
+		ws2_32
+	)
+endif()
+
 
 # mode
 target_compile_options(${PROJECT_NAME} PRIVATE
