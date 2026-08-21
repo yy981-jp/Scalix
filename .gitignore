@@ -3,7 +3,7 @@ external/build*/
 tracker/build/
 
 docs*/
-/assets/
+# /assets/
 /runtime/
 install/
 *.o

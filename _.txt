@@ -157,6 +157,17 @@ cameraから見て手前がZ-
 
 pose_world_landmark使用
 
+releaseSysをgithubactionsで作りたい
+build自体はできるが、sxtrのpy依存をどうすべきか
+dep-dllはSHTからシステムを転用できそう?
+
+
+
+
+
+
+
+
 
 sxtr-debug:
 	bone.restDir, currentDirは正常

@@ -28,3 +28,6 @@
 [submodule "external/asio"]
 	path = external/asio
 	url = git@github.com:chriskohlhoff/asio.git
+[submodule "assets"]
+	path = assets
+	url = git@github.com:yy981-jp/Scalix-Assets.git
