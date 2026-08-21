@@ -25,3 +25,6 @@
 [submodule "external/bgfx.cmake"]
 	path = external/bgfx.cmake
 	url = git@github.com:bkaradzic/bgfx.cmake.git
+[submodule "external/asio"]
+	path = external/asio
+	url = git@github.com:chriskohlhoff/asio.git
