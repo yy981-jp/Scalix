@@ -22,3 +22,6 @@
 [submodule "external/y9inc"]
 	path = external/y9inc
 	url = git@github.com:yy981-jp/tools.git
+[submodule "external/bgfx.cmake"]
+	path = external/bgfx.cmake
+	url = git@github.com:bkaradzic/bgfx.cmake.git

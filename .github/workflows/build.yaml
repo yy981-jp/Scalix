@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+
+      - name: Cache external build
+        uses: actions/cache@v4
+        with:
+          path: |
+            external/build_debug
+            external/build_release
+            external/install/debug
+            external/install/release
+          key: external-${{ runner.os }}-${{ hashFiles('external/CMakeLists.txt', 'external/bgfx.cmake/**') }}
+          restore-keys: |
+            external-${{ runner.os }}-
+
+      - name: Build external
+        shell: msys2 {0}
+        run: |
+          cmake -S external -B external/build -G Ninja
+          cmake --build external/build --parallel
+
+      - name: Configure
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          cmake --build build --parallel
