@@ -1,0 +1,19 @@
+name: Calculate external cache key
+
+outputs:
+  key:
+    description: External dependencies cache key
+    value: ${{ steps.key.outputs.key }}
+
+runs:
+  using: composite
+  steps:
+    - id: key
+      shell: bash
+      run: |
+        bgfx=$(git -C external/bgfx rev-parse HEAD)
+        bx=$(git -C external/bx rev-parse HEAD)
+        bimg=$(git -C external/bimg rev-parse HEAD)
+        bgfx_cmake=$(git -C external/bgfx.cmake rev-parse HEAD)
+
+        echo "key=bgfx-${{ runner.os }}-${{ runner.arch }}-${bgfx}-${bx}-${bimg}-${bgfx_cmake}" >> "$GITHUB_OUTPUT"
