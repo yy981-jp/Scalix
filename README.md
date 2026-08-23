@@ -1,5 +1,8 @@
 # Scalix
 
+[![Build](https://github.com/yy981-jp/Scalix/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/build.yaml)
+[![Doxygen](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yaml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yaml)
+
 ## OSS
 
 - draw: [`bgfx`](https://github.com/bkaradzic/bgfx) (BSD 2-clause)
