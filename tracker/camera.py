@@ -1,9 +1,11 @@
 import cv2
 import mediapipe as mp
 import socket
+import time
+import argparse
+
 from generated.proto import pose_pb2
 
-MODEL_PATH = "models/pose_landmarker_full.task"
 
 POSE_CONNECTIONS = [
 	(0, 1), (1, 2), (2, 3),
@@ -32,6 +34,21 @@ POSE_CONNECTIONS = [
 	(28, 30), (30, 32), (28, 32),
 ]
 
+
+parser = argparse.ArgumentParser(
+	description="sxtr-camera"
+)
+parser.add_argument("--background", "-b", action='store_true', help="デバッグ表示オフ")
+parser.add_argument("--host",		default="127.0.0.1", help="送信先ip")
+parser.add_argument("--port",		default=51801, type=int, help="送信先port")
+parser.add_argument("--model",		default="full", help="モデル名")
+
+args = parser.parse_args()
+
+
+debugMode = not args.background
+MODEL_PATH = f"models/pose_landmarker_{args.model}.task"
+
 BaseOptions = mp.tasks.BaseOptions
 PoseLandmarker = mp.tasks.vision.PoseLandmarker
 PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
@@ -50,7 +67,7 @@ cap = cv2.VideoCapture(0)
 
 udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-timestamp = 0
+start_time = time.perf_counter()
 
 while True:
 	ret, image = cap.read()
@@ -64,12 +81,12 @@ while True:
 		data=rgb
 	)
 
+	timestamp = int((time.perf_counter() - start_time) * 1000)
+
 	result = landmarker.detect_for_video(
 		mp_image,
 		timestamp
 	)
-
-	timestamp += 33
 
 	packet = pose_pb2.PoseFrame()
 	packet.timestamp = timestamp
@@ -88,63 +105,67 @@ while True:
 			item.y = lm.y
 			item.z = lm.z
 			item.visibility = lm.visibility
-			
-		# 骨線
-		for a, b in POSE_CONNECTIONS:
-			la = pose[a]
-			lb = pose[b]
 
-			if la.visibility < 0.5 or lb.visibility < 0.5:
-				continue
 
-			cv2.line(
-				image,
-				(int(la.x * w), int(la.y * h)),
-				(int(lb.x * w), int(lb.y * h)),
-				(255, 255, 255),
-				2,
-				cv2.LINE_AA
-			)
+		if debugMode:
+			# 骨線
+			for a, b in POSE_CONNECTIONS:
+				la = pose[a]
+				lb = pose[b]
 
-		# 点
-		for i, lm in enumerate(pose):
-			if lm.visibility < 0.5:
-				continue
+				if la.visibility < 0.5 or lb.visibility < 0.5:
+					continue
 
-			x = int(lm.x * w)
-			y = int(lm.y * h)
+				cv2.line(
+					image,
+					(int(la.x * w), int(la.y * h)),
+					(int(lb.x * w), int(lb.y * h)),
+					(255, 255, 255),
+					2,
+					cv2.LINE_AA
+				)
 
-			cv2.circle(
-				image,
-				(x, y),
-				4,
-				(0, 255, 0),
-				-1,
-				cv2.LINE_AA
-			)
+			# 点
+			for i, lm in enumerate(pose):
+				if lm.visibility < 0.5:
+					continue
 
-			# デバッグ用に番号表示
-			cv2.putText(
-				image,
-				str(i),
-				(x + 5, y - 5),
-				cv2.FONT_HERSHEY_SIMPLEX,
-				0.35,
-				(0, 255, 255),
-				1,
-				cv2.LINE_AA
-			)
+				x = int(lm.x * w)
+				y = int(lm.y * h)
+
+				cv2.circle(
+					image,
+					(x, y),
+					4,
+					(0, 255, 0),
+					-1,
+					cv2.LINE_AA
+				)
+
+				# デバッグ用に番号表示
+				cv2.putText(
+					image,
+					str(i),
+					(x + 5, y - 5),
+					cv2.FONT_HERSHEY_SIMPLEX,
+					0.35,
+					(0, 255, 255),
+					1,
+					cv2.LINE_AA
+				)
 
 	udp.sendto(
 		packet.SerializeToString(),
-		("127.0.0.1", 51801)
+		(args.host, args.port)
 	)
 
-	cv2.imshow("camera", image)
+	if debugMode:
+		cv2.imshow("camera", image)
 
-	if cv2.waitKey(1) == 27:
-		break
+		if cv2.waitKey(1) == 27:
+			break
 
 cap.release()
 udp.close()
-cv2.destroyAllWindows()
+if debugMode:
+	cv2.destroyAllWindows()
