@@ -48,20 +48,26 @@ public:
 		defaultConfig = readJson(defFile);
 		filename = file;
 
-		if (fs::exists(file))
+		if (fs::exists(file)) {
 			userPatch = readJson(file);
+			if (userPatch.empty())
+				userPatch = json::array();
+		} else {
+			userPatch = json::array();
+			fs::create_directories(fs::path(file).parent_path());
+		}
 
 		rebuild();
 	}
 
-	const ConfigJson& get() const {
+	ConfigJson& get() {
 		return mergedConfig;
 	}
 
-	void save(const ConfigJson& config) {
+	void save() {
 		userPatch = json::diff(
 			defaultConfig,
-			config.data()
+			mergedConfig.data()
 		);
 
 		writeJson(userPatch, filename);

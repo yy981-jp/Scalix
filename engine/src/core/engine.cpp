@@ -69,7 +69,7 @@ Engine::Engine() {
 	// bgfx::setPlatformData(pd);
 
 	bgfx::Init init{};
-	init.type = bgfx::RendererType::Direct3D11;
+	init.type = bgfx::RendererType::Count;
 
 	init.platformData.nwh = pd.nwh;
 
@@ -87,17 +87,24 @@ Engine::Engine() {
 
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
-	// cfg.init((getDataPath()/"config"/"user.json").string(), ("config"/"user.def.json").string());
+	syspath.init();
+	cfg.init((syspath.data/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
 
 	gctx.poseSolver = poseSolver;
 
 
-	// if (cfg.get()["tracker"].get<bool>()) {
-	// 	if (startProcess({"tracker/build/camera.dist/camera.exe"})) {
-	// 		throw std::runtime_error("couldn't start sxtr");
-	// 	}
-	// }
+	if (cfg.get()["tracker"].get<bool>()) {
+		if (!startProcess({
+			(syspath.resource/"tracker"/"camera").string()
+		})) {
+			throw std::runtime_error("couldn't start sxtr");
+		}
+	}
+
+	cfg.get()["tracker"] = false;
+	// j.set("tracker", false);
+	cfg.save();
 
 	// Controller ctrlr;
 	// ctrlr.connect();

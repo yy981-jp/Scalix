@@ -15,8 +15,7 @@ class LogoRenderer {
 
 public:
 	LogoRenderer(SDL_Window* window)
-		: window(window)
-	{
+		: window(window) {
 		renderer = SDL_CreateRenderer(window, SDL_SOFTWARE_RENDERER);
 		if (!renderer)
 			throw std::runtime_error(SDL_GetError());
