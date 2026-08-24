@@ -1,9 +1,14 @@
 #include "def/transform.h"
-#include "physics/springBone.h"
+#include "proto/instr.pb.h"
+#include <physics/springBone.h>
+#include <stdexcept>
+#include <tracker/controller.h>
 #include <core/engine.h>
 
 #include <gfx/shader.h>
 #include <debug/debugDraw.h>
+#include <util/path.h>
+#include <core/config.h>
 
 #include <physics/detect.h>
 
@@ -64,10 +69,25 @@ Engine::Engine() {
 
 	SDL_SetRelativeMouseMode(static_cast<SDL_bool>(mouseRelMode));
 
-	
+	// cfg.init((getDataPath()/"config"/"user.json").string(), ("config"/"user.def.json").string());
 	gameInit();
 
 	gctx.poseSolver = poseSolver;
+
+
+	// if (cfg.get()["tracker"].get<bool>()) {
+	// 	if (startProcess({"tracker/build/camera.dist/camera.exe"})) {
+	// 		throw std::runtime_error("couldn't start sxtr");
+	// 	}
+	// }
+
+	// Controller ctrlr;
+	// ctrlr.connect();
+	// sxtr::instr::Instr instr;
+	// instr.set_shutdown(true);
+	// ctrlr.send(instr);
+
+
 }
 
 Engine::~Engine() {
@@ -169,6 +189,7 @@ void Engine::gameInit() {
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
 
+	
 	// for (const NodeHandle& nh: nodeReg.get(nodeReg.findFromAvaId(0, 176)).children ) {
 	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
 	// }

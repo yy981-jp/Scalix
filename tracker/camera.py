@@ -3,8 +3,11 @@ import mediapipe as mp
 import socket
 import time
 import argparse
+import struct
+import threading
 
 from generated.proto import pose_pb2
+from generated.proto import instr_pb2
 
 
 POSE_CONNECTIONS = [
@@ -61,15 +64,53 @@ options = PoseLandmarkerOptions(
 	running_mode=RunningMode.VIDEO
 )
 
+
+shutdown = threading.Event()
+
+
+def recv_exact(sock, size):
+	data = bytearray()
+
+	while len(data) < size:
+		chunk = sock.recv(size - len(data))
+
+		if not chunk:
+			raise ConnectionError("connection closed")
+
+		data.extend(chunk)
+
+	return bytes(data)
+
+
+def recv():
+	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+		sock.connect(("127.0.0.1", 51802))
+
+		while True:
+			header = recv_exact(sock, 4)
+			size = struct.unpack("!I", header)[0]
+			data = recv_exact(sock, size)
+
+			message = instr_pb2.Instr()
+			message.ParseFromString(data)
+
+			field = message.WhichOneof("payload")
+
+			if field == "shutdown":
+				shutdown.set()
+				return
+
+
+
+
+threading.Thread(target=recv, daemon=True).start()
+
 landmarker = PoseLandmarker.create_from_options(options)
-
 cap = cv2.VideoCapture(0)
-
 udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
 start_time = time.perf_counter()
 
-while True:
+while not shutdown.is_set():
 	ret, image = cap.read()
 	if not ret:
 		break

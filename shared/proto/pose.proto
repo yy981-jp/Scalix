@@ -1,5 +1,4 @@
 syntax = "proto3";
-
 package sxtr.landmark.pose;
 
 message Landmark {

@@ -8,7 +8,9 @@ endif()
 
 # protobuf (generates engine/generated/*.pb.{cc,h} + tracker/generated/*_pb2.py*)
 generate_proto(pose)
+generate_proto(instr)
 list(APPEND SOURCES ${pose_PROTO_SOURCES})
+list(APPEND SOURCES ${instr_PROTO_SOURCES})
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 

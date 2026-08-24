@@ -94,7 +94,8 @@ worldはsystem内部では分割しつつも、連続した世界を作りたい
 port(プロジェクト固有番号) = 518**
 						(9+8+1=18, 5は利用可能なポート領域に合わせて適当につけた)
 
-port(sctr) = 51801
+port(sxtr->engine) = 51801	UDP
+port(engine->sxtr) = 51802	TCP
 
 AvatarIdはserver分離する場合にserverが基本連番(+世代を入れるか)でserver側管理
 
