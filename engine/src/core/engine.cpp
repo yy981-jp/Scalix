@@ -15,16 +15,19 @@
 
 Engine::Engine() {
 	SDL_Init(SDL_INIT_VIDEO);
-	if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
+	// if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
 
-	// ===== window 作成 (SDL2) =====
+	// ===== window 作成 (SDL) =====
 	window = SDL_CreateWindow(
 		"Scalix",
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
+		// SDL_WINDOWPOS_CENTERED,
+		// SDL_WINDOWPOS_CENTERED,
 		T_WIDTH, T_HEIGHT,
-		SDL_WINDOW_FULLSCREEN_DESKTOP
+		0
+		// SDL_WINDOW_FULLSCREEN
+		// SDL_WINDOW_FULLSCREEN_DESKTOP
 	);
+	SDL_SetWindowFullscreen(window, true);
 
 	// get window size
 	SDL_GetWindowSize(window, &width, &height);
@@ -34,24 +37,39 @@ Engine::Engine() {
 	logo->draw();
 
 	// ===== bgfx初期化 =====
-	SDL_SysWMinfo wmi;
-	SDL_VERSION(&wmi.version);
-	if (!SDL_GetWindowWMInfo(window, &wmi)) throw std::runtime_error("GetWMInfo");
-
 	bgfx::PlatformData pd{};
 
-#if defined(_WIN32)
-	pd.nwh = wmi.info.win.window;
-#elif defined(__linux__)
-	pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-#elif defined(__APPLE__)
-	pd.nwh = wmi.info.cocoa.window;
-#endif
+	SDL_PropertiesID props = SDL_GetWindowProperties(window);
 
-	bgfx::setPlatformData(pd);
+	#if defined(_WIN32)
+		pd.nwh = SDL_GetPointerProperty(
+			props,
+			SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+			nullptr
+		);
+	#elif defined(__linux__)
+		pd.nwh = reinterpret_cast<void*>(
+			SDL_GetNumberProperty(
+				props,
+				SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
+				0
+			)
+		);
+	#elif defined(__APPLE__)
+		pd.nwh = SDL_GetPointerProperty(
+			props,
+			SDL_PROP_WINDOW_COCOA_WINDOW_POINTER,
+			nullptr
+		);
+	#endif
+
+	if (!pd.nwh)
+		throw std::runtime_error("Get native window handle");
+
+	// bgfx::setPlatformData(pd);
 
 	bgfx::Init init{};
-	init.type = bgfx::RendererType::Count;
+	init.type = bgfx::RendererType::Direct3D11;
 
 	init.platformData.nwh = pd.nwh;
 
@@ -67,7 +85,7 @@ Engine::Engine() {
 
 	// set mouse mode
 
-	SDL_SetRelativeMouseMode(static_cast<SDL_bool>(mouseRelMode));
+	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
 	// cfg.init((getDataPath()/"config"/"user.json").string(), ("config"/"user.def.json").string());
 	gameInit();
@@ -93,20 +111,20 @@ Engine::Engine() {
 Engine::~Engine() {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-	IMG_Quit();
+	// IMG_Quit();
 }
 
 void Engine::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch(event.type) {
-			case SDL_QUIT: running = false; break;
-			case SDL_KEYDOWN: onKeyDown(event.key); break;
-			case SDL_KEYUP: onKeyUp(event.key); break;
-			case SDL_MOUSEBUTTONDOWN: onMouseBtDown(event.button); break;
-			case SDL_MOUSEBUTTONUP: onMouseBtUp(event.button); break;
-			case SDL_WINDOWEVENT: onWindowEve(event.window); break;
-			case SDL_MOUSEMOTION: onMouseMt(event.motion); break;
+			case SDL_EVENT_QUIT: running = false; break;
+			case SDL_EVENT_KEY_DOWN: onKeyDown(event.key); break;
+			case SDL_EVENT_KEY_UP: onKeyUp(event.key); break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN: onMouseBtDown(event.button); break;
+			case SDL_EVENT_MOUSE_BUTTON_UP: onMouseBtUp(event.button); break;
+			// case SDL_WINDOWEVENT: onWindowEve(event.window); break;
+			case SDL_EVENT_MOUSE_MOTION: onMouseMt(event.motion); break;
 		}
 	}
 
@@ -232,13 +250,13 @@ void Engine::gameInit() {
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
 	if (e.repeat) return;
-	auto it = keyMap.find(e.keysym.sym);
+	auto it = keyMap.find(e.key);
 	if (it != keyMap.end())
 		keyStat |= static_cast<KCodes>(it->second);
 }
 
 void Engine::onKeyUp(const SDL_KeyboardEvent& e) {
-	auto it = keyMap.find(e.keysym.sym);
+	auto it = keyMap.find(e.key);
 	if (it != keyMap.end())
 		keyStat &= ~static_cast<KCodes>(it->second);
 }
@@ -255,13 +273,13 @@ void Engine::onMouseBtUp(const SDL_MouseButtonEvent& e) {
 		mStat.codes &= ~static_cast<MCodes>(it->second);
 }
 
-void Engine::onWindowEve(const SDL_WindowEvent& e) {
-/*
-	if (e.event == SDL_WINDOWEVENT_FOCUS_LOST) {
-		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
-	}
-*/
-}
+// void Engine::onWindowEve(const SDL_WindowEvent& e) {
+// /*
+// 	if (e.event == SDL_EVENT_WINDOW_FOCUS_LOST) {
+// 		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
+// 	}
+// */
+// }
 
 void Engine::onMouseMt(const SDL_MouseMotionEvent& e) {
 	mStat.absPos.x = e.x;

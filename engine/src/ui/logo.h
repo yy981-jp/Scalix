@@ -2,27 +2,50 @@
 
 #include <def/def.h>
 
-#include <SDL.h>
-#include <SDL_image.h>
+#include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
+
+#include <stdexcept>
 
 
 class LogoRenderer {
-	SDL_Renderer* renderer;
-	SDL_Texture* texture;
-	SDL_Window* window;
+	SDL_Renderer* renderer = nullptr;
+	SDL_Texture* texture = nullptr;
+	SDL_Window* window = nullptr;
 
 public:
-	LogoRenderer(SDL_Window* window): window(window) {
-		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-		SDL_Surface* surface = IMG_Load((Assets + "logo.webp").c_str());
-		if (!surface) throw std::runtime_error("logo not found");
+	LogoRenderer(SDL_Window* window)
+		: window(window)
+	{
+		renderer = SDL_CreateRenderer(window, SDL_SOFTWARE_RENDERER);
+		if (!renderer)
+			throw std::runtime_error(SDL_GetError());
+
+		SDL_Surface* surface =
+			IMG_Load((Assets + "logo.webp").c_str());
+
+		if (!surface) {
+			SDL_DestroyRenderer(renderer);
+			renderer = nullptr;
+			throw std::runtime_error(SDL_GetError());
+		}
+
 		texture = SDL_CreateTextureFromSurface(renderer, surface);
-		SDL_FreeSurface(surface);
+		SDL_DestroySurface(surface);
+
+		if (!texture) {
+			SDL_DestroyRenderer(renderer);
+			renderer = nullptr;
+			throw std::runtime_error(SDL_GetError());
+		}
 	}
 
 	~LogoRenderer() {
-		SDL_DestroyTexture(texture);
-		SDL_DestroyRenderer(renderer);
+		if (texture)
+			SDL_DestroyTexture(texture);
+
+		if (renderer)
+			SDL_DestroyRenderer(renderer);
 	}
 
 	void draw() {
@@ -30,26 +53,26 @@ public:
 		int winW, winH;
 		SDL_GetWindowSize(window, &winW, &winH);
 
-		int texW, texH;
-		SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+		float texW, texH;
+		SDL_GetTextureSize(texture, &texW, &texH);
 
 		// スケール計算（小さい方に合わせる）
 		float scaleX = (float)winW / texW;
 		float scaleY = (float)winH / texH;
 		float scale = scaleX < scaleY ? scaleX : scaleY;
 
-		int drawW = (int)(texW * scale);
-		int drawH = (int)(texH * scale);
+		float drawW = (int)(texW * scale);
+		float drawH = (int)(texH * scale);
 
 		// 中央配置
-		SDL_Rect dst = {
+		SDL_FRect dst = {
 			(winW - drawW) / 2,
 			(winH - drawH) / 2,
 			drawW,
 			drawH
 		};
 
-		SDL_RenderCopy(renderer, texture, NULL, &dst);
+		SDL_RenderTexture(renderer, texture, NULL, &dst);
 		SDL_RenderPresent(renderer);
 	}
 };

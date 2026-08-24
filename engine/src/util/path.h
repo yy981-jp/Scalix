@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <initializer_list>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 
 inline std::filesystem::path getDataPath() {
