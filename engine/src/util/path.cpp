@@ -1,13 +1,42 @@
 #include <util/path.h>
-SysPath syspath;
-
-
 #include <SDL3/SDL.h>
 
 #include <filesystem>
 #include <string>
 
 namespace fs = std::filesystem;
+
+
+void SysPath::init() {
+	data = getDataPath();
+	resource = getResourcePath();
+}
+
+
+fs::path SysPath::getDataPath() {
+	char* path = SDL_GetPrefPath("yy981", "Scalix");
+	if (!path)
+		throw std::runtime_error(SDL_GetError());
+
+	fs::path result = path;
+	SDL_free(path);
+	return result;
+}
+
+fs::path SysPath::getResourcePath() {
+	auto path = SDL_GetBasePath();
+	if (!path)
+		throw std::runtime_error(SDL_GetError());
+
+	fs::path result = path;
+
+	result = result / ".." / "resources";
+	result.lexically_normal();
+
+	return result;
+}
+
+
 
 bool startProcess(const std::vector<std::string>& cmd, fs::path workingDirectory) {
 	if (cmd.empty())
@@ -78,3 +107,6 @@ bool startProcess(const std::vector<std::string>& cmd, fs::path workingDirectory
 	SDL_DestroyProcess(process);
 	return true;
 }
+
+
+SysPath syspath;

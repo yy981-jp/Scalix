@@ -9,26 +9,14 @@ class ConfigJson {
 	json config;
 
 public:
-	json& operator[](const std::string& key) {
-		return config.at(key);
-	}
-	const json& operator[](const std::string& key) const {
-		return config.at(key);
-	}
+	json& operator[](const std::string& key);
+	const json& operator[](const std::string& key) const;
 
-	json& operator[](std::size_t index) {
-		return config.at(index);
-	}
-	const json& operator[](std::size_t index) const {
-		return config.at(index);
-	}
+	json& operator[](std::size_t index);
+	const json& operator[](std::size_t index) const;
 
-	void set(const std::string& key, json value) {
-		config[key] = std::move(value);
-	}
-
-	json& data() { return config; };
-	const json& data() const { return config; };
+	json& data();
+	const json& data() const;
 };
 
 
@@ -38,41 +26,12 @@ class Config {
 	ConfigJson mergedConfig;
 	std::string filename;
 
-	void rebuild() {
-		mergedConfig.data() = defaultConfig;
-		mergedConfig.data() = mergedConfig.data().patch(userPatch);
-	}
-
+	void rebuild();
+	
 public:
-	void init(const std::string& file, const std::string& defFile) {
-		defaultConfig = readJson(defFile);
-		filename = file;
-
-		if (fs::exists(file)) {
-			userPatch = readJson(file);
-			if (userPatch.empty())
-				userPatch = json::array();
-		} else {
-			userPatch = json::array();
-			fs::create_directories(fs::path(file).parent_path());
-		}
-
-		rebuild();
-	}
-
-	ConfigJson& get() {
-		return mergedConfig;
-	}
-
-	void save() {
-		userPatch = json::diff(
-			defaultConfig,
-			mergedConfig.data()
-		);
-
-		writeJson(userPatch, filename);
-		rebuild();
-	}
+	void init(const std::string& file, const std::string& defFile);
+	ConfigJson& get();
+	void save();
 };
 
 
