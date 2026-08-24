@@ -8,7 +8,9 @@ endif()
 
 # protobuf (generates engine/generated/*.pb.{cc,h} + tracker/generated/*_pb2.py*)
 generate_proto(pose)
+generate_proto(instr)
 list(APPEND SOURCES ${pose_PROTO_SOURCES})
+list(APPEND SOURCES ${instr_PROTO_SOURCES})
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -60,8 +62,8 @@ set_target_properties(bimg PROPERTIES
 
 # package
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(SDL2 REQUIRED sdl2)
-pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
+pkg_check_modules(SDL3 REQUIRED sdl3)
+pkg_check_modules(SDL3_IMAGE REQUIRED sdl3-image)
 find_package(Protobuf CONFIG REQUIRED)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -71,8 +73,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/engine/src
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/engine/generated
     SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2_IMAGE_INCLUDE_DIRS}
+    ${SDL3_INCLUDE_DIRS}
+    ${SDL3_IMAGE_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -80,8 +82,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     bx
     bimg
     yaml-cpp::yaml-cpp
-    ${SDL2_LIBRARIES}
-    ${SDL2_IMAGE_LIBRARIES}
+    ${SDL3_LIBRARIES}
+    ${SDL3_IMAGE_LIBRARIES}
     protobuf::libprotobuf
 )
 

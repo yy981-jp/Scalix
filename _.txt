@@ -33,6 +33,7 @@ auto tangent はunityeditorが計算して.animに保存するからそれを抽
 入出力を何とかつなげれば、外部の資産を最大限活用できる
 かなり低レイヤな制御になってしまうのがクロスプラットフォーム思想的に障壁
 OSの概念としては扱わない 入出力だけ生かしておいて残りの処理はOSとアプリに任せ、デスクトップの機能だけscalixで管理する
+視線でfocusを切り替える機能があっても面白いかもしれない
 
 
 // ===== 物理演算 =====
@@ -94,7 +95,8 @@ worldはsystem内部では分割しつつも、連続した世界を作りたい
 port(プロジェクト固有番号) = 518**
 						(9+8+1=18, 5は利用可能なポート領域に合わせて適当につけた)
 
-port(sctr) = 51801
+port(sxtr->engine) = 51801	UDP
+port(engine->sxtr) = 51802	TCP
 
 AvatarIdはserver分離する場合にserverが基本連番(+世代を入れるか)でserver側管理
 
@@ -195,3 +197,6 @@ Mtx::fromTRSのinveseが原因でloaderの共役外したら正常に動いた
 よｓｓｓｓっしゃああああああああ!!!!! 200時間のデバッグ地獄がやっと報われた!!!!!
 あとは操作がいろいろ反転しちゃってるから修正して完全解決
 -> 解決済み (cc258b31b0706ba1df906ece28b7cdaf2aee4cf9)
+
+
+nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --include-data-files=..\.venv\Lib\site-packages\mediapipe\tasks\c\libmediapipe.dll=mediapipe\tasks\c\libmediapipe.dll --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py

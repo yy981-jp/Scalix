@@ -1,5 +1,4 @@
 syntax = "proto3";
-
 package sxtr.landmark.pose;
 
 message Landmark {
@@ -10,6 +9,6 @@ message Landmark {
 }
 
 message PoseFrame {
-	uint64 timestamp = 1;
+	uint64 timestamp = 1; // ms
 	repeated Landmark landmarks = 2;
 }
