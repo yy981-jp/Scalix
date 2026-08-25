@@ -1,5 +1,9 @@
 #include <core/config.h>
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 
 json& ConfigJson::operator[](const std::string& key) {
 	return config.at(key);

@@ -19,6 +19,8 @@ __pycache__/
 
 /resources/tracker/
 
+/repomix-output*
+
 # protoc 自動生成
 /engine/generated/proto/
 /tracker/generated/proto/

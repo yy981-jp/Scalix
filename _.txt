@@ -199,4 +199,5 @@ Mtx::fromTRSのinveseが原因でloaderの共役外したら正常に動いた
 -> 解決済み (cc258b31b0706ba1df906ece28b7cdaf2aee4cf9)
 
 
-nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --include-data-files=..\.venv\Lib\site-packages\mediapipe\tasks\c\libmediapipe.dll=mediapipe\tasks\c\libmediapipe.dll --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py
+pyコンパイルコマンド案
+	nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --include-data-files=..\.venv\Lib\site-packages\mediapipe\tasks\c\libmediapipe.dll=mediapipe\tasks\c\libmediapipe.dll --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py

@@ -52,8 +52,6 @@ class Engine {
 
 	SpringBoneSystem springBoneSystem;
 
-	LogoRenderer* logo;
-
 	Camera cam0;
 	CameraType camId;
 

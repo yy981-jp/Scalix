@@ -29,12 +29,15 @@ Engine::Engine() {
 	);
 	SDL_SetWindowFullscreen(window, true);
 
-	// get window size
-	SDL_GetWindowSize(window, &width, &height);
+	// path system
+	syspath.init();
 
 	// logo system
-	logo = new LogoRenderer(window);
-	logo->draw();
+	LogoRenderer logo(window);
+	logo.draw();
+
+	// get window size
+	SDL_GetWindowSize(window, &width, &height);
 
 	// ===== bgfx初期化 =====
 	bgfx::PlatformData pd{};
@@ -87,7 +90,6 @@ Engine::Engine() {
 
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
-	syspath.init();
 	cfg.init((syspath.data/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
 
@@ -102,16 +104,14 @@ Engine::Engine() {
 		}
 	}
 
-	cfg.get()["tracker"] = false;
-	// j.set("tracker", false);
-	cfg.save();
+	// cfg.get()["tracker"] = false;
+	// cfg.save();
 
 	// Controller ctrlr;
 	// ctrlr.connect();
 	// sxtr::instr::Instr instr;
 	// instr.set_shutdown(true);
 	// ctrlr.send(instr);
-
 
 }
 
@@ -205,8 +205,6 @@ void Engine::gameInit() {
 	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
 
 	elap.init();
-
-	delete logo;
 
 
 	avatarSystem.update(gctx,elap.get());

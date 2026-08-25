@@ -30,12 +30,12 @@ fs::path SysPath::getResourcePath() {
 
 	fs::path result = path;
 
-	result = result / ".." / "resources";
-	result.lexically_normal();
-
+#if defined(SDL_PLATFORM_MACOS)
 	return result;
+#else
+	return (result / ".." / "resources").lexically_normal();
+#endif
 }
-
 
 
 bool startProcess(const std::vector<std::string>& cmd, fs::path workingDirectory) {
