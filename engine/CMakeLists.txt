@@ -2,6 +2,8 @@
 file(GLOB_RECURSE SOURCES src/*.cpp ../shared/*.cpp)
 
 set(EXE_NAME sl)
+set(SDLIMAGE_DEPS_SHARED ON)
+
 
 # Windows icon
 if (WIN32)
@@ -115,3 +117,5 @@ target_compile_definitions(${EXE_NAME} PRIVATE
 	$<$<CONFIG:Release>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
 	$<$<CONFIG:RelWithDebInfo>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
 )
+
+# message(FATAL_ERROR dll:${LOAD_WEBP_DYNAMIC})
