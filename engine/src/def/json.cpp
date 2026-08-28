@@ -1,9 +1,6 @@
 #include <def/json.h>
 
 #include <fstream>
-#include <filesystem>
-
-namespace fs = std::filesystem;
 
 
 json readJson(const std::string& path) {

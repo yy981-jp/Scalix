@@ -1,10 +1,7 @@
 #include <util/path.h>
+
 #include <SDL3/SDL.h>
-
-#include <filesystem>
 #include <string>
-
-namespace fs = std::filesystem;
 
 
 void SysPath::init() {
@@ -14,7 +11,7 @@ void SysPath::init() {
 
 
 fs::path SysPath::getDataPath() {
-	char* path = SDL_GetPrefPath("yy981", "Scalix");
+	char* path = SDL_GetPrefPath("yy981", "scalix");
 	if (!path)
 		throw std::runtime_error(SDL_GetError());
 

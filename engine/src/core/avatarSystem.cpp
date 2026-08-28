@@ -23,13 +23,11 @@ void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
 }
 
 
-void AvatarSystem::loadData(const std::vector<std::string> path) {
-	AvatarId id = 0;
-	for (const auto& file: path) {
-		// NodeRegistry stores the Avatar* passed during Avatar construction.
-		// Construct the Avatar in its final container so that this address does
-		// not become stale after moving a local Avatar into `avatars`.
-		avatars.emplace_back(file, id++);
+void AvatarSystem::loadData(const std::vector<AvatarId> ids) {
+	size_t idx = 0;
+	for (const auto& id: ids) {
+		avatars.emplace_back(id);
+		avatarIndex[id] = idx++;
 	}
 }
 
@@ -377,5 +375,5 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 }
 
 Avatar& AvatarSystem::player() {
-	return avatars[playableAvatar]; // TODO: 仮
+	return avatars[avatarIndex[playableAvatar]]; // TODO: 仮
 }

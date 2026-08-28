@@ -30,7 +30,7 @@ add_custom_target(${EXE_NAME}_shaders ALL
 add_dependencies(${EXE_NAME} ${EXE_NAME}_shaders)
 
 
-include(cpack.cmake)
+include(../cmake/cpack.cmake)
 
 
 # external

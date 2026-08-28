@@ -1,3 +1,7 @@
 {
-	"tracker": true
+	"tracker": true,
+
+	"avatar": {
+		"id": null
+	}
 }

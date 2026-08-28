@@ -1,8 +1,5 @@
 #include <core/config.h>
-
-#include <filesystem>
-
-namespace fs = std::filesystem;
+#include <def/fs.h>
 
 
 json& ConfigJson::operator[](const std::string& key) {

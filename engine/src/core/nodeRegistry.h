@@ -1,13 +1,12 @@
 #pragma once
 
 #include <def/node.h>
+#include <model/avatarDef.h>
 
 #include <vector>
 #include <cstdint>
 #include <limits>
 
-struct Avatar;
-using AvatarId = int;
 struct Node;
 
 

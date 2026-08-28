@@ -34,7 +34,12 @@ auto tangent はunityeditorが計算して.animに保存するからそれを抽
 かなり低レイヤな制御になってしまうのがクロスプラットフォーム思想的に障壁
 OSの概念としては扱わない 入出力だけ生かしておいて残りの処理はOSとアプリに任せ、デスクトップの機能だけscalixで管理する
 視線でfocusを切り替える機能があっても面白いかもしれない
+設定UIもブラウザで表示して、scalix内部でブラウザの画面を表示するってやったら結構いい感じになりそう
 
+windowを3D空間に統合しようとするとwaylandと喧嘩することになりそう
+waylandはサポート切るか というかとりあえずwindows版だけでも作るか?
+
+windows, mac, x11(linux)あたりは可能性ありそうだと思ってる
 
 // ===== 物理演算 =====
 物理演算は入れるが、全mesh演算しようものならパフォーマンスが悲惨なことになるので、まずはcolliderは直方体か球
@@ -98,7 +103,8 @@ port(プロジェクト固有番号) = 518**
 port(sxtr->engine) = 51801	UDP
 port(engine->sxtr) = 51802	TCP
 
-AvatarIdはserver分離する場合にserverが基本連番(+世代を入れるか)でserver側管理
+// AvatarIdはserver分離する場合にserverが基本連番(+世代を入れるか)でserver側管理
+AvatarIdはUUIDとかは?
 
 
 
@@ -162,6 +168,9 @@ pose_world_landmark使用
 releaseSysをgithubactionsで作りたい
 build自体はできるが、sxtrのpy依存をどうすべきか
 dep-dllはSHTからシステムを転用できそう?
+
+
+設定UIは埋め込みの外部ブラウザにして、画面のみscalix内部の3D空間やoverlayに転送 とか?
 
 
 
