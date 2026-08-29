@@ -74,7 +74,7 @@ jobs:
         if: runner.os == 'Linux'
         uses: lukka/get-cmake@latest
         with:
-          cmakeVersion: 4.1.2
+          cmakeVersion: 4.2.0
           ninjaVersion: 1.13.2
 
       - name: Setup macOS
