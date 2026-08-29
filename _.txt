@@ -106,6 +106,9 @@ port(engine->sxtr) = 51802	TCP
 // AvatarIdはserver分離する場合にserverが基本連番(+世代を入れるか)でserver側管理
 AvatarIdはUUIDとかは?
 
+ubuntu24LTSにSDL3が無いことを引き金に、SDL3をsubmoduleとして管理してコンパイルすることにする
+bgfx系と同じくexternal側だけで終わらせたい
+
 
 
 
