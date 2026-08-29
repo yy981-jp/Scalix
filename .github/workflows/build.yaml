@@ -40,7 +40,6 @@ jobs:
           sudo apt update
           sudo apt install -y \
             build-essential \
-            cmake \
             ninja-build \
             libprotobuf-dev \
             protobuf-compiler \
@@ -71,7 +70,13 @@ jobs:
             libthai-dev \
             libprotobuf-dev
             
-                  
+      - name: Setup CMake(Linux)
+        if: runner.os == 'Linux'
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 4.1.2
+          ninjaVersion: 1.13.2
+
       - name: Setup macOS
         if: runner.os == 'macOS'
         run: |
