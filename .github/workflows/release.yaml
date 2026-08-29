@@ -9,6 +9,9 @@ permissions:
   contents: write
 
 jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
   release:
     runs-on: windows-latest
 
@@ -16,16 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build external
-        uses: ./.github/actions/buildExternal
+      - name: Build Project
+        uses: ./.github/actions/buildProject
 
-      - name: Build
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
+          name: scalix-windows
+          path: build/Release/
