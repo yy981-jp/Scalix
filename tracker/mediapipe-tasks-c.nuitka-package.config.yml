@@ -1,4 +1,4 @@
-# mediapipe-tasks-c.nuitka-package.config.yaml
+# mediapipe-tasks-c.nuitka-package.config.yml
 - module-name: 'mediapipe'
   dlls:
     - from_filenames:
