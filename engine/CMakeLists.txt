@@ -35,6 +35,7 @@ include(../cmake/cpack.cmake)
 
 # external
 # add_subdirectory(${CMAKE_SOURCE_DIR}/external/yaml-cpp)
+find_package(yaml-cpp REQUIRED)
 
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

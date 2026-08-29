@@ -22,7 +22,7 @@ include(cmake/protobuf.cmake)
 include(cmake/shaders.cmake)
 
 # external
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/yaml-cpp)
+# add_subdirectory(${CMAKE_SOURCE_DIR}/external/yaml-cpp)
 
 include(GNUInstallDirs)
 
