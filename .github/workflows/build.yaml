@@ -25,6 +25,7 @@ jobs:
             mingw-w64-x86_64-sdl3
             mingw-w64-x86_64-sdl3-image
             mingw-w64-x86_64-protobuf
+            mingw-w64-x86_64-yaml-cpp
 
       - name: Build external
         uses: ./.github/actions/buildExternal

@@ -29,12 +29,15 @@ Engine::Engine() {
 	);
 	SDL_SetWindowFullscreen(window, true);
 
-	// get window size
-	SDL_GetWindowSize(window, &width, &height);
+	// path system
+	syspath.init();
 
 	// logo system
-	logo = new LogoRenderer(window);
-	logo->draw();
+	LogoRenderer logo(window);
+	logo.draw();
+
+	// get window size
+	SDL_GetWindowSize(window, &width, &height);
 
 	// ===== bgfx初期化 =====
 	bgfx::PlatformData pd{};
@@ -87,7 +90,6 @@ Engine::Engine() {
 
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
-	syspath.init();
 	cfg.init((syspath.data/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
 
@@ -102,16 +104,14 @@ Engine::Engine() {
 		}
 	}
 
-	cfg.get()["tracker"] = false;
-	// j.set("tracker", false);
-	cfg.save();
+	// cfg.get()["tracker"] = false;
+	// cfg.save();
 
 	// Controller ctrlr;
 	// ctrlr.connect();
 	// sxtr::instr::Instr instr;
 	// instr.set_shutdown(true);
 	// ctrlr.send(instr);
-
 
 }
 
@@ -188,7 +188,7 @@ void Engine::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
-	avatarSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+	avatarSystem.loadData({{0,0}});
 	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
@@ -206,8 +206,6 @@ void Engine::gameInit() {
 
 	elap.init();
 
-	delete logo;
-
 
 	avatarSystem.update(gctx,elap.get());
 
@@ -219,16 +217,15 @@ void Engine::gameInit() {
 	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
 	// }
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,101)) )); // back b
-
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},101)) )); // back b
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},199)) )); // 
 
 	// Quat q = Quat::fromAxisAngle(
 	// 	{0, 1, 0},

@@ -1,11 +1,8 @@
 #pragma once
-#include <filesystem>
+#include <def/fs.h>
 #include <vector>
 
 #include <SDL3/SDL.h>
-
-namespace fs = std::filesystem;
-
 
 
 struct SysPath {

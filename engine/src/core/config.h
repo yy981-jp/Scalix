@@ -1,8 +1,5 @@
 #pragma once
 #include <def/json.h>
-#include <filesystem>
-
-namespace fs = std::filesystem;
 
 
 class ConfigJson {
@@ -27,7 +24,7 @@ class Config {
 	std::string filename;
 
 	void rebuild();
-	
+
 public:
 	void init(const std::string& file, const std::string& defFile);
 	ConfigJson& get();

@@ -1,4 +1,5 @@
 #include <core/config.h>
+#include <def/fs.h>
 
 
 json& ConfigJson::operator[](const std::string& key) {

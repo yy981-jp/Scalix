@@ -1,0 +1,12 @@
+{
+	"ignore": {
+		"customPatterns": [
+			"external/**",
+			"build/**",
+			".git/**",
+			"**/*.obj",
+			"**/*.ttf",
+			"**/*.qbk"
+		]
+	}
+}
