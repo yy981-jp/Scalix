@@ -13,6 +13,8 @@ jobs:
     uses: ./.github/workflows/build.yml
 
   release:
+    needs: build
+
     runs-on: windows-latest
 
     steps:
@@ -22,8 +24,8 @@ jobs:
       - name: Build Project
         uses: ./.github/actions/buildProject
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
-          name: scalix-windows
-          path: build/Release/
+          name: scalix-${{ runner.os }}-${{ runner.arch }}
+          path: build/
