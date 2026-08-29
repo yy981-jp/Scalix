@@ -52,6 +52,7 @@ jobs:
             libxi-dev \
             libxinerama-dev \
             libxss-dev \
+            libxtst-dev \
             libwayland-dev \
             wayland-protocols \
             libdecor-0-dev \
@@ -68,6 +69,7 @@ jobs:
             libunwind-dev \
             libfribidi-dev \
             libthai-dev
+            
                   
       - name: Setup macOS
         if: runner.os == 'macOS'
