@@ -26,7 +26,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: scalix-${{ runner.os }}-${{ runner.arch }}
+          name: build-rel-${{ runner.os }}-${{ runner.arch }}
           path: build/
 
       - uses: Nuitka/Nuitka-Action@main
