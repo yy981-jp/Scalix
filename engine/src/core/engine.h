@@ -1,7 +1,7 @@
 #pragma once
 
-#include <SDL.h>
-#include <SDL_syswm.h>
+#include <SDL3/SDL.h>
+// #include <SDL3/SDL_syswm.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 #include <bx/math.h>
@@ -51,8 +51,6 @@ class Engine {
 	AvatarSystem avatarSystem;
 
 	SpringBoneSystem springBoneSystem;
-
-	LogoRenderer* logo;
 
 	Camera cam0;
 	CameraType camId;

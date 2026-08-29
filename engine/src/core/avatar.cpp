@@ -6,6 +6,7 @@
 #include <gltf/loader.h>
 #include <util/cache.h>
 #include <util/math.h>
+#include <util/path.h>
 #include <core/key.h>
 #include <core/gctx.h>
 #include <physics/springBone.h>
@@ -128,16 +129,31 @@ void Avatar::draw(Camera& cam) {
 	cam.update(camPos, camPos + lookDir);
 }
 
-Avatar::Avatar(const std::string& glTFPath, AvatarId id): id(id) {
-	pos = {0, 0, 0};
-	yaw = 0.0f;
-	head = {};
+Avatar::Avatar(const AvatarId& id): id(id) {
+	const fs::path base = syspath.data / "avatars" / id.hex();
+	std::string path;
+	GltfType type;
 
-	GltfLoaderImpl loader(glTFPath);
+	if (fs::exists(base / "model")) {
+		for (const auto& e: fs::recursive_directory_iterator(base / "model")) {
+			if (e.path().extension() == ".gltf") {
+				path = e.path().string();
+				type = GltfType::ascii;
+				break;
+			}
+		}
+		if (path.empty())
+			throw std::runtime_error("Avatar::Avatar: model dir is exist, but system couldn't find gltf file");
+	} else if (fs::exists(base / "model.glb")) {
+		path = (base / "model.glb").string();
+		type = GltfType::binary;
+	} else 
+		throw std::runtime_error("Avatar::Avatar: system couldn't find any format gltf file");
+
+	GltfLoader loader(path, type);
 	loader.load();
 	loader.procHdl(this);
 	model = loader.get();
-
 
 	humanoid.init(model);
 

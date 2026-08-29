@@ -1,49 +1,75 @@
 #include "def/transform.h"
-#include "physics/springBone.h"
+#include "proto/instr.pb.h"
+#include <physics/springBone.h>
+#include <stdexcept>
+#include <tracker/controller.h>
 #include <core/engine.h>
 
 #include <gfx/shader.h>
 #include <debug/debugDraw.h>
+#include <util/path.h>
+#include <core/config.h>
 
 #include <physics/detect.h>
 
 
 Engine::Engine() {
 	SDL_Init(SDL_INIT_VIDEO);
-	if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
+	// if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
 
-	// ===== window 作成 (SDL2) =====
+	// ===== window 作成 (SDL) =====
 	window = SDL_CreateWindow(
 		"Scalix",
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
+		// SDL_WINDOWPOS_CENTERED,
+		// SDL_WINDOWPOS_CENTERED,
 		T_WIDTH, T_HEIGHT,
-		SDL_WINDOW_FULLSCREEN_DESKTOP
+		0
+		// SDL_WINDOW_FULLSCREEN
+		// SDL_WINDOW_FULLSCREEN_DESKTOP
 	);
+	SDL_SetWindowFullscreen(window, true);
+
+	// path system
+	syspath.init();
+
+	// logo system
+	LogoRenderer logo(window);
+	logo.draw();
 
 	// get window size
 	SDL_GetWindowSize(window, &width, &height);
 
-	// logo system
-	logo = new LogoRenderer(window);
-	logo->draw();
-
 	// ===== bgfx初期化 =====
-	SDL_SysWMinfo wmi;
-	SDL_VERSION(&wmi.version);
-	if (!SDL_GetWindowWMInfo(window, &wmi)) throw std::runtime_error("GetWMInfo");
-
 	bgfx::PlatformData pd{};
 
-#if defined(_WIN32)
-	pd.nwh = wmi.info.win.window;
-#elif defined(__linux__)
-	pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-#elif defined(__APPLE__)
-	pd.nwh = wmi.info.cocoa.window;
-#endif
+	SDL_PropertiesID props = SDL_GetWindowProperties(window);
 
-	bgfx::setPlatformData(pd);
+	#if defined(_WIN32)
+		pd.nwh = SDL_GetPointerProperty(
+			props,
+			SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+			nullptr
+		);
+	#elif defined(__linux__)
+		pd.nwh = reinterpret_cast<void*>(
+			SDL_GetNumberProperty(
+				props,
+				SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
+				0
+			)
+		);
+	#elif defined(__APPLE__)
+		pd.nwh = SDL_GetPointerProperty(
+			props,
+			SDL_PROP_WINDOW_COCOA_WINDOW_POINTER,
+			nullptr
+		);
+	#endif
+
+	if (!pd.nwh)
+		throw std::runtime_error("Get native window handle");
+
+	// bgfx::setPlatformData(pd);
 
 	bgfx::Init init{};
 	init.type = bgfx::RendererType::Count;
@@ -62,31 +88,50 @@ Engine::Engine() {
 
 	// set mouse mode
 
-	SDL_SetRelativeMouseMode(static_cast<SDL_bool>(mouseRelMode));
+	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
-	
+	cfg.init((syspath.data/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
 
 	gctx.poseSolver = poseSolver;
+
+
+	if (cfg.get()["tracker"].get<bool>()) {
+		if (!startProcess({
+			(syspath.resource/"tracker"/"camera").string()
+		})) {
+			throw std::runtime_error("couldn't start sxtr");
+		}
+	}
+
+	// cfg.get()["tracker"] = false;
+	// cfg.save();
+
+	// Controller ctrlr;
+	// ctrlr.connect();
+	// sxtr::instr::Instr instr;
+	// instr.set_shutdown(true);
+	// ctrlr.send(instr);
+
 }
 
 Engine::~Engine() {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-	IMG_Quit();
+	// IMG_Quit();
 }
 
 void Engine::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch(event.type) {
-			case SDL_QUIT: running = false; break;
-			case SDL_KEYDOWN: onKeyDown(event.key); break;
-			case SDL_KEYUP: onKeyUp(event.key); break;
-			case SDL_MOUSEBUTTONDOWN: onMouseBtDown(event.button); break;
-			case SDL_MOUSEBUTTONUP: onMouseBtUp(event.button); break;
-			case SDL_WINDOWEVENT: onWindowEve(event.window); break;
-			case SDL_MOUSEMOTION: onMouseMt(event.motion); break;
+			case SDL_EVENT_QUIT: running = false; break;
+			case SDL_EVENT_KEY_DOWN: onKeyDown(event.key); break;
+			case SDL_EVENT_KEY_UP: onKeyUp(event.key); break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN: onMouseBtDown(event.button); break;
+			case SDL_EVENT_MOUSE_BUTTON_UP: onMouseBtUp(event.button); break;
+			// case SDL_WINDOWEVENT: onWindowEve(event.window); break;
+			case SDL_EVENT_MOUSE_MOTION: onMouseMt(event.motion); break;
 		}
 	}
 
@@ -143,7 +188,7 @@ void Engine::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
-	avatarSystem.loadData({"glTF-Shinano/Shinano_AMS.gltf"});
+	avatarSystem.loadData({{0,0}});
 	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
@@ -161,28 +206,26 @@ void Engine::gameInit() {
 
 	elap.init();
 
-	delete logo;
-
 
 	avatarSystem.update(gctx,elap.get());
 
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
 
+	
 	// for (const NodeHandle& nh: nodeReg.get(nodeReg.findFromAvaId(0, 176)).children ) {
 	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
 	// }
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,101)) )); // back b
-
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(0,199)) )); // 
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},101)) )); // back b
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},199)) )); // 
 
 	// Quat q = Quat::fromAxisAngle(
 	// 	{0, 1, 0},
@@ -211,13 +254,13 @@ void Engine::gameInit() {
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
 	if (e.repeat) return;
-	auto it = keyMap.find(e.keysym.sym);
+	auto it = keyMap.find(e.key);
 	if (it != keyMap.end())
 		keyStat |= static_cast<KCodes>(it->second);
 }
 
 void Engine::onKeyUp(const SDL_KeyboardEvent& e) {
-	auto it = keyMap.find(e.keysym.sym);
+	auto it = keyMap.find(e.key);
 	if (it != keyMap.end())
 		keyStat &= ~static_cast<KCodes>(it->second);
 }
@@ -234,13 +277,13 @@ void Engine::onMouseBtUp(const SDL_MouseButtonEvent& e) {
 		mStat.codes &= ~static_cast<MCodes>(it->second);
 }
 
-void Engine::onWindowEve(const SDL_WindowEvent& e) {
-/*
-	if (e.event == SDL_WINDOWEVENT_FOCUS_LOST) {
-		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
-	}
-*/
-}
+// void Engine::onWindowEve(const SDL_WindowEvent& e) {
+// /*
+// 	if (e.event == SDL_EVENT_WINDOW_FOCUS_LOST) {
+// 		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
+// 	}
+// */
+// }
 
 void Engine::onMouseMt(const SDL_MouseMotionEvent& e) {
 	mStat.absPos.x = e.x;

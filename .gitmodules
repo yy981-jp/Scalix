@@ -29,5 +29,8 @@
 	path = external/asio
 	url = git@github.com:chriskohlhoff/asio.git
 [submodule "assets"]
-	path = assets
+	path = resources/assets
 	url = git@github.com:yy981-jp/Scalix-Assets.git
+[submodule "external/subprocess"]
+	path = external/subprocess
+	url = git@github.com:sheredom/subprocess.h.git

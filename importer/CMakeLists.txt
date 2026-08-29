@@ -18,6 +18,8 @@ target_include_directories(${sxim} PRIVATE
 	SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}
 )
 
+find_package(yaml-cpp REQUIRED)
+
 target_link_libraries(${sxim} PRIVATE
 	yaml-cpp::yaml-cpp
 )

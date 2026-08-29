@@ -2,13 +2,12 @@
 
 #include <model/model.h>
 #include <model/humanoid.h>
+#include <model/avatarDef.h>
 #include <anim/animSystem.h>
 #include <def/euler.h>
 #include <def/pose.h>
 #include <def/transform.h>
 
-
-using AvatarId = int;
 
 /// @brief 状態を含む1つのアバター
 struct Avatar {
@@ -45,7 +44,7 @@ struct Avatar {
 	void update(GameContext& keyStat, float dt);
 	void draw(Camera& cam);
 	
-	Avatar(const std::string& glTFPath, AvatarId id);
+	Avatar(const AvatarId& id);
 	~Avatar();
 
 	Avatar(const Avatar&) = delete;

@@ -1,8 +1,5 @@
 #include <gfx/shader.h>
-
-#include <filesystem>
-
-namespace fs = std::filesystem;
+#include <def/fs.h>
 
 
 bgfx::ShaderHandle loadShader(const char* path) {

@@ -17,6 +17,10 @@ __pycache__/
 
 !/tracker/records/*.bin
 
+/resources/tracker/
+
+/repomix-output*
+
 # protoc 自動生成
 /engine/generated/proto/
 /tracker/generated/proto/

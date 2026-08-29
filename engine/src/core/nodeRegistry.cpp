@@ -32,7 +32,7 @@ void NodeRegistry::destroy(NodeHandle h) {
 
 	++records[h.id].gen;
 	records[h.id].avatar = nullptr;
-	records[h.id].avatarId = -1;
+	records[h.id].avatarId = {};
 	records[h.id].node = NodeId::invalid();
 
 	// フリースロット linked list に追加

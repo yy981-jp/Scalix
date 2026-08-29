@@ -15,14 +15,15 @@ struct LoadingNode {
 };
 
 
-struct AccessorView {
-	uint8_t* data;
-	size_t stride;
-	size_t count;
+enum class GltfType {
+	ascii,
+	binary
 };
 
-class GltfLoaderImpl {
+class GltfLoader {
 	const std::string& path;
+
+	GltfType type;
 
 	// in processing data
 	tinygltf::Model model;
@@ -38,7 +39,7 @@ class GltfLoaderImpl {
 	bool handleSolved = false;
 
 public:
-	GltfLoaderImpl(const std::string& path);
+	GltfLoader(const std::string& path, GltfType type);
 	void load();
 	void procHdl(Avatar* avatar);
 	inline Model get() {

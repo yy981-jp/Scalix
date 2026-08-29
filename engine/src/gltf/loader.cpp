@@ -11,6 +11,14 @@
 
 namespace {
 
+
+struct AccessorView {
+	uint8_t* data;
+	size_t stride;
+	size_t count;
+};
+
+
 struct AccessorBytes {
 	const tinygltf::Accessor* accessor = nullptr;
 	const uint8_t* data = nullptr;
@@ -139,7 +147,7 @@ void readWeights(Vertex& vert, const uint8_t* ptr, int componentType) {
 } // namespace
 
 
-void GltfLoaderImpl::parseMesh(NodeId nodeId) {
+void GltfLoader::parseMesh(NodeId nodeId) {
 	const auto& tn = model.nodes[nodeId];
 	const auto& tnmesh = model.meshes[tn.mesh];
 
@@ -260,7 +268,7 @@ void GltfLoaderImpl::parseMesh(NodeId nodeId) {
 }
 
 
-void GltfLoaderImpl::parse() {
+void GltfLoader::parse() {
 	int nodesSize = model.nodes.size();
 	scalixModel.nodes.resize(nodesSize);
 	scalixModel.nodeHandles.resize(nodesSize);
@@ -381,7 +389,7 @@ void GltfLoaderImpl::parse() {
 	}
 }
 
-void GltfLoaderImpl::buildPalletCompress() {
+void GltfLoader::buildPalletCompress() {
 	// ===== pallet圧縮 =====
 
 	for (const auto& node : scalixModel.nodes) {
@@ -429,15 +437,26 @@ void GltfLoaderImpl::buildPalletCompress() {
 }
 
 
-GltfLoaderImpl::GltfLoaderImpl(const std::string& path): path(path) {}
+GltfLoader::GltfLoader(const std::string& path, GltfType type): path(path), type(type) {}
 
 
-void GltfLoaderImpl::load() {
+void GltfLoader::load() {
 	tinygltf::TinyGLTF loader;
 
 	std::string err, warn;
-	if (!loader.LoadASCIIFromFile(&model, &err, &warn, path)) {
-		throw std::runtime_error("gltf load failed: " + err);
+
+	switch (type) {
+		case GltfType::ascii: {
+			if (!loader.LoadASCIIFromFile(&model, &err, &warn, path)) {
+				throw std::runtime_error("gltf(ascii) load failed: " + err);
+			}
+		} break;
+
+		case GltfType::binary: {
+			if (!loader.LoadBinaryFromFile(&model, &err, &warn, path)) {
+				throw std::runtime_error("gltf(binary) load failed: " + err);
+			}
+		} break;
 	}
 
 	if (model.meshes.empty())
@@ -525,7 +544,7 @@ void GltfLoaderImpl::load() {
 	}
 }
 
-void GltfLoaderImpl::procHdl(Avatar* avatar) {
+void GltfLoader::procHdl(Avatar* avatar) {
 	// すべてのnodeを登録
 	for (int i = 0; i < scalixModel.nodes.size(); i++) {
 		LoadingNode& lnode = lnodes[i];
