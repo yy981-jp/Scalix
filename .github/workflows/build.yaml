@@ -89,6 +89,12 @@ jobs:
       - name: Build external
         uses: ./.github/actions/buildExternal
 
+      - name: Check CMake
+        if: runner.os == 'Linux'
+        run: |
+          type -a cmake
+          cmake --version
+
       - name: Configure
         if: runner.os != 'Windows'
         run: |

@@ -18,9 +18,8 @@ install(
 	TARGETS ${EXE_NAME}
 	RUNTIME_DEPENDENCIES
 		DIRECTORIES
-			# ${CMAKE_PREFIX_PATH}/bin
+			${EXTERNAL_INSTALL_DIR}/bin
 			${COMPILER_BIN_DIR}
-			# "C:/msys64/mingw64/bin"
 		PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
 		POST_EXCLUDE_REGEXES ${_rd_post_exclude}
 		RUNTIME DESTINATION bin
@@ -29,17 +28,7 @@ install(
 	RUNTIME DESTINATION bin
 )
 
-# message(WARNING ${COMPILER_BIN_DIR})
-
-# file(GET_RUNTIME_DEPENDENCIES
-#     LIBRARIES "${CMAKE_PREFIX_PATH}/bin/libwebp-*"           # 依存関係を調べたい対象のDLLパス
-#     DIRECTORIES "${CMAKE_PREFIX_PATH}/bin"      # DLLを探す検索ディレクトリのリスト
-#     RESOLVED_DEPENDENCIES_VAR resolved_deps   # 解決された依存DLLのパスが入る変数
-#     UNRESOLVED_DEPENDENCIES_VAR unresolved_deps # 未解決の依存DLLのパスが入る変数
-# )
-
-
-install_dlls_by_wildcard("libwebp*" "${COMPILER_BIN_DIR}" "bin")
+install_dlls_by_wildcard("libwebp*" "${EXTERNAL_INSTALL_DIR}/bin" "bin")
 
 # shaders
 install(
