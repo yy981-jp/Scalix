@@ -8,14 +8,20 @@ runs:
       id: external-key
       shell: bash
       run: |
-        bgfx=$(git -C external/bgfx rev-parse HEAD)
-        bx=$(git -C external/bx rev-parse HEAD)
-        bimg=$(git -C external/bimg rev-parse HEAD)
-        bgfx_cmake=$(git -C external/bgfx.cmake rev-parse HEAD)
-
-        key="bgfx-${{ runner.os }}-${{ runner.arch }}-${bgfx}-${bx}-${bimg}-${bgfx_cmake}"
-
+        hash=$(
+          {
+            git -C external/bgfx rev-parse HEAD
+            git -C external/bx rev-parse HEAD
+            git -C external/bimg rev-parse HEAD
+            git -C external/bgfx.cmake rev-parse HEAD
+            git -C external/SDL rev-parse HEAD
+            git -C external/SDL-image rev-parse HEAD
+            sha256sum external/CMakeLists.txt
+          } | sha256sum | cut -d ' ' -f1
+        )
+        key="bgfx-${{ runner.os }}-${{ runner.arch }}-${hash}"
         echo "key=$key" >> "$GITHUB_OUTPUT"
+
 
     - name: Restore bgfx cache
       id: bgfx-cache

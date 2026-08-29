@@ -27,6 +27,18 @@ include(cmake/shaders.cmake)
 include(GNUInstallDirs)
 
 # Scalix
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	list(PREPEND CMAKE_PREFIX_PATH
+		${CMAKE_SOURCE_DIR}/external/install/debug
+	)
+else()
+	list(PREPEND CMAKE_PREFIX_PATH
+		${CMAKE_SOURCE_DIR}/external/install/release
+	)
+endif()
+
+
 add_subdirectory(engine)
 add_subdirectory(importer)
 add_subdirectory(dev)
