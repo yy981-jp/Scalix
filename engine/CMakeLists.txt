@@ -62,7 +62,12 @@ find_package(bgfx CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_image CONFIG REQUIRED)
 find_package(yaml-cpp REQUIRED)
-find_package(Protobuf CONFIG REQUIRED)
+
+if(WIN32 OR APPLE)
+  find_package(Protobuf CONFIG REQUIRED)
+else()
+  find_package(Protobuf REQUIRED)
+endif()
 
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
