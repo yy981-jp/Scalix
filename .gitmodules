@@ -1,12 +1,15 @@
 [submodule "external/bgfx"]
 	path = external/bgfx
-	url = https://github.com/bkaradzic/bgfx
+	url = git@github.com:bkaradzic/bgfx.git
 [submodule "external/bx"]
 	path = external/bx
-	url = https://github.com/bkaradzic/bx
+	url = git@github.com:bkaradzic/bx.git
 [submodule "external/bimg"]
 	path = external/bimg
-	url = https://github.com/bkaradzic/bimg
+	url = git@github.com:bkaradzic/bimg.git
+[submodule "external/bgfx.cmake"]
+	path = external/bgfx.cmake
+	url = git@github.com:bkaradzic/bgfx.cmake.git
 [submodule "external/tinygltf"]
 	path = external/tinygltf
 	url = git@github.com:yy981-jp/tinygltf.git
@@ -22,9 +25,6 @@
 [submodule "external/y9inc"]
 	path = external/y9inc
 	url = git@github.com:yy981-jp/tools.git
-[submodule "external/bgfx.cmake"]
-	path = external/bgfx.cmake
-	url = git@github.com:bkaradzic/bgfx.cmake.git
 [submodule "external/asio"]
 	path = external/asio
 	url = git@github.com:chriskohlhoff/asio.git
@@ -34,3 +34,9 @@
 [submodule "external/subprocess"]
 	path = external/subprocess
 	url = git@github.com:sheredom/subprocess.h.git
+[submodule "external/SDL"]
+	path = external/SDL
+	url = git@github.com:libsdl-org/SDL.git
+[submodule "external/SDL-image"]
+	path = external/SDL-image
+	url = git@github.com:libsdl-org/SDL_image.git
