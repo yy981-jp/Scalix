@@ -24,6 +24,8 @@ install(
 		PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
 		POST_EXCLUDE_REGEXES ${_rd_post_exclude}
 		RUNTIME DESTINATION bin
+		LIBRARY DESTINATION bin
+		FRAMEWORK DESTINATION bin
 	RUNTIME DESTINATION bin
 )
 
@@ -33,7 +35,7 @@ install(
 #     LIBRARIES "${CMAKE_PREFIX_PATH}/bin/libwebp-*"           # 依存関係を調べたい対象のDLLパス
 #     DIRECTORIES "${CMAKE_PREFIX_PATH}/bin"      # DLLを探す検索ディレクトリのリスト
 #     RESOLVED_DEPENDENCIES_VAR resolved_deps   # 解決された依存DLLのパスが入る変数
-#     UNRESOLVED_DEPENDENCIES_VAR unresolved_deps # 未解決の依存DLLが入る変数
+#     UNRESOLVED_DEPENDENCIES_VAR unresolved_deps # 未解決の依存DLLのパスが入る変数
 # )
 
 

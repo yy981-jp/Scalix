@@ -30,8 +30,6 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-sdl3
-            mingw-w64-x86_64-sdl3-image
             mingw-w64-x86_64-protobuf
             mingw-w64-x86_64-yaml-cpp
 
@@ -47,22 +45,12 @@ jobs:
             protobuf-compiler \
             libyaml-cpp-dev
       
-      - name: Prepare SDL3(Linux)
-        if: runner.os == 'Linux'
-        uses: libsdl-org/setup-sdl@main
-        with:
-          install-linux-dependencies: true
-          version: 3-latest
-          version-sdl-image: 3-latest
-
       - name: Setup macOS
         if: runner.os == 'macOS'
         run: |
           brew install \
             cmake \
             ninja \
-            sdl3 \
-            sdl3_image \
             protobuf \
             yaml-cpp
 

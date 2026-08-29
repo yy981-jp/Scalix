@@ -7,12 +7,25 @@ file(GLOB_RECURSE SOURCES
 set(EXE_NAME sl)
 set(SDLIMAGE_DEPS_SHARED ON)
 
+# External install prefix
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	list(PREPEND CMAKE_PREFIX_PATH
+		${CMAKE_SOURCE_DIR}/external/install/debug
+	)
+else()
+	list(PREPEND CMAKE_PREFIX_PATH
+		${CMAKE_SOURCE_DIR}/external/install/release
+	)
+endif()
+
+
 # Windows icon
 if(WIN32)
 	list(APPEND SOURCES
 		${CMAKE_SOURCE_DIR}/cmake/icon.rc
 	)
 endif()
+
 
 # protobuf
 # generates engine/generated/*.pb.{cc,h} + tracker/generated/*_pb2.py*
@@ -25,6 +38,7 @@ list(APPEND SOURCES
 )
 
 add_executable(${EXE_NAME} ${SOURCES})
+
 
 # shaders
 # compiles engine/shaders/<name>/{vs,fs}.sc into build/runtime/*.bin
@@ -39,52 +53,18 @@ add_custom_target(${EXE_NAME}_shaders ALL
 
 add_dependencies(${EXE_NAME} ${EXE_NAME}_shaders)
 
+
 include(../cmake/cpack.cmake)
 
 
-# external
+# External packages
+find_package(bgfx CONFIG REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3_image CONFIG REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
 
-# SDL
-#
-# external/install/debug or release should be added to CMAKE_PREFIX_PATH
-# before reaching this file.
-find_package(SDL3 CONFIG REQUIRED COMPONENTS SDL3)
-find_package(SDL3_image CONFIG REQUIRED)
 
-# bgfx
-add_library(bgfx STATIC IMPORTED)
-set_target_properties(bgfx PROPERTIES
-	IMPORTED_LOCATION_DEBUG
-		${CMAKE_SOURCE_DIR}/external/install/debug/lib/libbgfx.a
-	IMPORTED_LOCATION_RELEASE
-		${CMAKE_SOURCE_DIR}/external/install/release/lib/libbgfx.a
-
-	INTERFACE_INCLUDE_DIRECTORIES
-		${CMAKE_SOURCE_DIR}/external/install/release/include
-)
-
-# bx
-add_library(bx STATIC IMPORTED)
-set_target_properties(bx PROPERTIES
-	IMPORTED_LOCATION_DEBUG
-		${CMAKE_SOURCE_DIR}/external/install/debug/lib/libbx.a
-	IMPORTED_LOCATION_RELEASE
-		${CMAKE_SOURCE_DIR}/external/install/release/lib/libbx.a
-)
-
-# bimg
-add_library(bimg STATIC IMPORTED)
-set_target_properties(bimg PROPERTIES
-	IMPORTED_LOCATION_DEBUG
-		${CMAKE_SOURCE_DIR}/external/install/debug/lib/libbimg.a
-	IMPORTED_LOCATION_RELEASE
-		${CMAKE_SOURCE_DIR}/external/install/release/lib/libbimg.a
-)
-
-
-# compiler-specific fixes
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 	set_source_files_properties(
 		${CMAKE_SOURCE_DIR}/engine/src/gltf/tinygltf_impl.cpp
@@ -104,11 +84,13 @@ target_include_directories(${EXE_NAME} PRIVATE
 		${CMAKE_SOURCE_DIR}
 )
 
+get_target_property(BGFX_LINK_LIBS bgfx::bgfx INTERFACE_LINK_LIBRARIES)
+
+# message(STATUS "bgfx dependencies:")
+# message(STATUS "${BGFX_LINK_LIBS}")
 
 target_link_libraries(${EXE_NAME} PRIVATE
-	bgfx
-	bx
-	bimg
+	bgfx::bgfx
 
 	yaml-cpp::yaml-cpp
 
@@ -141,5 +123,3 @@ target_compile_definitions(${EXE_NAME} PRIVATE
 	$<$<CONFIG:Release>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
 	$<$<CONFIG:RelWithDebInfo>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
 )
-
-# message(FATAL_ERROR dll:${LOAD_WEBP_DYNAMIC})
