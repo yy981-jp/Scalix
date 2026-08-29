@@ -89,12 +89,20 @@ jobs:
       - name: Build external
         uses: ./.github/actions/buildExternal
 
-      - name: Check CMake
+      - name: Check Protobuf
         if: runner.os == 'Linux'
         run: |
-          type -a cmake
-          cmake --version
+          echo "=== apt protobuf ==="
+          dpkg -L libprotobuf-dev | grep -E 'protobuf.*(cmake|config)|Protobuf.*(cmake|Config)' || true
 
+          echo "=== external protobuf ==="
+          find "$PWD/external/install" \
+            -iname 'ProtobufConfig.cmake' \
+            -o -iname 'protobuf-config.cmake' \
+            -o -iname 'Protobuf.cps' \
+            -o -iname 'protobuf.cps' \
+            2>/dev/null || true
+            
       - name: Configure
         if: runner.os != 'Windows'
         run: |
