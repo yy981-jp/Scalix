@@ -43,7 +43,16 @@ jobs:
             ninja-build \
             libprotobuf-dev \
             protobuf-compiler \
-            libyaml-cpp-dev
+            libyaml-cpp-dev \
+            libwayland-dev \
+            wayland-protocols \
+            libx11-dev \
+            libxext-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxinerama-dev \
+            libxss-dev
       
       - name: Setup macOS
         if: runner.os == 'macOS'
