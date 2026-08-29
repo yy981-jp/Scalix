@@ -28,16 +28,15 @@ jobs:
 
 
       - name: Build with Nuitka
-        working-directory: tracker
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          script-name: camera.py
+          script-name: tracker/camera.py
           mode: standalone
-          # ユーザー独自のパッケージ設定ファイルを指定
-          user-package-configuration-file: mediapipe-tasks-c.nuitka-package.config.yml
+          output-dir: tracker/build
+          user-package-configuration-file: tracker/mediapipe-tasks-c.nuitka-package.config.yml
           include-data-files: |
-            models/pose_landmarker_full.task=models/pose_landmarker_full.task
+            tracker/models/pose_landmarker_full.task=models/pose_landmarker_full.task
 
       - name: install sxtr module
         run: |
