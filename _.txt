@@ -195,3 +195,8 @@ pyコンパイルコマンド案
 
 	nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --user-package-configuration-file=..\mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task --verbose ..\camera.py > _.log 2>&1
 	
+	nuitka --standalone --jobs=0 --user-package-configuration-file=..\mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py
+	
+	
+	
+	nuitka --standalone --jobs=0 --user-package-configuration-file=mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=models/pose_landmarker_full.task=models/pose_landmarker_full.task camera.py --output-dir=../build/tracker
