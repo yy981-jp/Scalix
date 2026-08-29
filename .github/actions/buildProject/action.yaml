@@ -13,7 +13,7 @@ runs:
 
     - name: Restore submodule cache
       id: submodules
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: external
         key: ${{ steps.submodule-key.outputs.key }}
@@ -25,6 +25,13 @@ runs:
         git config --global url."https://github.com/".insteadOf "git@github.com:"
         git submodule update --init --recursive
 
+    - name: Save submodule cache
+      if: steps.submodules.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: external
+        key: ${{ steps.submodule-key.outputs.key }}
+        
 
 
     - name: Setup MSYS2
