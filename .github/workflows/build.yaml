@@ -35,7 +35,9 @@ jobs:
 
       - name: Checkout submodules
         if: steps.submodules.outputs.cache-hit != 'true'
-        run: git submodule update --init --recursive
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --recursive
 
 
 
