@@ -43,11 +43,17 @@ jobs:
             build-essential \
             cmake \
             ninja-build \
-            libsdl3-dev \
-            libsdl3-image-dev \
             libprotobuf-dev \
             protobuf-compiler \
             libyaml-cpp-dev
+      
+      - name: Prepare SDL3(Linux)
+        if: runner.os == 'Linux'
+        uses: libsdl-org/setup-sdl@main
+        with:
+          install-linux-dependencies: true
+          version: 3-latest
+          version-sdl-image: 3-latest
 
       - name: Setup macOS
         if: runner.os == 'macOS'
