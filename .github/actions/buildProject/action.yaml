@@ -142,3 +142,4 @@ runs:
       with:
         name: build-${{ runner.os }}-${{ runner.arch }}
         path: build/
+        # retention-days: 3 別に要らんかった

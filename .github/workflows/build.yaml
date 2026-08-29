@@ -22,3 +22,9 @@ jobs:
 
       - name: Build Project
         uses: ./.github/actions/buildProject
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ runner.os }}-${{ runner.arch }}
+          path: build/

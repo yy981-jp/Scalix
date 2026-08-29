@@ -1,0 +1,24 @@
+# mediapipe-tasks-c.nuitka-package.config.yaml
+- module-name: 'mediapipe'
+  dlls:
+    - from_filenames:
+        relative_path: 'tasks/c'
+        prefixes:
+          - 'libmediapipe'
+        suffixes:
+          - 'dll'
+      when: 'win32'
+    - from_filenames:
+        relative_path: 'tasks/c'
+        prefixes:
+          - 'libmediapipe'
+        suffixes:
+          - 'so'
+      when: 'linux'
+    - from_filenames:
+        relative_path: 'tasks/c'
+        prefixes:
+          - 'libmediapipe'
+        suffixes:
+          - 'dylib'
+      when: 'macos'
