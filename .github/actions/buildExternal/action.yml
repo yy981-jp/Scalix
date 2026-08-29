@@ -8,7 +8,17 @@ runs:
       id: external-key
       shell: bash
       run: |
-        hash=$(git submodule status | sha256sum | cut -d' ' -f1)
+        hash=$(
+          {
+            git ls-tree HEAD external/bgfx | awk '{print $3}'
+            git ls-tree HEAD external/bx | awk '{print $3}'
+            git ls-tree HEAD external/bimg | awk '{print $3}'
+            git ls-tree HEAD external/bgfx.cmake | awk '{print $3}'
+            git ls-tree HEAD external/SDL | awk '{print $3}'
+            git ls-tree HEAD external/SDL-image | awk '{print $3}'
+            sha256sum external/CMakeLists.txt
+          } | sha256sum | cut -d' ' -f1
+        )
         key="external-${{ runner.os }}-${{ runner.arch }}-${hash}"
         echo "key=$key" >> "$GITHUB_OUTPUT"
 
