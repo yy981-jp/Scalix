@@ -134,20 +134,3 @@ runs:
       shell: msys2 {0}
       run: |
         cmake --build build --parallel
-
-
-
-    - name: Upload artifact (standalone)
-      if: github.event_name != 'workflow_call'
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-${{ runner.os }}-${{ runner.arch }}
-        path: build/
-
-    - name: Upload artifact (release)
-      if: github.event_name == 'workflow_call'
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-rel-${{ runner.os }}-${{ runner.arch }}
-        path: build/
-        retention-days: 3
