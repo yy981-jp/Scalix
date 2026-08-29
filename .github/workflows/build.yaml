@@ -68,7 +68,8 @@ jobs:
             libudev-dev \
             libunwind-dev \
             libfribidi-dev \
-            libthai-dev
+            libthai-dev \
+            libprotobuf-dev
             
                   
       - name: Setup macOS
