@@ -27,6 +27,17 @@ jobs:
           path: build/
 
 
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: '${{ runner.arch }}'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r tracker/requirements.txt
+      
+
       - name: Build with Nuitka
         uses: Nuitka/Nuitka-Action@main
         with:
