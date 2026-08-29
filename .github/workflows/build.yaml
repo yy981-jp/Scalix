@@ -6,6 +6,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os:
           - windows-latest
@@ -44,16 +45,30 @@ jobs:
             libprotobuf-dev \
             protobuf-compiler \
             libyaml-cpp-dev \
-            libwayland-dev \
-            wayland-protocols \
             libx11-dev \
             libxext-dev \
             libxrandr-dev \
             libxcursor-dev \
             libxi-dev \
             libxinerama-dev \
-            libxss-dev
-      
+            libxss-dev \
+            libwayland-dev \
+            wayland-protocols \
+            libdecor-0-dev \
+            libgl-dev \
+            libopengl-dev \
+            libglx-dev \
+            libegl1-mesa-dev \
+            libdrm-dev \
+            libgbm-dev \
+            libpulse-dev \
+            libasound2-dev \
+            libusb-1.0-0-dev \
+            libudev-dev \
+            libunwind-dev \
+            libfribidi-dev \
+            libthai-dev
+                  
       - name: Setup macOS
         if: runner.os == 'macOS'
         run: |
