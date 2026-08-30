@@ -52,8 +52,8 @@ function(install_dlls_by_wildcard wildcard_pattern search_dir dest_dir)
                 RESOLVED_DEPENDENCIES_VAR _resolved
                 UNRESOLVED_DEPENDENCIES_VAR _unresolved
                 DIRECTORIES \${_search_dir} ${MSYS_BIN_DIR}
-                PRE_EXCLUDE_REGEXES${_pre_str}
-                POST_EXCLUDE_REGEXES${_post_str}
+                PRE_EXCLUDE_REGEXES ${_pre_str_rd_pre_exclude}
+                POST_EXCLUDE_REGEXES ${_rd_post_exclude}
             )
 
 			# message(WARNING \"DEST DIR: \${_dest_dir}\")

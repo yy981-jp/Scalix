@@ -5,14 +5,17 @@ if(WIN32)
 	set(_rd_pre_exclude "api-ms-" "ext-ms-")
 	set(_rd_post_exclude ".*system32/.*\\.dll")
 	set(_webp_pattern "libwebp*.dll")
+	set(_webp_from "${CMAKE_SOURCE_DIR}/external/SDL-image/VisualC/external/optional/x64/")
 elseif(APPLE)
 	set(_rd_pre_exclude "")
 	set(_rd_post_exclude "^/usr/lib/.*" "^/System/Library/.*")
 	set(_webp_pattern "libwebp*.dylib")
+	set(_webp_from "${CMAKE_SOURCE_DIR}/external/")
 elseif(UNIX)
 	set(_rd_pre_exclude "^linux-vdso\\.so.*" "^ld-linux.*\\.so.*")
 	set(_rd_post_exclude "^/lib/.*" "^/lib64/.*" "^/usr/lib/.*")
 	set(_webp_pattern "libwebp*.so*")
+	set(_webp_from "${CMAKE_SOURCE_DIR}/external/")
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/install_dlls.cmake)
@@ -33,7 +36,7 @@ install(
 
 install_dlls_by_wildcard(
 	"${_webp_pattern}"
-	"${CMAKE_SOURCE_DIR}/external/"
+	"${_webp_from}"
 	"bin"
 	PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
 	POST_EXCLUDE_REGEXES ${_rd_post_exclude}
