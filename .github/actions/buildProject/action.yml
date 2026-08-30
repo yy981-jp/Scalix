@@ -4,34 +4,9 @@ runs:
   using: composite
   
   steps:
-    - name: Calculate submodule cache key
-      id: submodule-key
-      shell: bash
-      run: |
-        hash=$(git submodule status | sha256sum | cut -d' ' -f1)
-        echo "key=submodules-${hash}" >> "$GITHUB_OUTPUT"
+    - name: get submodules
+      uses: ./.github/actions/getSubmodules
 
-    - name: Restore submodule cache
-      id: submodules
-      uses: actions/cache/restore@v4
-      with:
-        path: external
-        key: ${{ steps.submodule-key.outputs.key }}
-
-    - name: Checkout submodules
-      if: steps.submodules.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        git config --global url."https://github.com/".insteadOf "git@github.com:"
-        git submodule update --init --recursive
-
-    - name: Save submodule cache
-      if: steps.submodules.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: external
-        key: ${{ steps.submodule-key.outputs.key }}
-        
     - name: Checkout assets
       shell: bash
       run: |

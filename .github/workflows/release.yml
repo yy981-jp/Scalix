@@ -53,6 +53,9 @@ jobs:
       - name: Setup env
         uses: ./.github/actions/setupCENV
 
+      - name: get submodules
+        uses: ./.github/actions/getSubmodules
+
       - name: get external install
         uses: ./.github/actions/buildExternal
 
