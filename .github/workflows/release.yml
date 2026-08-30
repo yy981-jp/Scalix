@@ -11,7 +11,7 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
 
-  release:
+  pack:
     needs: build
     strategy:
       fail-fast: false
@@ -53,6 +53,9 @@ jobs:
       - name: Setup env
         uses: ./.github/actions/setupCENV
 
+      - name: get external install
+        uses: ./.github/actions/buildExternal
+
       - name: Package
         working-directory: build
         shell: bash
@@ -66,3 +69,28 @@ jobs:
         with:
           name: dist-${{ runner.os }}-${{ runner.arch }}
           path: build/dist/
+
+
+
+  release:
+    needs: pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+
+      # - name: Create release
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     files: dist/**/*
+
+      - name: test Create release
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: dist
