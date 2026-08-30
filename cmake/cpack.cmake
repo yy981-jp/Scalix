@@ -18,7 +18,7 @@ install(
 	TARGETS ${EXE_NAME}
 	RUNTIME_DEPENDENCIES
 		DIRECTORIES
-			${EXTERNAL_INSTALL_DIR}/bin
+			${EXTERNAL_INSTALL_PREFIX}/bin
 			${COMPILER_BIN_DIR}
 		PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
 		POST_EXCLUDE_REGEXES ${_rd_post_exclude}
@@ -28,7 +28,7 @@ install(
 	RUNTIME DESTINATION bin
 )
 
-install_dlls_by_wildcard("libwebp*" "${EXTERNAL_INSTALL_DIR}/bin" "bin")
+install_dlls_by_wildcard("libwebp*" "${EXTERNAL_INSTALL_PREFIX}/bin" "bin")
 
 # shaders
 install(
