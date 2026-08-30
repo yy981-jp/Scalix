@@ -28,7 +28,7 @@ install(
 	RUNTIME DESTINATION bin
 )
 
-install_dlls_by_wildcard("libwebp*" "${EXTERNAL_INSTALL_PREFIX}/bin" "bin")
+install_dlls_by_wildcard("libwebp*" "${CMAKE_SOURCE_DIR}/external/" "bin")
 
 # shaders
 install(

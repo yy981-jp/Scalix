@@ -65,6 +65,13 @@ jobs:
           name: debug-${{ runner.os }}-${{ runner.arch }}
           path: .
 
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        run: |
+          choco install nsis -y
+          echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+
+
       - name: Package
         working-directory: build
         shell: bash
