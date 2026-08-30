@@ -46,8 +46,8 @@ jobs:
       - name: install sxtr module
         shell: bash
         run: |
-          mkdir -p build/dist
-          cp -r tracker/build/camera.dist* build/dist/
+          mkdir -p build/tracker
+          cp -r tracker/build/camera.dist/* build/tracker/
 
 
       - name: Setup env
@@ -99,6 +99,8 @@ jobs:
           pattern: dist-*
           path: dist
           merge-multiple: true
+
+
 
       # - name: Create release
       #   uses: softprops/action-gh-release@v2
