@@ -45,11 +45,11 @@ runs:
         key: ${{ steps.models-key.outputs.key }}
 
 
-    - name: Debug Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: debug-${{ runner.os }}-${{ runner.arch }}
-        path: .
+    # - name: Debug Upload artifact
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: debug-${{ runner.os }}-${{ runner.arch }}
+    #     path: .
 
 
 
