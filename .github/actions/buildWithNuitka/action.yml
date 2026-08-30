@@ -53,6 +53,13 @@ runs:
 
 
 
+    - name: fix for mac
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        LIBPATH="$(python -c 'import mediapipe, os; print(os.path.join(os.path.dirname(mediapipe.__file__), "tasks/c/libmediapipe.dylib"))')"
+        install_name_tool -id "@rpath/libmediapipe.dylib" "$LIBPATH"
+
     - name: Build with Nuitka
       uses: Nuitka/Nuitka-Action@main
       with:
