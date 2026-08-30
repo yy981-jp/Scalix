@@ -26,57 +26,8 @@ jobs:
           name: build-${{ runner.os }}-${{ runner.arch }}
           path: build/
 
-
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          architecture: '${{ runner.arch }}'
-
-      - name: Install Dependencies
-        run: |
-          pip install -r tracker/requirements.txt
-      
-
-      - name: Caluculate models cache key
-        id: models-key
-        shell: bash
-        run: |
-          mkdir -p tracker/models/
-          hash=$(sha256sum tracker/target.txt | cut -d' ' -f1)
-          echo "key=models-${hash}" >> "$GITHUB_OUTPUT"
-
-
-
-      - name: Restore models cache
-        id: models
-        uses: actions/cache/restore@v4
-        with:
-          path: tracker/models
-          key: ${{ steps.models-key.outputs.key }}
-
-      - name: Download Models
-        working-directory: tracker
-        run: python getModels.py target.txt
-
-      - name: Save models cache
-        if: steps.models.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: tracker/models
-          key: ${{ steps.models-key.outputs.key }}
-
-
       - name: Build with Nuitka
-        uses: Nuitka/Nuitka-Action@main
-        with:
-          nuitka-version: main
-          script-name: tracker/camera.py
-          mode: standalone
-          output-dir: tracker/build
-          user-package-configuration-file: tracker/mediapipe-tasks-c.nuitka-package.config.yml
-          include-data-files: |
-            tracker/models/pose_landmarker_full.task=models/pose_landmarker_full.task
+        uses: ./.github/actions/buildWithNuitka
 
       - name: install sxtr module
         run: |
