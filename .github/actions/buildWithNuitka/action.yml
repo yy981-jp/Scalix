@@ -10,6 +10,7 @@ runs:
         architecture: '${{ runner.arch }}'
 
     - name: Install Dependencies
+      shell: bash
       run: |
         pip install -r tracker/requirements.txt
     
@@ -33,6 +34,7 @@ runs:
 
     - name: Download Models
       working-directory: tracker
+      shell: bash
       run: python getModels.py target.txt
 
     - name: Save models cache

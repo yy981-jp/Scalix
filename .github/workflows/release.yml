@@ -34,6 +34,9 @@ jobs:
           mkdir -p build/dist
           cp -r tracker/build/camera.dist* build/dist/
 
+      - name: Package
+        working-directory: build
+        run: cpack --config CPackConfig.cmake
 
 
       - name: Upload artifact
