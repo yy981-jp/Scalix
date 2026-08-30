@@ -37,13 +37,17 @@ jobs:
         uses: ./.github/actions/buildWithNuitka
 
       - name: install sxtr module
+        shell: bash
         run: |
           mkdir -p build/dist
           cp -r tracker/build/camera.dist* build/dist/
 
       - name: Package
         working-directory: build
-        run: cpack --config CPackConfig.cmake
+        shell: bash
+        run: |
+          cpack --config CPackConfig.cmake
+          rm -rf dist/_CPack_Packages
 
 
       - name: Upload artifact
