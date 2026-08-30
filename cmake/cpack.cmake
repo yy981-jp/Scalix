@@ -60,7 +60,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
 	"High-performance 3D avatar engine utilizing C++23 and bgfx for maximizing VRChat/Unity asset usage.")
 
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
-set(CPACK_RESOURCE_FILE_DESCRIPTION "${CMAKE_SOURCE_DIR}/cmake/cpack-description.txt")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/cmake/cpack-description.txt")
 
 set(CPACK_THREADS 0)
 
