@@ -40,6 +40,7 @@ jobs:
 
       - name: Caluculate models cache key
         id: models-key
+        shell: bash
         run: |
           hash=$(sha256sum tracker/target.txt | cut -d' ' -f1)
           echo "key=models-${hash}" >> "$GITHUB_OUTPUT"
