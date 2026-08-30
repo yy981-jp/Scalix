@@ -56,6 +56,12 @@ jobs:
       - name: get external install
         uses: ./.github/actions/buildExternal
 
+      - name: Upload Debug artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-${{ runner.os }}-${{ runner.arch }}
+          path: .
+
       - name: Package
         working-directory: build
         shell: bash
