@@ -38,6 +38,32 @@ jobs:
           pip install -r tracker/requirements.txt
       
 
+      - name: Caluculate models cache key
+        id: models-key
+        run: |
+          hash=$(sha256sum tracker/target.txt | cut -d' ' -f1)
+          echo "key=models-${hash}" >> "$GITHUB_OUTPUT"
+
+
+      - name: Restore models cache
+        id: models
+        uses: actions/cache/restore@v4
+        with:
+          path: tracker/models
+          key: ${{ steps.models-key.outputs.key }}
+
+      - name: Download Models
+        working-directory: tracker
+        run: python getModels.py target.txt
+
+      - name: Save models cache
+        if: steps.models.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: tracker/models
+          key: ${{ steps.models-key.outputs.key }}
+
+
       - name: Build with Nuitka
         uses: Nuitka/Nuitka-Action@main
         with:
