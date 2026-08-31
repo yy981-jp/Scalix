@@ -20,7 +20,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 	float fx = -lutsv.getSin(yaw);
 	float fz =  lutsv.getCos(yaw);
 
-	float rx =  fz;   // = cos(yaw)
+	float rx = -fz;   // = cos(yaw)
 	float rz = -fx;   // = sin(yaw)
 
 	bool walking = false;
@@ -30,23 +30,23 @@ void Avatar::update(GameContext& ctx, float dt) {
 
 	if (has(ctx.keyStat, KCode::W)) {
 		walking = true;
-		pos.x += fx * aplSpeed;
+		pos.x -= fx * aplSpeed;
 		pos.z += fz * aplSpeed;
 	}
 	if (has(ctx.keyStat, KCode::S)) {
 		walking = true;
-		pos.x -= fx * aplSpeed;
+		pos.x += fx * aplSpeed;
 		pos.z -= fz * aplSpeed;
 	}
 	if (has(ctx.keyStat, KCode::A)) {
 		walking = true;
-		pos.x += rx * aplSpeed * rlMove;
-		pos.z += rz * aplSpeed * rlMove;
+		pos.x -= rx * aplSpeed * rlMove;
+		pos.z -= rz * aplSpeed * rlMove;
 	}
 	if (has(ctx.keyStat, KCode::D)) {
 		walking = true;
-		pos.x -= rx * aplSpeed * rlMove;
-		pos.z -= rz * aplSpeed * rlMove;
+		pos.x += rx * aplSpeed * rlMove;
+		pos.z += rz * aplSpeed * rlMove;
 	}
 
 	// if (has(ctx.keyStat, KCode::T))
