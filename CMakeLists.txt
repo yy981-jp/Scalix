@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 4.3)
 project(
 	scalix
 	VERSION 0.1.0
@@ -27,6 +27,21 @@ include(cmake/shaders.cmake)
 include(GNUInstallDirs)
 
 # Scalix
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(EXTERNAL_INSTALL_PREFIX
+		"${CMAKE_SOURCE_DIR}/external/install/debug"
+	)
+else()
+	set(EXTERNAL_INSTALL_PREFIX
+		"${CMAKE_SOURCE_DIR}/external/install/release"
+	)
+endif()
+
+list(PREPEND CMAKE_PREFIX_PATH
+	"${EXTERNAL_INSTALL_PREFIX}"
+)
+
 add_subdirectory(engine)
 add_subdirectory(importer)
 add_subdirectory(dev)

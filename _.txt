@@ -184,32 +184,19 @@ dep-dllはSHTからシステムを転用できそう?
 
 
 sxtr-debug:
-	bone.restDir, currentDirは正常
-	worldDelta, bone.globalBindRot, bone.childLocalDir もどうやら正常そう(多分)
-
----
-今は、
-node.mtx = Mtx::fromTRS(node.trs);
-した後に、
-node.mtx.rot()
-すると、
-
-(x,y,z,w)
-↓
-(-x,-y,-z,w)
-
-になる。
-
-おそらく
-matrixRot = inverse(trsRot)
-になってしまっている
-
-
-Mtx::fromTRSのinveseが原因でloaderの共役外したら正常に動いた
-よｓｓｓｓっしゃああああああああ!!!!! 200時間のデバッグ地獄がやっと報われた!!!!!
-あとは操作がいろいろ反転しちゃってるから修正して完全解決
--> 解決済み (cc258b31b0706ba1df906ece28b7cdaf2aee4cf9)
+	Mtx::fromTRSのinveseが原因でloaderの共役外したら正常に動いた
+	よｓｓｓｓっしゃああああああああ!!!!! 200時間のデバッグ地獄がやっと報われた!!!!!
+	あとは操作がいろいろ反転しちゃってるから修正して完全解決
+	-> 解決済み (cc258b31b0706ba1df906ece28b7cdaf2aee4cf9)
 
 
 pyコンパイルコマンド案
 	nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --include-data-files=..\.venv\Lib\site-packages\mediapipe\tasks\c\libmediapipe.dll=mediapipe\tasks\c\libmediapipe.dll --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py
+
+	nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --user-package-configuration-file=..\mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task --verbose ..\camera.py > _.log 2>&1
+	
+	nuitka --standalone --jobs=0 --user-package-configuration-file=..\mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py
+	
+	
+	
+	nuitka --standalone --jobs=0 --user-package-configuration-file=mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=models/pose_landmarker_full.task=models/pose_landmarker_full.task camera.py --output-dir=../build/tracker

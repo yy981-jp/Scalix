@@ -4,12 +4,18 @@ get_filename_component(COMPILER_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
 if(WIN32)
 	set(_rd_pre_exclude "api-ms-" "ext-ms-")
 	set(_rd_post_exclude ".*system32/.*\\.dll")
+	set(_webp_pattern "libwebp*.dll")
+	set(_webp_from "${CMAKE_SOURCE_DIR}/external/SDL-image/VisualC/external/optional/x64/")
 elseif(APPLE)
 	set(_rd_pre_exclude "")
 	set(_rd_post_exclude "^/usr/lib/.*" "^/System/Library/.*")
+	set(_webp_pattern "libwebp*.dylib")
+	set(_webp_from "${CMAKE_SOURCE_DIR}/external/")
 elseif(UNIX)
 	set(_rd_pre_exclude "^linux-vdso\\.so.*" "^ld-linux.*\\.so.*")
 	set(_rd_post_exclude "^/lib/.*" "^/lib64/.*" "^/usr/lib/.*")
+	set(_webp_pattern "libwebp*.so*")
+	set(_webp_from "${CMAKE_SOURCE_DIR}/external/")
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/install_dlls.cmake)
@@ -18,26 +24,23 @@ install(
 	TARGETS ${EXE_NAME}
 	RUNTIME_DEPENDENCIES
 		DIRECTORIES
-			# ${CMAKE_PREFIX_PATH}/bin
+			${EXTERNAL_INSTALL_PREFIX}/bin
 			${COMPILER_BIN_DIR}
-			# "C:/msys64/mingw64/bin"
 		PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
 		POST_EXCLUDE_REGEXES ${_rd_post_exclude}
 		RUNTIME DESTINATION bin
+		LIBRARY DESTINATION bin
+		FRAMEWORK DESTINATION bin
 	RUNTIME DESTINATION bin
 )
 
-# message(WARNING ${COMPILER_BIN_DIR})
-
-# file(GET_RUNTIME_DEPENDENCIES
-#     LIBRARIES "${CMAKE_PREFIX_PATH}/bin/libwebp-*"           # 依存関係を調べたい対象のDLLパス
-#     DIRECTORIES "${CMAKE_PREFIX_PATH}/bin"      # DLLを探す検索ディレクトリのリスト
-#     RESOLVED_DEPENDENCIES_VAR resolved_deps   # 解決された依存DLLのパスが入る変数
-#     UNRESOLVED_DEPENDENCIES_VAR unresolved_deps # 未解決の依存DLLが入る変数
-# )
-
-
-install_dlls_by_wildcard("libwebp*" "${COMPILER_BIN_DIR}" "bin")
+install_dlls_by_wildcard(
+	"${_webp_pattern}"
+	"${_webp_from}"
+	"bin"
+	PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
+	POST_EXCLUDE_REGEXES ${_rd_post_exclude}
+)
 
 # shaders
 install(
@@ -63,11 +66,19 @@ set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/dist")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY ${PROJECT_NAME})
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/yy981-jp/Scalix")
+set(CPACK_PACKAGE_VENDOR "yy981")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+	"High-performance 3D avatar engine utilizing C++23 and bgfx for maximizing VRChat/Unity asset usage.")
+
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/cmake/cpack-description.txt")
+
+set(CPACK_THREADS 0)
 
 if(WIN32)
-	# set(CPACK_GENERATOR "ZIP;NSIS")
-	set(CPACK_GENERATOR "ZIP")
+	set(CPACK_GENERATOR "ZIP;NSIS")
+	# set(CPACK_GENERATOR "ZIP")
 elseif(APPLE)
 	set(CPACK_GENERATOR "DragNDrop")
 elseif(UNIX)

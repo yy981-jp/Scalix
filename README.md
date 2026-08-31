@@ -1,7 +1,7 @@
 # Scalix
 
-[![Build](https://github.com/yy981-jp/Scalix/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/build.yaml)
-[![Doxygen](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yaml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yaml)
+[![Build](https://github.com/yy981-jp/Scalix/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/build.yml)
+[![Doxygen](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yml)
 
 ## OSS
 

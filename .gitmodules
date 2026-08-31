@@ -31,9 +31,6 @@
 [submodule "assets"]
 	path = resources/assets
 	url = git@github.com:yy981-jp/Scalix-Assets.git
-[submodule "external/subprocess"]
-	path = external/subprocess
-	url = git@github.com:sheredom/subprocess.h.git
 [submodule "external/SDL"]
 	path = external/SDL
 	url = git@github.com:libsdl-org/SDL.git
