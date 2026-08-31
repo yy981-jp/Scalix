@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Project
+        uses: ./.github/actions/buildProject
+
+
+
+      - name: Upload artifact
+        # if: github.event_name != 'workflow_call'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ runner.os }}-${{ runner.arch }}
+          path: build/
+
+      # - name: Upload artifact (release)
+      #   if: github.event_name == 'workflow_call'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: build-rel-${{ runner.os }}-${{ runner.arch }}
+      #     path: build/
+      #     retention-days: 3

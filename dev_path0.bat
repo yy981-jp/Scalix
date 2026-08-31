@@ -1,1 +1,1 @@
-start "path0 test" /max cmd /k set path=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Users\%username%\AppData\Local\Microsoft\WindowsApp
+@start "path0 test" /max cmd /k set path=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Users\%username%\AppData\Local\Microsoft\WindowsApp

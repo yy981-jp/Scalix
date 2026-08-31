@@ -1,4 +1,4 @@
-#include <anim/AnimSystem.h>
+#include <anim/animSystem.h>
 
 #include <core/avatar.h>
 
