@@ -188,7 +188,11 @@ void Engine::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
-	avatarSystem.loadData({{0,0}});
+	avatarSystem.loadData({
+		UUID::fromString(
+			cfg.get()["avatar"]["id"].get<std::string>()
+		)
+	});
 	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====

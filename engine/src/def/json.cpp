@@ -11,8 +11,10 @@ json readJson(const std::string& path) {
 	return j;
 }
 
-void writeJson(const json& j, const std::string& path) {
+void writeJson(const json& j, const std::string& path, bool indent) {
 	std::ofstream ofs(path);
 	if (!ofs) throw std::runtime_error("writeJson()::ファイルを開けませんでした");
-	ofs << j;
+	
+	if (indent) ofs << j.dump(4);
+	else ofs << j;
 }

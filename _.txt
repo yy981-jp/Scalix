@@ -181,6 +181,10 @@ dep-dllはSHTからシステムを転用できそう?
 
 
 
+humanoid 検出: hair root 検出 実装途中
+
+
+blender 4.2.23 LTS
 
 
 sxtr-debug:
