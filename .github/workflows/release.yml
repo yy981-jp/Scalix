@@ -1,11 +1,13 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'release-*'
     branches:
       - ci/github-actions
+
 
 jobs:
   build:
@@ -102,13 +104,26 @@ jobs:
 
 
 
-      # - name: Create release
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     files: dist/**/*
-
       - name: test Create release
         uses: actions/upload-artifact@v4
         with:
           name: release
           path: dist
+
+
+          
+      - name: Calculate version
+        if: startsWith(github.ref, 'refs/tags/release-')
+        id: version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#release-}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/release-')
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Scalix ${{ steps.version.outputs.version }}
+
