@@ -29,6 +29,8 @@ void AvatarSystem::loadData(const std::vector<AvatarId> ids) {
 		avatars.emplace_back(id);
 		avatarIndex[id] = idx++;
 	}
+
+	playableAvatar = avatars[0].id;
 }
 
 void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
@@ -233,39 +235,6 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				jointMtx[i] = avatar.globalMtx[nodeIdx] * skin.invBind[i];
 			}
 		}
-
-		// if (motionTraceEnabled()) {
-		// 	for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
-		// 		if (!avatar.humanoid.has(bone)) continue;
-		// 		const Node& node = nodeReg.get(avatar.humanoid.bones[(size_t)bone]);
-		// 		const Mtx& global = avatar.globalMtx[node.id];
-		// 		const vec3f globalPos = global.pos();
-		// 		const Quat globalRot = global.rot();
-		// 		const Mtx& skinMtx = allJointMtx[node.skinIndex][node.jointIndex];
-		// 		const vec3f skinPos = skinMtx.pos();
-		// 		const Mtx bindMtx = Mtx::inverse(avatar.model.skins[node.skinIndex].invBind[node.jointIndex]);
-		// 		const vec3f bindJointPos = bindMtx.pos();
-		// 		const vec3f skinnedJointPos = {bx::mulH(bindJointPos, skinMtx.data())};
-		// 		const vec3f skinError = skinnedJointPos - globalPos;
-				
-		// 		printf(
-		// 			"MOTION draw bone=%d "
-		// 			"globalPos=(%.5f,%.5f,%.5f) "
-		// 			"globalRot=(%.5f,%.5f,%.5f,%.5f) "
-		// 			"skinTranslation=(%.5f,%.5f,%.5f) "
-		// 			"bindJoint=(%.5f,%.5f,%.5f) "
-		// 			"skinnedJoint=(%.5f,%.5f,%.5f) "
-		// 			"skinError=(%.6f,%.6f,%.6f)\\n",
-		// 			static_cast<int>(bone),
-		// 			globalPos.x,globalPos.y,globalPos.z,
-		// 			globalRot.x,globalRot.y,globalRot.z,globalRot.w,
-		// 			skinPos.x,skinPos.y,skinPos.z,
-		// 			bindJointPos.x,bindJointPos.y,bindJointPos.z,
-		// 			skinnedJointPos.x,skinnedJointPos.y,skinnedJointPos.z,
-		// 			skinError.x,skinError.y,skinError.z
-		// 		);
-		// 	}
-		// }
 
 
 		// === nodeのloop 描画loop本体とも言える ===

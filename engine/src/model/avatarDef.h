@@ -10,6 +10,15 @@ struct UUID {
 
 	UUID(const uint64_t& high, const uint64_t& low): high(high), low(low) {}
 	UUID(): high(UINT64_MAX), low(UINT64_MAX) {}
+	static UUID fromString(const std::string& str) {
+		if (str.size() != 32) throw std::invalid_argument("Invalid UUID");
+		
+		UUID uuid;
+		uuid.high = std::stoull(str.substr(0, 16), nullptr, 16);
+		uuid.low = std::stoull(str.substr(16, 16), nullptr, 16);
+
+		return uuid;
+	}
 
 	std::string hex() const { return std::format("{:016x}{:016x}", high, low); }
 
