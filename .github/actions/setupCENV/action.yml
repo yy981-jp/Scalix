@@ -1,4 +1,5 @@
 name: Setup C env
+description: setup C env
 
 runs:
   using: composite

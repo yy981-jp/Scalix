@@ -221,15 +221,15 @@ void Engine::gameInit() {
 	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
 	// }
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},101)) )); // back b
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},199)) )); // 
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
 
 	// Quat q = Quat::fromAxisAngle(
 	// 	{0, 1, 0},
