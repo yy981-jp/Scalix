@@ -1,0 +1,10 @@
+bazel build ^
+	--cpu=x64_windows ^
+	--compiler=mingw-gcc ^
+	--define MEDIAPIPE_DISABLE_GPU=1 ^
+	--repo_env=HERMETIC_PYTHON_VERSION=3.12 ^
+	--copt=-DHAVE_PTHREAD ^
+	--copt=-D_WIN32_WINNT=0x0600 ^
+	--host_copt=-D_WIN32_WINNT=0x0600 ^
+	--verbose_failures ^
+	//mediapipe/examples/desktop/hello_world:hello_world
