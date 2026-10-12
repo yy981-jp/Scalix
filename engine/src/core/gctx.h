@@ -1,6 +1,6 @@
 #pragma once
 
-// #include <tracker/poseSolver.h>
+// #include <mocap/poseSolver.h>
 #include <core/key.h>
 #include <core/camera.h>
 

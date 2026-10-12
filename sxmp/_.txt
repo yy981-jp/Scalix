@@ -57,3 +57,16 @@ bazel run //:refresh_compile_commands ^
 
 external\mediapipe\bazel-bin\external\sxmp\sxmp.exe
 
+
+
+
+
+
+
+bazel build \
+  --compiler=gcc \
+  --reuse_sandbox_directories \
+  --define MEDIAPIPE_DISABLE_GPU=1 \
+  --copt=-fno-canonical-system-headers \
+  --linkopt=-lopencv_geometry \
+  @sxmp//:sxmp_be

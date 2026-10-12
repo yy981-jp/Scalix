@@ -2,7 +2,7 @@
 #include "proto/instr.pb.h"
 #include <physics/springBone.h>
 #include <stdexcept>
-#include <tracker/controller.h>
+#include <mocap/controller.h>
 #include <core/engine.h>
 
 #include <gfx/shader.h>
