@@ -7,8 +7,6 @@
 #include <string>
 #include <utility>
 
-#include "../external/CLI11/include/CLI/CLI.hpp"
-
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -26,8 +24,8 @@ constexpr float kVisibilityThreshold = 0.5f;
 
 // Connections used by the original Python sxtr-camera implementation.
 constexpr int kPoseConnections[][2] = {
-	{0, 1}, {1, 2}, {2, 3}, {0, 4}, {4, 5}, {5, 6},
-	{7, 9}, {8, 10}, {9, 10}, {11, 12},
+	{0, 1},	 {1, 2},	 {2, 3},	 {0, 4},	 {4, 5},	 {5, 6},
+	{7, 9},	 {8, 10},	{9, 10},	{11, 12},
 	{11, 13}, {13, 15}, {15, 17}, {15, 19}, {15, 21}, {17, 19},
 	{12, 14}, {14, 16}, {16, 18}, {16, 20}, {16, 22}, {18, 20},
 	{11, 23}, {12, 24}, {23, 24},
@@ -46,67 +44,75 @@ struct Options {
 	bool background = false;
 };
 
+void PrintUsage(const char* executable) {
+	std::cout
+		<< "Usage: " << executable
+		<< " [<model.task>] [--model <name-or-path>] [--background|-b]\n\n"
+		<< "Examples:\n"
+		<< "	" << executable
+		<< " C:\\cpp\\scalix\\tracker\\models\\pose_landmarker_full.task\n"
+		<< "	" << executable << " --model full\n"
+		<< "	" << executable << " --model C:\\models\\pose_landmarker_full.task\n\n"
+		<< "Without --background, ESC closes the preview window. In background "
+				"mode, press Ctrl+C to stop.\n";
+}
+
 bool LooksLikeTaskPath(const std::string& value) {
 	if (value.find('/') != std::string::npos ||
 			value.find('\\') != std::string::npos) {
 		return true;
 	}
-
 	constexpr char kTaskExtension[] = ".task";
 	constexpr std::size_t kExtensionLength = sizeof(kTaskExtension) - 1;
 	return value.size() >= kExtensionLength &&
 		value.compare(value.size() - kExtensionLength, kExtensionLength,
-			kTaskExtension) == 0;
+		kTaskExtension) == 0;
 }
 
 std::string ResolveModelArgument(const std::string& value) {
-	if (LooksLikeTaskPath(value)) return value;
+	if (LooksLikeTaskPath(value)) {
+		return value;
+	}
 	return "models/pose_landmarker_" + value + ".task";
 }
 
-bool ParseArguments(int argc, char* argv[], Options* options, int* exit_code) {
-	std::string positional_model;
-	std::string model_argument;
+bool ParseArguments(int argc, char* argv[], Options* options) {
+	bool positional_model_seen = false;
 
-	CLI::App app{"Run MediaPipe PoseLandmarker using camera 0."};
-	app.name(argv[0]);
-	app.footer(
-		"Examples:\n"
-		"  " + std::string(argv[0]) + R"( C:\cpp\scalix\tracker\models\pose_landmarker_full.task)" + "\n"
-		"  " + std::string(argv[0]) + " --model full\n"
-		"  " + std::string(argv[0]) + R"( --model C:\models\pose_landmarker_full.task)" + "\n\n"
-		"Without --background, ESC closes the preview window. In background "
-		"mode, press Ctrl+C to stop.");
+	for (int i = 1; i < argc; ++i) {
+		const std::string arg(argv[i]);
 
-	auto* positional_option = app.add_option(
-		"model_path", positional_model,
-		"Explicit model file path (optional positional argument).");
-	auto* model_option = app.add_option(
-		"--model", model_argument,
-		"Model name (e.g. full) or model file path.");
-	app.add_flag(
-		"-b,--background", options->background,
-		"Disable the preview window; press Ctrl+C to stop.");
+		if (arg == "--help" || arg == "-h") {
+			PrintUsage(argv[0]);
+			return false;
+		}
+		if (arg == "--background" || arg == "-b") {
+			options->background = true;
+			continue;
+		}
+		if (arg == "--model") {
+			if (i + 1 >= argc) {
+				std::cerr << "Missing value after --model.\n";
+				PrintUsage(argv[0]);
+				return false;
+			}
+			options->model_path = ResolveModelArgument(argv[++i]);
+			continue;
+		}
+		if (!arg.empty() && arg[0] == '-') {
+			std::cerr << "Unknown option: " << arg << '\n';
+			PrintUsage(argv[0]);
+			return false;
+		}
+		if (positional_model_seen) {
+			std::cerr << "Only one positional model path is accepted.\n";
+			PrintUsage(argv[0]);
+			return false;
+		}
 
-	try {
-		app.parse(argc, argv);
-	} catch (const CLI::ParseError& error) {
-		*exit_code = app.exit(error);
-		return false;
-	}
-
-	if (positional_option->count() > 0 && model_option->count() > 0) {
-		std::cerr << "Error: specify the model either as a positional path or with --model, not both.\n";
-		std::cerr << app.help();
-		*exit_code = 2;
-		return false;
-	}
-
-	// A positional argument is always treated as an explicit filesystem path.
-	if (model_option->count() > 0) {
-		options->model_path = ResolveModelArgument(model_argument);
-	} else if (positional_option->count() > 0) {
-		options->model_path = positional_model;
+		// A positional argument is always treated as an explicit filesystem path.
+		options->model_path = arg;
+		positional_model_seen = true;
 	}
 
 	return true;
@@ -121,9 +127,8 @@ bool IsVisible(const NormalizedLandmark& landmark) {
 }
 
 cv::Point ToImagePoint(const NormalizedLandmark& landmark, int width, int height) {
-	return cv::Point(
-		static_cast<int>(landmark.x * width),
-		static_cast<int>(landmark.y * height));
+	return cv::Point(static_cast<int>(landmark.x * width),
+			static_cast<int>(landmark.y * height));
 }
 
 void DrawPoseLandmarks(
@@ -135,45 +140,54 @@ void DrawPoseLandmarks(
 		for (const auto& connection : kPoseConnections) {
 			const auto a = static_cast<std::size_t>(connection[0]);
 			const auto b = static_cast<std::size_t>(connection[1]);
-			if (a >= landmarks.size() || b >= landmarks.size()) continue;
-			if (!IsVisible(landmarks[a]) || !IsVisible(landmarks[b])) continue;
+			if (a >= landmarks.size() || b >= landmarks.size()) {
+				continue;
+			}
+			if (!IsVisible(landmarks[a]) || !IsVisible(landmarks[b])) {
+				continue;
+			}
 
-			cv::line(
-				image,
-				ToImagePoint(landmarks[a], image.cols, image.rows),
-				ToImagePoint(landmarks[b], image.cols, image.rows),
-				cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
+			cv::line(image, ToImagePoint(landmarks[a], image.cols, image.rows),
+							 ToImagePoint(landmarks[b], image.cols, image.rows),
+							 cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
 		}
 
 		for (std::size_t i = 0; i < landmarks.size(); ++i) {
 			const auto& landmark = landmarks[i];
-			if (!IsVisible(landmark)) continue;
+			if (!IsVisible(landmark)) {
+				continue;
+			}
 
 			const cv::Point point = ToImagePoint(landmark, image.cols, image.rows);
 			cv::circle(image, point, 4, cv::Scalar(0, 255, 0), -1, cv::LINE_AA);
-			cv::putText(
-				image, std::to_string(i), cv::Point(point.x + 5, point.y - 5),
-				cv::FONT_HERSHEY_SIMPLEX, 0.35, cv::Scalar(0, 255, 255), 1, cv::LINE_AA);
+			cv::putText(image, std::to_string(i), cv::Point(point.x + 5, point.y - 5),
+									cv::FONT_HERSHEY_SIMPLEX, 0.35,
+									cv::Scalar(0, 255, 255), 1, cv::LINE_AA);
 		}
 	}
 }
 
 mediapipe::Image ToMediaPipeImage(const cv::Mat& rgb) {
 	auto frame = std::make_shared<mediapipe::ImageFrame>();
-	frame->CopyPixelData(
-		mediapipe::ImageFormat::SRGB, rgb.cols, rgb.rows,
-		static_cast<int>(rgb.step), rgb.data,
-		mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+	frame->CopyPixelData(mediapipe::ImageFormat::SRGB, rgb.cols, rgb.rows,
+						static_cast<int>(rgb.step), rgb.data,
+						mediapipe::ImageFrame::kDefaultAlignmentBoundary);
 	return mediapipe::Image(std::move(frame));
 }
 
-} // namespace
+}	// namespace
 
 int main(int argc, char* argv[]) {
 	Options options;
-	int parse_exit_code = 0;
-	if (!ParseArguments(argc, argv, &options, &parse_exit_code)) {
-		return parse_exit_code;
+	if (!ParseArguments(argc, argv, &options)) {
+		// --help is a successful request; malformed arguments are an error.
+		for (int i = 1; i < argc; ++i) {
+			const std::string arg(argv[i]);
+			if (arg == "--help" || arg == "-h") {
+				return 0;
+			}
+		}
+		return 2;
 	}
 
 	std::signal(SIGINT, HandleSigInt);
@@ -184,8 +198,6 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	std::cout << "GUI backend: " << cv::currentUIFramework() << '\n';
-
 	auto landmarker_options =
 		std::make_unique<mediapipe::tasks::vision::pose_landmarker::PoseLandmarkerOptions>();
 	landmarker_options->base_options.model_asset_path = options.model_path;
@@ -195,18 +207,18 @@ int main(int argc, char* argv[]) {
 		mediapipe::tasks::vision::pose_landmarker::PoseLandmarker::Create(std::move(landmarker_options));
 	if (!landmarker_or.ok()) {
 		std::cerr << "PoseLandmarker creation failed: "
-			<< landmarker_or.status().ToString() << '\n';
+				<< landmarker_or.status().ToString() << '\n';
 		capture.release();
 		return 1;
 	}
 	auto landmarker = std::move(landmarker_or).value();
 
 	std::cout << "PoseLandmarker initialized successfully.\n"
-		<< "Model: " << options.model_path << '\n'
-		<< "Camera: 0\n"
-		<< (options.background
-			? "Preview disabled; press Ctrl+C to stop.\n"
-			: "Preview enabled; press ESC to stop.\n");
+				<< "Model: " << options.model_path << '\n'
+				<< "Camera: 0\n"
+				<< (options.background
+					? "Preview disabled; press Ctrl+C to stop.\n"
+					: "Preview enabled; press ESC to stop.\n");
 
 	const auto start_time = std::chrono::steady_clock::now();
 	std::int64_t previous_timestamp_ms = -1;
@@ -236,14 +248,14 @@ int main(int argc, char* argv[]) {
 					break;
 				default:
 					std::cerr << "Unsupported camera frame channel count: "
-						<< frame.channels() << '\n';
+										<< frame.channels() << '\n';
 					exit_code = 1;
 					g_stop_requested = 1;
 					continue;
 			}
 
-			const auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-				std::chrono::steady_clock::now() - start_time).count();
+			const auto elapsed_ms = 
+				std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();
 			const std::int64_t timestamp_ms =
 				std::max<std::int64_t>(elapsed_ms, previous_timestamp_ms + 1);
 			previous_timestamp_ms = timestamp_ms;
@@ -251,7 +263,7 @@ int main(int argc, char* argv[]) {
 			auto result_or = landmarker->DetectForVideo(ToMediaPipeImage(rgb), timestamp_ms);
 			if (!result_or.ok()) {
 				std::cerr << "PoseLandmarker inference failed: "
-					<< result_or.status().ToString() << '\n';
+						<< result_or.status().ToString() << '\n';
 				exit_code = 1;
 				break;
 			}
@@ -270,12 +282,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	capture.release();
-	if (!options.background) cv::destroyAllWindows();
+	if (!options.background) {
+		cv::destroyAllWindows();
+	}
 
 	const auto close_status = landmarker->Close();
 	if (!close_status.ok()) {
 		std::cerr << "PoseLandmarker close failed: "
-			<< close_status.ToString() << '\n';
+					<< close_status.ToString() << '\n';
 		exit_code = 1;
 	} else {
 		std::cout << "PoseLandmarker closed successfully.\n";

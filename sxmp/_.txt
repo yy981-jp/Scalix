@@ -56,3 +56,4 @@ bazel run //:refresh_compile_commands ^
 	--linkopt=-lopencv_geometry
 
 external\mediapipe\bazel-bin\external\sxmp\sxmp.exe
+
