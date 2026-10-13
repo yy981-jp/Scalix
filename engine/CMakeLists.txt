@@ -79,15 +79,19 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 
+target_include_directories(${EXE_NAME} SYSTEM PRIVATE
+	${CMAKE_SOURCE_DIR}/external
+	${CMAKE_SOURCE_DIR}/external/nlohmann/include
+	${CMAKE_SOURCE_DIR}/external/asio/include
+	${CMAKE_SOURCE_DIR}/external/opencv/include
+	${EXTERNAL_INSTALL_PREFIX}/include
+	${EXTERNAL_INSTALL_PREFIX}/include/opencv5
+)
+
 target_include_directories(${EXE_NAME} PRIVATE
-	SYSTEM
-		${CMAKE_SOURCE_DIR}/external
-		${CMAKE_SOURCE_DIR}/external/nlohmann/include
-		${CMAKE_SOURCE_DIR}/external/asio/include
-		${CMAKE_SOURCE_DIR}/external/opencv/include
-		${CMAKE_SOURCE_DIR}/engine/src
-		${CMAKE_SOURCE_DIR}/engine/generated
-		${CMAKE_SOURCE_DIR}
+	${CMAKE_SOURCE_DIR}/engine/src
+	${CMAKE_SOURCE_DIR}/engine/generated
+	${CMAKE_SOURCE_DIR}
 )
 
 get_target_property(BGFX_LINK_LIBS bgfx::bgfx INTERFACE_LINK_LIBRARIES)
