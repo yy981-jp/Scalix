@@ -49,7 +49,7 @@ void SXMocapBackend::init(const std::string& modelpath) {
 }
 
 
-void SXMocapBackend::tick(const cv::Mat& frame) {
+void SXMocapBackend::tick(std::span<SXMPLandmark> result, const cv::Mat& frame) {
 	cv::Mat rgb;
 	switch (frame.channels()) {
 		case 1:
@@ -73,13 +73,25 @@ void SXMocapBackend::tick(const cv::Mat& frame) {
 		std::max<std::int64_t>(elapsed_ms, previous_timestamp_ms + 1);
 	previous_timestamp_ms = timestamp_ms;
 
-	auto result_or = data->landmarker->DetectForVideo(ToMediaPipeImage(rgb), timestamp_ms);
-	if (!result_or.ok())
-		throw std::runtime_error("PoseLandmarker inference failed: " + result_or.status().ToString());
+	auto mp_result_or = data->landmarker->DetectForVideo(ToMediaPipeImage(rgb), timestamp_ms);
+	if (!mp_result_or.ok())
+		throw std::runtime_error("PoseLandmarker inference failed: " + mp_result_or.status().ToString());
 
-	const auto result = std::move(result_or).value();
-	
-	result.pose_world_landmarks; // TODO: この結果データをどう扱うか
+	const auto mp_result = std::move(mp_result_or).value();
+
+	if (!mp_result.pose_world_landmarks.size()) {
+		for (auto& el: result) {
+			el.visibility = 0;
+		}
+		return;
+	}
+
+	for (size_t i = 0; i < result.size(); i++) {
+		const auto lm = mp_result.pose_world_landmarks[0].landmarks[i];
+		auto rlm = result[i];
+
+		rlm.x = lm.x;   rlm.y = lm.y;   rlm.z = lm.z;
+	}
 }
 
 

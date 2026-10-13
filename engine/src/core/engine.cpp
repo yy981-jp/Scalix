@@ -90,7 +90,7 @@ Engine::Engine() {
 
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
-	cfg.init((syspath.data/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
+	cfg.init((syspath.userdata/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
 
 	gctx.poseSolver = poseSolver;

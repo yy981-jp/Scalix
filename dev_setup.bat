@@ -2,4 +2,4 @@
 
 start "scalix" /max cmd /k cd build ^& chcp 65001
 start "sxtr" /max cmd /k cd tracker ^& call .venv\scripts\activate
-start "sx: mocap" /max cmd /k cd mocap
+start "sx: mocap" /max cmd /k cd sxmp

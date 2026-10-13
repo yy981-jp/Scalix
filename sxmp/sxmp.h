@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <cstdint>
+#include <span>
 
 #include <opencv2/core.hpp>
 
@@ -19,6 +20,10 @@
 #endif
 
 
+struct SXMPLandmark {
+	float x, y, z, visibility;
+};
+
 struct SXMPBE_impl;
 
 class SXMP_API SXMocapBackend {
@@ -29,6 +34,7 @@ class SXMP_API SXMocapBackend {
 public:
 	SXMocapBackend();
 	void init(const std::string& modelpath);
-	void tick(const cv::Mat& frame);
+	void tick(std::span<SXMPLandmark> result, const cv::Mat& frame);
+
 	~SXMocapBackend();
 };

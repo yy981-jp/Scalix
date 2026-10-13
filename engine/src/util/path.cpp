@@ -5,7 +5,7 @@
 
 
 void SysPath::init() {
-	data = getDataPath();
+	userdata = getDataPath();
 	resource = getResourcePath();
 }
 
