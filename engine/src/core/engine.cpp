@@ -2,7 +2,7 @@
 #include "proto/instr.pb.h"
 #include <physics/springBone.h>
 #include <stdexcept>
-#include <mocap/controller.h>
+#include <mocap/mocap.h>
 #include <core/engine.h>
 
 #include <gfx/shader.h>
@@ -103,15 +103,6 @@ Engine::Engine() {
 			throw std::runtime_error("couldn't start sxtr");
 		}
 	}
-
-	// cfg.get()["tracker"] = false;
-	// cfg.save();
-
-	// Controller ctrlr;
-	// ctrlr.connect();
-	// sxtr::instr::Instr instr;
-	// instr.set_shutdown(true);
-	// ctrlr.send(instr);
 
 }
 

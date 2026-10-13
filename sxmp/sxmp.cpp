@@ -1,7 +1,7 @@
 #include "sxmp.h"
 
+#include <chrono>
 
-#include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
@@ -24,19 +24,15 @@ namespace {
 
 
 struct SXMPBE_impl {
-	cv::VideoCapture capture;
 	std::unique_ptr<mediapipe::tasks::vision::pose_landmarker::PoseLandmarker> landmarker;
+	std::chrono::time_point<std::chrono::steady_clock> start_time;
 };
 
 
-SXMocapBackend::SXMocapBackend(const std::string& modelpath): modelpath(modelpath), data(std::make_unique<SXMPBE_impl>()) {
-	data->capture.open(0);
-	
-	if (!data->capture.isOpened()) {
-		throw std::runtime_error("Failed to open camera device 0.");
-		
-	}
+SXMocapBackend::SXMocapBackend(): data(std::make_unique<SXMPBE_impl>()) {}
 
+
+void SXMocapBackend::init(const std::string& modelpath) {
 	auto landmarker_options =
 		std::make_unique<mediapipe::tasks::vision::pose_landmarker::PoseLandmarkerOptions>();
 	landmarker_options->base_options.model_asset_path = modelpath;
@@ -45,19 +41,15 @@ SXMocapBackend::SXMocapBackend(const std::string& modelpath): modelpath(modelpat
 	auto landmarker_or =
 		mediapipe::tasks::vision::pose_landmarker::PoseLandmarker::Create(std::move(landmarker_options));
 	if (!landmarker_or.ok()) {
-		data->capture.release();
 		throw std::runtime_error("PoseLandmarker creation failed: " + landmarker_or.status().ToString());
 	}
 	data->landmarker = std::move(landmarker_or).value();
 
-	start_time = std::chrono::steady_clock::now();
+	data->start_time = std::chrono::steady_clock::now();
 }
 
 
 void SXMocapBackend::tick(const cv::Mat& frame) {
-	if (!data->capture.read(frame) || frame.empty())
-		throw std::runtime_error("Camera frame read failed.");
-
 	cv::Mat rgb;
 	switch (frame.channels()) {
 		case 1:
@@ -76,7 +68,7 @@ void SXMocapBackend::tick(const cv::Mat& frame) {
 	}
 
 	const auto elapsed_ms = 
-		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count();
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - data->start_time).count();
 	const std::int64_t timestamp_ms =
 		std::max<std::int64_t>(elapsed_ms, previous_timestamp_ms + 1);
 	previous_timestamp_ms = timestamp_ms;
@@ -92,8 +84,6 @@ void SXMocapBackend::tick(const cv::Mat& frame) {
 
 
 SXMocapBackend::~SXMocapBackend() {
-	data->capture.release();
-
 	const auto close_status = data->landmarker->Close();
 	if (!close_status.ok())
 		throw std::runtime_error(std::string{"PoseLandmarker close failed: "} + close_status.ToString());

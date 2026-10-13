@@ -84,6 +84,7 @@ target_include_directories(${EXE_NAME} PRIVATE
 		${CMAKE_SOURCE_DIR}/external
 		${CMAKE_SOURCE_DIR}/external/nlohmann/include
 		${CMAKE_SOURCE_DIR}/external/asio/include
+		${CMAKE_SOURCE_DIR}/external/opencv/include
 		${CMAKE_SOURCE_DIR}/engine/src
 		${CMAKE_SOURCE_DIR}/engine/generated
 		${CMAKE_SOURCE_DIR}

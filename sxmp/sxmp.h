@@ -2,7 +2,6 @@
 #include <string>
 #include <memory>
 #include <cstdint>
-#include <chrono>
 
 #include <opencv2/core.hpp>
 
@@ -25,13 +24,11 @@ struct SXMPBE_impl;
 class SXMP_API SXMocapBackend {
 	std::unique_ptr<SXMPBE_impl> data;
 
-	const std::string& modelpath;
 	int64_t previous_timestamp_ms = -1;
 
-	std::chrono::time_point<std::chrono::steady_clock> start_time;
-
 public:
-	SXMocapBackend(const std::string& modelpath);
+	SXMocapBackend();
+	void init(const std::string& modelpath);
 	void tick(const cv::Mat& frame);
 	~SXMocapBackend();
 };

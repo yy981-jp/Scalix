@@ -14,9 +14,7 @@ bazel build -c opt ^
   --copt=-D_WIN32_WINNT=0x0601 ^
   --host_copt=-D_WIN32_WINNT=0x0601 ^
   --copt=-fno-canonical-system-headers ^
-  --verbose_failures ^
-  --subcommands ^
-  --sandbox_debug ^
+  --reuse_sandbox_directories ^
   --linkopt=-LC:/msys64/mingw64/lib ^
   --linkopt=-lopencv_geometry ^
   @sxmp//:sxmp_be
