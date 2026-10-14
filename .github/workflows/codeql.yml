@@ -35,6 +35,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
+      with:
+        fetch-depth: 1
 
     # Build external libraries before initializing CodeQL so their source files
     # are not collected as part of the Scalix C/C++ build trace.
