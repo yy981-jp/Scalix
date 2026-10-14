@@ -12,7 +12,7 @@ runs:
       shell: bash
       run: |
         git config --global url."https://github.com/".insteadOf "git@github.com:"
-        git submodule update --init resources/assets
+        git submodule update --init --depth 1 resources/assets
 
     - name: Setup env
       uses: ./.github/actions/setupCENV
