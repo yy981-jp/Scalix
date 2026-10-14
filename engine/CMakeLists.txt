@@ -72,7 +72,7 @@ if(WIN32)
 		)
 	endif()
 
-	add_custom_target(${EXE_NAME}_runtime_deps ALL
+	add_custom_target(${EXE_NAME}_runtime_deps
 		COMMAND "${CMAKE_COMMAND}"
 			"-DRUNTIME_EXE=$<TARGET_FILE:${EXE_NAME}>"
 			"-DRUNTIME_DEST=$<TARGET_FILE_DIR:${EXE_NAME}>"
@@ -173,9 +173,3 @@ target_compile_options(${EXE_NAME} PRIVATE
 	$<$<CONFIG:Release>:-O3>
 	$<$<CONFIG:RelWithDebInfo>:-O3 -g>
 )
-
-# target_compile_definitions(${EXE_NAME} PRIVATE
-# 	$<$<CONFIG:Debug>:BX_CONFIG_DEBUG=1 BGFX_CONFIG_DEBUG=1>
-# 	$<$<CONFIG:Release>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
-# 	$<$<CONFIG:RelWithDebInfo>:BX_CONFIG_DEBUG=0 BGFX_CONFIG_DEBUG=0>
-# )
