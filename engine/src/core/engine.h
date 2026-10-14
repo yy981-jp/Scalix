@@ -1,11 +1,8 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-// #include <SDL3/SDL_syswm.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
-#include <bx/math.h>
-// #include <stdexcept>
 
 #include <gfx/shader.h>
 #include <gltf/loader.h>
@@ -19,6 +16,7 @@
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
 #include <physics/springBone.h>
+#include <mocap/mocap.h>
 #include <mocap/recv.h>
 #include <mocap/poseSolver.h>
 
@@ -57,6 +55,7 @@ class Engine {
 
 	Grid grid;
 
+	std::jthread mocapThr;
 	Recv receiver;
 	PoseSolver* poseSolver;
 

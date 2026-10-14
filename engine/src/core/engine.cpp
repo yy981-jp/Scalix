@@ -1,15 +1,12 @@
-#include "def/transform.h"
-#include "proto/instr.pb.h"
-#include <physics/springBone.h>
-#include <stdexcept>
-#include <mocap/mocap.h>
 #include <core/engine.h>
+
+#include <stdexcept>
+#include <bx/math.h>
 
 #include <gfx/shader.h>
 #include <debug/debugDraw.h>
 #include <util/path.h>
 #include <core/config.h>
-
 #include <physics/detect.h>
 
 
@@ -94,15 +91,6 @@ Engine::Engine() {
 	gameInit();
 
 	gctx.poseSolver = poseSolver;
-
-
-	if (cfg.get()["tracker"].get<bool>()) {
-		if (!startProcess({
-			(syspath.resource/"tracker"/"camera").string()
-		})) {
-			throw std::runtime_error("couldn't start sxtr");
-		}
-	}
 
 }
 
@@ -222,29 +210,7 @@ void Engine::gameInit() {
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
 
-	// Quat q = Quat::fromAxisAngle(
-	// 	{0, 1, 0},
-	// 	bx::kPi * 0.5f
-	// );
-
-	// Transform trs;
-	// trs.pos = {0,0,0};
-	// trs.rot = q;
-	// trs.scale = {1,1,1};
-
-	// Mtx m = Mtx::fromTRS(trs);
-
-	// Quat q2 = m.rot();
-
-	// printf(
-	// 	"q  = %.5f %.5f %.5f %.5f\n",
-	// 	q.x,q.y,q.z,q.w
-	// );
-
-	// printf(
-	// 	"q2 = %.5f %.5f %.5f %.5f\n",
-	// 	q2.x,q2.y,q2.z,q2.w
-	// );
+	mocapThr = std::jthread(mocapWorker);
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {

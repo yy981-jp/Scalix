@@ -1,6 +1,6 @@
 #include <mocap/recv.h>
 
-#include <engine/generated/proto/pose.pb.h>
+#include <proto/pose.pb.h>
 #include <mocap/motionDebug.h>
 
 #include <cmath>

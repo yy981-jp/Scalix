@@ -61,6 +61,7 @@ include(../cmake/cpack.cmake)
 find_package(bgfx CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_image CONFIG REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core videoio)
 find_package(yaml-cpp REQUIRED)
 
 if(WIN32 OR APPLE)
@@ -101,16 +102,12 @@ target_include_directories(${EXE_NAME} PRIVATE
 
 get_target_property(BGFX_LINK_LIBS bgfx::bgfx INTERFACE_LINK_LIBRARIES)
 
-# message(STATUS "bgfx dependencies:")
-# message(STATUS "${BGFX_LINK_LIBS}")
-
 target_link_libraries(${EXE_NAME} PRIVATE
 	bgfx::bgfx
-
 	yaml-cpp::yaml-cpp
-
 	SDL3::SDL3
 	SDL3_image::SDL3_image
+	${OpenCV_LIBS}
 
 	protobuf::libprotobuf
 )
