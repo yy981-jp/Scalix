@@ -202,7 +202,7 @@ void GltfLoader::parseMesh(NodeId nodeId) {
 			}
 		} else {
 			// indexなし → 連番
-			for (uint16_t i = 0; i < pos.count; i++)
+			for (uint16_t i = 0; i < static_cast<uint16_t>(pos.count); i++)
 				idx.push_back(i);
 		}
 
