@@ -88,9 +88,10 @@ void SXMocapBackend::tick(std::span<SXMPLandmark> result, const cv::Mat& frame) 
 
 	for (size_t i = 0; i < result.size(); i++) {
 		const auto lm = mp_result.pose_world_landmarks[0].landmarks[i];
-		auto rlm = result[i];
+		auto& rlm = result[i];
 
 		rlm.x = lm.x;   rlm.y = lm.y;   rlm.z = lm.z;
+		rlm.visibility = lm.visibility? lm.visibility.value() : 0;
 	}
 }
 

@@ -1,0 +1,21 @@
+name: Prepare Build
+description: Prepare the project environment and external dependencies
+
+runs:
+  using: composite
+
+  steps:
+    - name: Get submodules
+      uses: ./.github/actions/getSubmodules
+
+    - name: Checkout assets
+      shell: bash
+      run: |
+        git config --global url."https://github.com/".insteadOf "git@github.com:"
+        git submodule update --init --depth 1 resources/assets
+
+    - name: Setup env
+      uses: ./.github/actions/setupCENV
+
+    - name: Build external
+      uses: ./.github/actions/buildExternal

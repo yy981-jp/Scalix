@@ -10,7 +10,8 @@ runs:
       shell: bash
       run: |
         hash=$(git submodule status | sha256sum | cut -d' ' -f1)
-        echo "key=submodules-${hash}" >> "$GITHUB_OUTPUT"
+        # Version the key so old full-history caches are not restored.
+        echo "key=submodules-depth1-${hash}" >> "$GITHUB_OUTPUT"
 
     - name: Restore submodule cache
       id: submodules
@@ -24,7 +25,7 @@ runs:
       shell: bash
       run: |
         git config --global url."https://github.com/".insteadOf "git@github.com:"
-        git submodule update --init --recursive
+        git submodule update --init --recursive --depth 1
 
     - name: Save submodule cache
       if: steps.submodules.outputs.cache-hit != 'true'

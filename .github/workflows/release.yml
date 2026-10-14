@@ -8,6 +8,8 @@ on:
     branches:
       - ci/github-actions
 
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -28,12 +30,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Checkout assets
         shell: bash
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git submodule update --init resources/assets
+          git submodule update --init --depth 1 resources/assets
 
 
       - name: Download artifact
@@ -71,7 +75,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install nsis -y
-          echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+          echo "C:\\Program Files (x86)\\NSIS" >> $GITHUB_PATH
 
 
       - name: Package
@@ -94,6 +98,8 @@ jobs:
   release:
     needs: pack
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Download dist artifacts
@@ -127,4 +133,3 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Scalix ${{ steps.version.outputs.version }}
-

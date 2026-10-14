@@ -22,11 +22,7 @@ bazel build ^
 	--host_copt=-D_WIN32_WINNT=0x0601 ^
 	--copt=-fno-canonical-system-headers ^
 	--reuse_sandbox_directories ^
-	@sxmp//:sxmp_be
-
-copy /y bazel-bin\external\sxmp\libsxmp_be.dll ..\..\..\build\ > nul
+	@sxmp//:sxmp_be_import_lib
 
 
 popd
-
-goto :eof
