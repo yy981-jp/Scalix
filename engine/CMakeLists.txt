@@ -79,6 +79,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 
+target_compile_definitions(${EXE_NAME} PRIVATE
+    TINYGLTF_NO_STB_IMAGE_WRITE
+)
+
+
 target_include_directories(${EXE_NAME} SYSTEM PRIVATE
 	${CMAKE_SOURCE_DIR}/external
 	${CMAKE_SOURCE_DIR}/external/nlohmann/include
