@@ -6,11 +6,9 @@ pushd external\mediapipe
 bazel build ^
 	-c opt ^
   	--copt=-O3 ^
-	--copt=-flto ^
 	--copt=-fomit-frame-pointer ^
 	--copt=-ffunction-sections ^
 	--copt=-fdata-sections ^
-	--linkopt=-flto ^
 	--linkopt=-Wl,--gc-sections ^
 	 ^
 	--crosstool_top=//third_party/mingw_cc_toolchain:toolchain ^
@@ -32,6 +30,3 @@ copy /y bazel-bin\external\sxmp\libsxmp_be.dll ..\..\..\build\ > nul
 popd
 
 goto :eof
-
-	--linkopt=-LC:/msys64/mingw64/lib ^
-	--linkopt=-lopencv_geometry ^
