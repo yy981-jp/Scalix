@@ -2,7 +2,7 @@
 #include "proto/instr.pb.h"
 #include <physics/springBone.h>
 #include <stdexcept>
-#include <tracker/controller.h>
+#include <mocap/mocap.h>
 #include <core/engine.h>
 
 #include <gfx/shader.h>
@@ -90,7 +90,7 @@ Engine::Engine() {
 
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
-	cfg.init((syspath.data/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
+	cfg.init((syspath.userdata/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
 
 	gctx.poseSolver = poseSolver;
@@ -103,15 +103,6 @@ Engine::Engine() {
 			throw std::runtime_error("couldn't start sxtr");
 		}
 	}
-
-	// cfg.get()["tracker"] = false;
-	// cfg.save();
-
-	// Controller ctrlr;
-	// ctrlr.connect();
-	// sxtr::instr::Instr instr;
-	// instr.set_shutdown(true);
-	// ctrlr.send(instr);
 
 }
 
@@ -152,7 +143,7 @@ void Engine::update(float dt) {
 	if (has(keyStat,KCode::Esc)) running = false;
 
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, 5},{0.0f, 0.7f, 0});
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -5},{0.0f, 0.7f, 0});
 	springBoneSystem.update(dt);
 
 	PoseFrame frame;
@@ -188,7 +179,11 @@ void Engine::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
-	avatarSystem.loadData({{0,0}});
+	avatarSystem.loadData({
+		UUID::fromString(
+			cfg.get()["avatar"]["id"].get<std::string>()
+		)
+	});
 	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
@@ -217,15 +212,15 @@ void Engine::gameInit() {
 	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
 	// }
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},101)) )); // back b
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},199)) )); // 
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
 
 	// Quat q = Quat::fromAxisAngle(
 	// 	{0, 1, 0},

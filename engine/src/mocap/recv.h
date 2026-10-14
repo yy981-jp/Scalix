@@ -7,7 +7,7 @@
 #include <mutex>
 #include <thread>
 
-#include <tracker/pose.h>
+#include <mocap/pose.h>
 
 
 class Recv {

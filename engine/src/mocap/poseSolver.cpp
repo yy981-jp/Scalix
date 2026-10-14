@@ -1,10 +1,10 @@
 #include "def/node.h"
 #include "util/math.h"
 #include <bx/math.h>
-#include <tracker/pose.h>
-#include <tracker/poseSolver.h>
-#include <tracker/motionDebug.h>
-#include <tracker/implDef.h>
+#include <mocap/pose.h>
+#include <mocap/poseSolver.h>
+#include <mocap/motionDebug.h>
+#include <mocap/implDef.h>
 
 #include <debug/debugDraw.h>
 

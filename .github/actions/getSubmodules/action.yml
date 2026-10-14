@@ -1,4 +1,5 @@
 name: Get submodules
+description: Get submodules
 
 runs:
   using: composite

@@ -1,5 +1,5 @@
 #pragma once
-#include <tracker/poseSolver.h>
+#include <mocap/poseSolver.h>
 
 
 struct LandmarkConnection {

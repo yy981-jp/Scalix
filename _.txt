@@ -181,6 +181,17 @@ dep-dllはSHTからシステムを転用できそう?
 
 
 
+humanoid 検出: hair root 検出 実装途中
+springbone検出に使うもの(hair roootなど)検出器はphysics系統に属させるべきかもしれない
+
+
+set_target_properties(sl PROPERTIES
+    INSTALL_RPATH "$ORIGIN"
+    BUILD_WITH_INSTALL_RPATH FALSE
+)
+./sl: error while loading shared libraries: libprotobuf.so.32: cannot open shared object file: No such file or directory
+
+blender 4.2.23 LTS
 
 
 sxtr-debug:

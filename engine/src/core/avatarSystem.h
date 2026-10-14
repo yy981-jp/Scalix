@@ -11,7 +11,7 @@
 /// @brief avatar 全体管理&描画システム
 class AvatarSystem {
 	std::deque<Avatar> avatars;
-	AvatarId playableAvatar = {0,0};
+	AvatarId playableAvatar;
 	std::unordered_map<AvatarId, size_t> avatarIndex;
 
 public:

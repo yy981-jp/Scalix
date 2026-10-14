@@ -1,4 +1,5 @@
 name: Build External
+description: Build External
 
 runs:
   using: composite

@@ -19,8 +19,8 @@
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
 #include <physics/springBone.h>
-#include <tracker/recv.h>
-#include <tracker/poseSolver.h>
+#include <mocap/recv.h>
+#include <mocap/poseSolver.h>
 
 
 enum class ShaderId {

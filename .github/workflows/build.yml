@@ -31,6 +31,7 @@ jobs:
         with:
           name: build-${{ runner.os }}-${{ runner.arch }}
           path: build/
+          retention-days: 3
 
       # - name: Upload artifact (release)
       #   if: github.event_name == 'workflow_call'

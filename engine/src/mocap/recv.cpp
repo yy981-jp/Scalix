@@ -1,7 +1,7 @@
-#include <tracker/recv.h>
+#include <mocap/recv.h>
 
 #include <engine/generated/proto/pose.pb.h>
-#include <tracker/motionDebug.h>
+#include <mocap/motionDebug.h>
 
 #include <cmath>
 #include <cstdio>

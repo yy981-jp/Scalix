@@ -37,3 +37,12 @@
 [submodule "external/SDL-image"]
 	path = external/SDL-image
 	url = git@github.com:libsdl-org/SDL_image.git
+[submodule "sxmp/external/mediapipe"]
+	path = sxmp/external/mediapipe
+	url = git@github.com:yy981-jp/mediapipe.git
+[submodule "external/CLI11"]
+	path = external/CLI11
+	url = https://github.com/CLIUtils/CLI11.git
+[submodule "external/opencv"]
+	path = external/opencv
+	url = https://github.com/opencv/opencv.git

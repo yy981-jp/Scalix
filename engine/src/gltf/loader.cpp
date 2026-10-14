@@ -290,7 +290,6 @@ void GltfLoader::parse() {
 
 		// rotation
 		if (!tn.rotation.empty()) {
-			// glTFクォータニオン (x, y, z, w) の共役を取る: (x, y, z, w) -> (-x, -y, -z, w)
 			node.trs.rot = {
 				(float)tn.rotation[0],
 				(float)tn.rotation[1],
@@ -362,10 +361,10 @@ void GltfLoader::parse() {
 			}
 		} else {
 			// glTFにデータが無い場合はidentityで初期化
-			for (size_t i = 0; i < skin.joints.size(); i++) {
-				for (auto& m : scalixModel.skins[i].invBind) {
-					bx::mtxIdentity(m.data());
-				}
+			skin.invBind.resize(skin.joints.size());
+
+			for (auto& m : skin.invBind) {
+				bx::mtxIdentity(m.data());
 			}
 		}
 
