@@ -29,5 +29,3 @@ copy /y bazel-bin\external\sxmp\libsxmp_be.if.lib ..\..\..\build\ > nul
 
 
 popd
-
-goto :eof

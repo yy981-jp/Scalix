@@ -40,6 +40,54 @@ list(APPEND SOURCES
 add_executable(${EXE_NAME} ${SOURCES})
 
 
+if(WIN32)
+	target_compile_definitions(${EXE_NAME} PRIVATE
+		_WIN32_WINNT=0x0A00
+	)
+
+	set(SXMP_BACKEND_BAZEL_DIR
+		"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
+	)
+
+	add_library(sxmp_be SHARED IMPORTED GLOBAL)
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
+		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+	)
+
+	target_link_libraries(${EXE_NAME} PRIVATE
+		ws2_32
+		sxmp_be
+	)
+
+
+	get_filename_component(SXMP_MINGW_BIN
+		"${CMAKE_CXX_COMPILER}" DIRECTORY
+	)
+
+	set(SXMP_RUNTIME_OBJDUMP_ARG)
+	if(CMAKE_OBJDUMP)
+		list(APPEND SXMP_RUNTIME_OBJDUMP_ARG
+			"-DCMAKE_GET_RUNTIME_DEPENDENCIES_COMMAND=${CMAKE_OBJDUMP}"
+		)
+	endif()
+
+	add_custom_command(TARGET ${EXE_NAME} POST_BUILD
+		COMMAND "${CMAKE_COMMAND}"
+			"-DRUNTIME_EXE=$<TARGET_FILE:${EXE_NAME}>"
+			"-DRUNTIME_DEST=$<TARGET_FILE_DIR:${EXE_NAME}>"
+			"-DRUNTIME_BAZEL_BIN=${SXMP_BACKEND_BAZEL_DIR}"
+			"-DRUNTIME_DEBUG_BIN=${CMAKE_SOURCE_DIR}/external/install/debug/x64/mingw/bin"
+			"-DRUNTIME_RELEASE_BIN=${CMAKE_SOURCE_DIR}/external/install/release/x64/mingw/bin"
+			"-DRUNTIME_MINGW_BIN=${SXMP_MINGW_BIN}"
+			${SXMP_RUNTIME_OBJDUMP_ARG}
+			-P "${CMAKE_SOURCE_DIR}/cmake/copy_runtime_deps.cmake"
+		VERBATIM
+	)
+
+endif()
+
+
 # shaders
 # compiles engine/shaders/<name>/{vs,fs}.sc into build/runtime/*.bin
 compile_shader(tex)
@@ -111,37 +159,6 @@ target_link_libraries(${EXE_NAME} PRIVATE
 
 	protobuf::libprotobuf
 )
-
-
-if(WIN32)
-	target_compile_definitions(${EXE_NAME} PRIVATE
-		_WIN32_WINNT=0x0A00
-	)
-
-	# sxmp_be is built by Bazel in the MediaPipe submodule. Link against its
-	# import library in-place; only the DLL needs to be copied beside sl.exe.
-	set(SXMP_BACKEND_BAZEL_DIR
-		"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
-	)
-
-	add_library(sxmp_be SHARED IMPORTED GLOBAL)
-	set_target_properties(sxmp_be PROPERTIES
-		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
-		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
-	)
-
-	target_link_libraries(${EXE_NAME} PRIVATE
-		ws2_32
-		sxmp_be
-	)
-
-	add_custom_command(TARGET ${EXE_NAME} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
-			"$<TARGET_FILE_DIR:${EXE_NAME}>"
-		VERBATIM
-	)
-endif()
 
 
 # mode

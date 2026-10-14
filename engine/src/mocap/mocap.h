@@ -45,7 +45,7 @@ class Mocap {
 		poseFrame.set_timestamp(UINT64_MAX); // TODO: timestampどうするん? 要る?
 
 		serialized.clear();
-		if (!poseFrame.SerializeToString(&serialized)) return;
+		if (!poseFrame.SerializeToString(&serialized)) throw std::runtime_error("Mocap::push(): serialize");
 
 		socket.send_to(asio::buffer(serialized), endpoint);
 	}
