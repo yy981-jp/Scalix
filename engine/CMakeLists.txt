@@ -118,8 +118,28 @@ if(WIN32)
 		_WIN32_WINNT=0x0A00
 	)
 
+	# sxmp_be is built by Bazel in the MediaPipe submodule. Link against its
+	# import library in-place; only the DLL needs to be copied beside sl.exe.
+	set(SXMP_BACKEND_BAZEL_DIR
+		"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
+	)
+
+	add_library(sxmp_be SHARED IMPORTED GLOBAL)
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
+		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+	)
+
 	target_link_libraries(${EXE_NAME} PRIVATE
 		ws2_32
+		sxmp_be
+	)
+
+	add_custom_command(TARGET ${EXE_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+			"$<TARGET_FILE_DIR:${EXE_NAME}>"
+		VERBATIM
 	)
 endif()
 

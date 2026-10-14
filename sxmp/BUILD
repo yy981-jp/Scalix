@@ -23,3 +23,10 @@ cc_shared_library(
     deps = [":mediapipe_backend_impl"],
     visibility = ["//visibility:public"],
 )
+
+genrule(
+    name = "sxmp_be_import_lib",
+    srcs = [":sxmp_be"],
+    outs = ["libsxmp_be.if.lib"],
+    cmd_bat = "copy /y \"$(location :sxmp_be).if.lib\" \"$@\"",
+)
