@@ -1,3 +1,5 @@
+cmake_policy(SET CMP0207 NEW)
+
 if(NOT EXISTS "${RUNTIME_EXE}")
 	message(FATAL_ERROR "Executable not found: ${RUNTIME_EXE}")
 endif()
@@ -25,16 +27,14 @@ file(GET_RUNTIME_DEPENDENCIES
 	RESOLVED_DEPENDENCIES_VAR runtime_deps
 	UNRESOLVED_DEPENDENCIES_VAR unresolved_deps
 
-	# Windows の API set DLL は配布対象から除外
 	PRE_EXCLUDE_REGEXES
 		"api-ms-.*"
 		"ext-ms-.*"
 
-	# Windows のシステム DLL は配布対象から除外
 	POST_EXCLUDE_REGEXES
-		".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/.*"
-		"C:\\WINDOWS\\system32/*"
+		".*/[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/.*"
 )
+
 
 foreach(dll IN LISTS runtime_deps)
 	get_filename_component(dll_name "${dll}" NAME)

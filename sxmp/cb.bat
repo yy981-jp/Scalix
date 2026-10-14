@@ -24,8 +24,5 @@ bazel build ^
 	--reuse_sandbox_directories ^
 	@sxmp//:sxmp_be_import_lib
 
-copy /y bazel-bin\external\sxmp\libsxmp_be.dll ..\..\..\build\ > nul
-copy /y bazel-bin\external\sxmp\libsxmp_be.if.lib ..\..\..\build\ > nul
-
 
 popd

@@ -72,7 +72,7 @@ if(WIN32)
 		)
 	endif()
 
-	add_custom_command(TARGET ${EXE_NAME} POST_BUILD
+	add_custom_target(${EXE_NAME}_runtime_deps ALL
 		COMMAND "${CMAKE_COMMAND}"
 			"-DRUNTIME_EXE=$<TARGET_FILE:${EXE_NAME}>"
 			"-DRUNTIME_DEST=$<TARGET_FILE_DIR:${EXE_NAME}>"
@@ -82,8 +82,15 @@ if(WIN32)
 			"-DRUNTIME_MINGW_BIN=${SXMP_MINGW_BIN}"
 			${SXMP_RUNTIME_OBJDUMP_ARG}
 			-P "${CMAKE_SOURCE_DIR}/cmake/copy_runtime_deps.cmake"
+
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+			"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+			"$<TARGET_FILE_DIR:${EXE_NAME}>/libsxmp_be.dll"
+
 		VERBATIM
 	)
+
+	add_dependencies(${EXE_NAME}_runtime_deps ${EXE_NAME})
 
 endif()
 

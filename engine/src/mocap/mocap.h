@@ -59,12 +59,12 @@ public:
 		backend.init(modelpath.string());
 		cap.open(0);
 
-		landmarks.reserve(landmarkCount);
+		landmarks.resize(landmarkCount);
 	}
 
 	void tick() {
 		update();
-		tick();
+		push();
 	}
 };
 
