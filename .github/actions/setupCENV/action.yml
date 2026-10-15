@@ -21,6 +21,7 @@ runs:
           mingw-w64-x86_64-protobuf
           mingw-w64-x86_64-python
           mingw-w64-x86_64-yaml-cpp
+          perl
 
     - name: Setup Linux
       if: runner.os == 'Linux'
