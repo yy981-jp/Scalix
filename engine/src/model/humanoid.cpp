@@ -248,7 +248,6 @@ void Humanoid::init(const Model& model) {
 	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
 		
-		// TODO: fix: boneFlagに反映
 		if (bones[i].isValid()) {
 			boneFlag |= HBTFlag(static_cast<HBT>(i));
 		}

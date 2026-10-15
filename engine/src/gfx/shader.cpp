@@ -13,10 +13,9 @@ bgfx::ShaderHandle loadShader(const char* path) {
 
 	if (size == 0) throw std::runtime_error("shader: size = 0");
 
-	const bgfx::Memory* mem = bgfx::alloc(size/* + 1*/);
+	const bgfx::Memory* mem = bgfx::alloc(size);
 	fread(mem->data, 1, size, f);
 	fclose(f);
-	// mem->data[mem->size - 1] = '\0';
 
 	return bgfx::createShader(mem);
 }

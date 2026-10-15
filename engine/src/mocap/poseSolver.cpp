@@ -1,19 +1,14 @@
 #include "def/node.h"
 #include "util/math.h"
-#include <bx/math.h>
 #include <mocap/pose.h>
 #include <mocap/poseSolver.h>
-#include <mocap/motionDebug.h>
 #include <mocap/implDef.h>
 
 #include <debug/debugDraw.h>
 
 #include <core/nodeRegistry.h>
-#include <util/fmutil.h>
-#include <def/str.h>
 
 #include <cmath>
-#include <cstdio>
 
 
 // Humanoid::parentTable は「親」しか引けないので、逆引き用のヘルパー。
@@ -49,7 +44,7 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 		// trackingMtx は calcGlobal() で親→子の順にローカルTRSを合成した
 		// 結果なので、.rot() にはこのボーンまでの回転がすべて含まれている。
 		Quat rot = avatar.trackingMtx[nodeReg.getId(nodeHdl)].rot();
-		bones[(size_t)cnct.bone].globalBindRot = rot/* * Quat::fromAxisAngle({0,1,0}, deg2rad(180))*/;
+		bones[(size_t)cnct.bone].globalBindRot = rot;
 
 		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
 		// 子ボーンの向き)。実際のスキニングパイプラインが使う値そのもの。
@@ -58,11 +53,6 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 	}
 
 
-	// for (const auto& cnct: upperBody_list) {
-	// 	const Node& node = nodeReg.get( avatar.humanoid.bones[(size_t)cnct.bone] );
-	// 	const Mtx& invBind = avatar.model.skins[ node.skinIndex ].invBind[node.jointIndex];
-	// 	Mtx bind = Mtx::inverse(invBind);
-	// }
 }
 
 
@@ -80,7 +70,6 @@ void PoseSolver::solve(const PoseFrame& frame) {
 	std::array<bool, static_cast<size_t>(HBT::Count)> hasSolvedGlobalRot{};
 
 	for (const auto& cnct: upperBody_list) {
-		// const auto& cnct = upperBody_list[0];
 
 		const vec3f& parent =
 			frame.landmarks[(size_t)cnct.parent].pos;
@@ -108,7 +97,6 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		Quat worldDelta = Quat::fromTo(bone.restDir, currentDir);
 		Quat newGlobalRot = worldDelta * bone.globalBindRot;
 
-		// debug.drawQuat(avatar.globalMtx[node.id].pos(), newGlobalRot, 0.5);
 
 
 		// node.trs.rot は親ボーンのローカル空間での回転なので、
@@ -124,77 +112,16 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		bone.lastSolvedGlobalRot = newGlobalRot;
 		bone.wasSolved = true;
 		
-		// const auto check2 = parentGlobalRot * node.trs.rot;
 
 		solvedGlobalRot[(size_t)cnct.bone] = newGlobalRot;
 		hasSolvedGlobalRot[(size_t)cnct.bone] = true;
 
 
 
-		// const auto& check = bone.globalBindRot * bone.childLocalDir;
 
-
-		// ===== Debug Draw =====
-
-		// vec3f origin = parent + vec3f{0, 2, 0};
-
-		// debug.drawLine(
-		// 	origin,
-		// 	origin + (solvedGlobalRot[(size_t)cnct.bone] * bone.childLocalDir) * 0.3f,
-		// 	0xff00ffff // 黄色
-		// );
-
-		// debug.drawLine(
-		// 	avatar.trackingMtx[node.id].pos(),
-		// 	avatar.trackingMtx[node.id].pos() + bone.restDir * 0.3f,
-		// 	0xffffff00 // 水色?
-		// );
 
 	}
 }
-
-void PoseSolver::traceAfterGlobalRebuild() const {
-	// if (!motionTraceEnabled()) return;
-	// for (const auto& cnct : upperBody_list) {
-	// 	const BoneState& bone = bones[(size_t)cnct.bone];
-	// 	if (!bone.wasSolved) continue;
-	// 	NodeHandle nodeHdl = avatar.humanoid.bones[(size_t)cnct.bone];
-	// 	NodeHandle childHdl = avatar.humanoid.bones[(size_t)childBoneOf(cnct.bone)];
-	// 	const Mtx& global = avatar.trackingMtx[nodeReg.getId(nodeHdl)];
-	// 	const Mtx& childGlobal = avatar.trackingMtx[nodeReg.getId(childHdl)];
-	// 	const Node& node = nodeReg.get(nodeHdl);
-	// 	const vec3f globalPos = global.pos();
-	// 	const vec3f childGlobalPos = childGlobal.pos();
-	// 	const Quat globalRot = global.rot();
-	// 	const vec3f actualDir = (childGlobalPos - globalPos).normalized();
-	// 	HBT parentBone = Humanoid::parentTable[(size_t)cnct.bone];
-	// 	NodeHandle parentHdl = avatar.humanoid.bones[(size_t)parentBone];
-
-	// 	const Quat actualParentGlobalRot = avatar.trackingMtx[nodeReg.getId(parentHdl)].rot();
-	// 	const Quat expectedGlobalRot = actualParentGlobalRot * node.trs.rot;
-		
-	// 	printf(
-	// 		"MOTION global bone=%d "
-	// 		"localNow=(%.5f,%.5f,%.5f,%.5f) "
-	// 		"globalRot=(%.5f,%.5f,%.5f,%.5f) "
-	// 		"actualDir=(%.5f,%.5f,%.5f) "
-	// 		"actualParentGlobalRot=(%.5f,%.5f,%.5f) "
-	// 		"expectedGlobalRot=(%.5f,%.5f,%.5f) "
-	// 		"targetDot=%.6f pos=(%.5f,%.5f,%.5f) "
-	// 		"childPos=(%.5f,%.5f,%.5f)\n",
-	// 		static_cast<int>(cnct.bone),
-	// 		node.trs.rot.x,node.trs.rot.y,node.trs.rot.z,node.trs.rot.w,
-	// 		globalRot.x,globalRot.y,globalRot.z,globalRot.w,
-	// 		actualDir.x,actualDir.y,actualDir.z,
-	// 		actualParentGlobalRot.x,actualParentGlobalRot.y,actualParentGlobalRot.z,
-	// 		expectedGlobalRot.x,expectedGlobalRot.y,expectedGlobalRot.z,
-	// 		bx::dot(actualDir,bone.lastTargetDir),
-	// 		globalPos.x,globalPos.y,globalPos.z,
-	// 		childGlobalPos.x,childGlobalPos.y,childGlobalPos.z
-	// 	);
-	// }
-}
-
 
 void PoseSolver::debug_(const PoseFrame& frame) {
 	for (auto& lm : frame.landmarks) {
