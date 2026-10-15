@@ -10,6 +10,17 @@ runs:
       run: |
         git submodule update --init --depth 1 sxmp/external/mediapipe
 
+    - name: Setup Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+
+    - name: Verify Python
+      shell: msys2 {0}
+      run: |
+        python --version
+        python3 --version 2>/dev/null || true
+
     - name: Setup Bazel
       uses: bazel-contrib/setup-bazel@0.19.1
       with:
