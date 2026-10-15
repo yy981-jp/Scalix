@@ -6,7 +6,7 @@
 
 
 struct SysPath {
-	fs::path data, resource;
+	fs::path userdata, resource;
 
 	void init();
 	

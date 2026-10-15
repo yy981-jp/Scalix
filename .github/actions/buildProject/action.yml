@@ -1,26 +1,17 @@
 name: Build Project
+description: Build Project
 
 runs:
   using: composite
-  
+
   steps:
-    - name: get submodules
-      uses: ./.github/actions/getSubmodules
+    - name: Prepare build
+      uses: ./.github/actions/prepareBuild
 
-    - name: Checkout assets
-      shell: bash
-      run: |
-        git config --global url."https://github.com/".insteadOf "git@github.com:"
-        git submodule update --init resources/assets
+    - name: Build sxmp backend
+      if: runner.os == 'Windows'
+      uses: ./.github/actions/buildSxmpBackend
 
-
-    - name: Setup env
-      uses: ./.github/actions/setupCENV
-
-
-    - name: Build external
-      uses: ./.github/actions/buildExternal
-    
     - name: Configure
       if: runner.os != 'Windows'
       shell: bash

@@ -6,7 +6,7 @@
 
 #include <core/avatar.h>
 #include <model/humanoid.h>
-#include <tracker/pose.h>
+#include <mocap/pose.h>
 
 
 namespace PoseSolverMode {

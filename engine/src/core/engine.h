@@ -1,11 +1,8 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-// #include <SDL3/SDL_syswm.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
-#include <bx/math.h>
-// #include <stdexcept>
 
 #include <gfx/shader.h>
 #include <gltf/loader.h>
@@ -19,8 +16,8 @@
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
 #include <physics/springBone.h>
-#include <tracker/recv.h>
-#include <tracker/poseSolver.h>
+#include <mocap/recv.h>
+#include <mocap/poseSolver.h>
 
 
 enum class ShaderId {
@@ -57,6 +54,9 @@ class Engine {
 
 	Grid grid;
 
+#if defined(_WIN32)
+	std::jthread mocapThr;
+#endif
 	Recv receiver;
 	PoseSolver* poseSolver;
 

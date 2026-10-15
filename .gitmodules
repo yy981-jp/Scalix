@@ -13,6 +13,7 @@
 [submodule "external/tinygltf"]
 	path = external/tinygltf
 	url = git@github.com:yy981-jp/tinygltf.git
+	branch = y9_dev
 [submodule "external/yaml-cpp"]
 	path = external/yaml-cpp
 	url = git@github.com:jbeder/yaml-cpp.git
@@ -37,3 +38,9 @@
 [submodule "external/SDL-image"]
 	path = external/SDL-image
 	url = git@github.com:libsdl-org/SDL_image.git
+[submodule "sxmp/external/mediapipe"]
+	path = sxmp/external/mediapipe
+	url = git@github.com:yy981-jp/mediapipe.git
+[submodule "external/opencv"]
+	path = external/opencv
+	url = https://github.com/opencv/opencv.git

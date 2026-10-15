@@ -1,15 +1,16 @@
-#include "def/transform.h"
-#include "proto/instr.pb.h"
-#include <physics/springBone.h>
-#include <stdexcept>
-#include <tracker/controller.h>
 #include <core/engine.h>
+
+#if defined(_WIN32)
+#include <mocap/mocap.h>
+#endif
+
+#include <stdexcept>
+#include <bx/math.h>
 
 #include <gfx/shader.h>
 #include <debug/debugDraw.h>
 #include <util/path.h>
 #include <core/config.h>
-
 #include <physics/detect.h>
 
 
@@ -90,28 +91,10 @@ Engine::Engine() {
 
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
-	cfg.init((syspath.data/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
+	cfg.init((syspath.userdata/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
 
 	gctx.poseSolver = poseSolver;
-
-
-	if (cfg.get()["tracker"].get<bool>()) {
-		if (!startProcess({
-			(syspath.resource/"tracker"/"camera").string()
-		})) {
-			throw std::runtime_error("couldn't start sxtr");
-		}
-	}
-
-	// cfg.get()["tracker"] = false;
-	// cfg.save();
-
-	// Controller ctrlr;
-	// ctrlr.connect();
-	// sxtr::instr::Instr instr;
-	// instr.set_shutdown(true);
-	// ctrlr.send(instr);
 
 }
 
@@ -221,39 +204,19 @@ void Engine::gameInit() {
 	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
 	// }
 
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},101)) )); // back b
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId({0,0},199)) )); // 
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,113)) )); // back d l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,117)) )); // back d r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,105)) )); // back c l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,109)) )); // back c r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,120)) )); // back e l
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,123)) )); // back e r
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,98)) )); // back a
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
+	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
 
-	// Quat q = Quat::fromAxisAngle(
-	// 	{0, 1, 0},
-	// 	bx::kPi * 0.5f
-	// );
-
-	// Transform trs;
-	// trs.pos = {0,0,0};
-	// trs.rot = q;
-	// trs.scale = {1,1,1};
-
-	// Mtx m = Mtx::fromTRS(trs);
-
-	// Quat q2 = m.rot();
-
-	// printf(
-	// 	"q  = %.5f %.5f %.5f %.5f\n",
-	// 	q.x,q.y,q.z,q.w
-	// );
-
-	// printf(
-	// 	"q2 = %.5f %.5f %.5f %.5f\n",
-	// 	q2.x,q2.y,q2.z,q2.w
-	// );
+#if defined(_WIN32)
+	mocapThr = std::jthread(mocapWorker);
+#endif
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {

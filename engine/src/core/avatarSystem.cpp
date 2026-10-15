@@ -6,8 +6,8 @@
 #include <core/nodeRegistry.h>
 #include <util/cache.h>
 #include <def/mtx.h>
-#include <tracker/motionDebug.h>
-#include <tracker/poseSolver.h>
+#include <mocap/motionDebug.h>
+#include <mocap/poseSolver.h>
 
 #include <bx/math.h>
 
