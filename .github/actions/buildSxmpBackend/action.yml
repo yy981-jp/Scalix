@@ -26,7 +26,12 @@ runs:
       env:
         USE_BAZEL_VERSION: 7.4.1
       run: |
-        bazelisk build \
+        BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
+        if [[ ! -x "$BAZEL" ]]; then
+          echo "::error::Bazelisk executable not found: $BAZEL"
+          exit 1
+        fi
+        "$BAZEL" build \
           -c opt \
           --copt=-O3 \
           --copt=-fomit-frame-pointer \
