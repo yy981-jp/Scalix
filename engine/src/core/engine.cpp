@@ -1,5 +1,9 @@
 #include <core/engine.h>
 
+#if defined(_WIN32)
+#include <mocap/mocap.h>
+#endif
+
 #include <stdexcept>
 #include <bx/math.h>
 
