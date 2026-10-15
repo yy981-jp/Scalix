@@ -1,5 +1,9 @@
 #include <core/engine.h>
 
+#if defined(_WIN32)
+#include <mocap/mocap.h>
+#endif
+
 #include <stdexcept>
 #include <bx/math.h>
 
@@ -210,7 +214,9 @@ void Engine::gameInit() {
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
 
+#if defined(_WIN32)
 	mocapThr = std::jthread(mocapWorker);
+#endif
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {

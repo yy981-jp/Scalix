@@ -8,6 +8,10 @@ runs:
     - name: Prepare build
       uses: ./.github/actions/prepareBuild
 
+    - name: Build sxmp backend
+      if: runner.os == 'Windows'
+      uses: ./.github/actions/buildSxmpBackend
+
     - name: Configure
       if: runner.os != 'Windows'
       shell: bash

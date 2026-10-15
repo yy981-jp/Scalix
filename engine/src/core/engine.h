@@ -16,7 +16,6 @@
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
 #include <physics/springBone.h>
-#include <mocap/mocap.h>
 #include <mocap/recv.h>
 #include <mocap/poseSolver.h>
 
@@ -55,7 +54,9 @@ class Engine {
 
 	Grid grid;
 
+#if defined(_WIN32)
 	std::jthread mocapThr;
+#endif
 	Recv receiver;
 	PoseSolver* poseSolver;
 

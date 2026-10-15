@@ -10,13 +10,18 @@ runs:
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
+        # The MediaPipe MinGW toolchain uses the fixed C:\\msys64 path.
+        # Reuse the runner image's installation instead of installing under D:\\a\\_temp.
+        release: false
         update: true
         install: >-
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-ninja
           mingw-w64-x86_64-protobuf
+          mingw-w64-x86_64-python
           mingw-w64-x86_64-yaml-cpp
+          perl
 
     - name: Setup Linux
       if: runner.os == 'Linux'
