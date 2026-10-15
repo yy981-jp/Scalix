@@ -26,7 +26,7 @@ runs:
       env:
         USE_BAZEL_VERSION: 7.4.1
       run: |
-        bazel build \
+        bazelisk build \
           -c opt \
           --copt=-O3 \
           --copt=-fomit-frame-pointer \

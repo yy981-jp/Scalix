@@ -210,7 +210,9 @@ void Engine::gameInit() {
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
 
+#if defined(_WIN32)
 	mocapThr = std::jthread(mocapWorker);
+#endif
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
