@@ -4,15 +4,35 @@
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/core/utils/logger.hpp>
 
 #include "mediapipe/framework/formats/image.h"
 #include "mediapipe/framework/formats/image_format.pb.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/tasks/cc/vision/core/running_mode.h"
 #include "mediapipe/tasks/cc/vision/pose_landmarker/pose_landmarker.h"
+#include "absl/log/globals.h"
+#include "absl/log/initialize.h"
+#include "tensorflow/lite/logger.h"
 
 
 namespace {
+
+	void configureLogging() {
+		// Abseil / MediaPipe: WARNING以下を抑制
+		absl::InitializeLog();
+		absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
+
+		// TensorFlow Lite: INFOを抑制
+		tflite::LoggerOptions::SetMinimumLogSeverity(
+			tflite::TFLITE_LOG_WARNING
+		);
+
+		// OpenCV: INFOを抑制
+		cv::utils::logging::setLogLevel(
+			cv::utils::logging::LOG_LEVEL_WARNING
+		);
+	}
 	mediapipe::Image ToMediaPipeImage(const cv::Mat& rgb) {
 		auto frame = std::make_shared<mediapipe::ImageFrame>();
 		frame->CopyPixelData(mediapipe::ImageFormat::SRGB, rgb.cols, rgb.rows,
@@ -29,7 +49,9 @@ struct SXMPBE_impl {
 };
 
 
-SXMocapBackend::SXMocapBackend(): data(std::make_unique<SXMPBE_impl>()) {}
+SXMocapBackend::SXMocapBackend(): data(std::make_unique<SXMPBE_impl>()) {
+	configureLogging();
+}
 
 
 void SXMocapBackend::init(const std::string& modelpath) {
