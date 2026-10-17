@@ -82,7 +82,23 @@ runs:
           echo "::error::Bazelisk executable not found: $BAZEL"
           exit 1
         fi
-        "$BAZEL" build \
+
+        # setup-bazel's cache paths are D:/_bazel-{disk,repo} on hosted Windows.
+        # Pass them directly to Bazel as MSYS2 may use a different HOME than the
+        # setup-bazel action that writes the user .bazelrc.
+        OUTPUT_BASE="D:/_bazel"
+        DISK_CACHE="D:/_bazel-disk"
+        REPOSITORY_CACHE="D:/_bazel-repo"
+        mkdir -p "$(cygpath -u "$OUTPUT_BASE")" \
+          "$(cygpath -u "$DISK_CACHE")" \
+          "$(cygpath -u "$REPOSITORY_CACHE")"
+
+        "$BAZEL" \
+          --output_base="$OUTPUT_BASE" \
+          --announce_rc \
+          build \
+          --disk_cache="$DISK_CACHE" \
+          --repository_cache="$REPOSITORY_CACHE" \
           -c opt \
           --copt=-O3 \
           --copt=-fomit-frame-pointer \
