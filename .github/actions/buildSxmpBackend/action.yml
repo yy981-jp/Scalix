@@ -10,6 +10,16 @@ runs:
       run: |
         git submodule update --init --depth 1 sxmp/external/mediapipe
 
+    - name: Verify zlib macOS compatibility patch
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        patch="sxmp/external/mediapipe/third_party/zlib.diff"
+        if ! grep -Fq '+#if defined(MACOS)' "$patch"; then
+          echo "::error::MediaPipe zlib patch is missing the macOS compatibility fix."
+          exit 1
+        fi
+
     - name: Fix zlib download URL (Windows)
       if: runner.os == 'Windows'
       shell: bash
