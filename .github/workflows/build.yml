@@ -1,8 +1,13 @@
 name: Build
 
 on:
-  push:
   workflow_call:
+    inputs:
+      package:
+        description: Whether to create distributable packages after building.
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -28,20 +33,32 @@ jobs:
       - name: Build Project
         uses: ./.github/actions/buildProject
 
+      - name: Install NSIS
+        if: ${{ inputs.package && runner.os == 'Windows' }}
+        run: |
+          choco install nsis -y
+          echo "C:\\Program Files (x86)\\NSIS" >> $GITHUB_PATH
 
+      - name: Package
+        if: ${{ inputs.package }}
+        working-directory: build
+        shell: bash
+        run: |
+          cpack --config CPackConfig.cmake
+          rm -rf dist/_CPack_Packages
 
-      - name: Upload artifact
-        # if: github.event_name != 'workflow_call'
+      - name: Upload build artifact
+        if: ${{ !inputs.package }}
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ runner.os }}-${{ runner.arch }}
           path: build/
           retention-days: 3
 
-      # - name: Upload artifact (release)
-      #   if: github.event_name == 'workflow_call'
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: build-rel-${{ runner.os }}-${{ runner.arch }}
-      #     path: build/
-      #     retention-days: 3
+      - name: Upload package artifact
+        if: ${{ inputs.package }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ runner.os }}-${{ runner.arch }}
+          path: build/dist/
+          retention-days: 3
