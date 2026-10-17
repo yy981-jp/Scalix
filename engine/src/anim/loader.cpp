@@ -2,8 +2,6 @@
 
 #include <core/avatar.h>
 #include <unordered_map>
-#include <unordered_set>
-#include <fstream>
 
 
 std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avatar& avatar) {
@@ -22,60 +20,14 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 	if (invalid) throw std::runtime_error(".sxa is invalid");
 
 
-	// process pre
+	// ノード名から ID を引くための索引を作成する。
 	std::unordered_map<StrHs,NodeId> map;
 	map.reserve(avatar.model.nodes.size());
-	std::ofstream dbg("test.txt");
-	dbg << "===== node names =====\n";
 	for (const Node& node: avatar.model.nodes) {
 		map[node.name] = node.id;
-		dbg << node.name.hash << "\t\t\t" << strsv().get(node.name) << "\t=\t" << node.id << "\n";
 	}
 
-	for (size_t i = 0; i < 10; i++) dbg << "\n";
-	dbg << "===== node names =====\n";
-
-
-
-	// dbg << "----------\n";
-
-	// for (const auto& node: avatar.model.nodes) {
-	//	 dbg << strsv().get(node.name) << "\n";
-	// }
-
-	// --- DEBUG: Track missing node analysis ---
-	dbg << "===== TRACK TARGET ANALYSIS =====\n";
-	std::unordered_set<std::string> missingTargets;
-	std::unordered_set<std::string> foundTargets;
-	
-	for (const auto& [key,value]: j["body"].items()) {
-		const AnimImFmt& imf = value.get<AnimImFmt>();
-		for (const auto& track_i: imf.tracks) {
-			auto it = map.find(StrHs(track_i.target));
-			if (it == map.end()) {
-				missingTargets.insert(track_i.target);
-			} else {
-				foundTargets.insert(track_i.target);
-			}
-		}
-	}
-	
-	dbg << "Found targets: " << foundTargets.size() << "\n";
-	for (const auto& t: foundTargets) {
-		dbg << "  OK: " << t << "\n";
-	}
-	
-	dbg << "\nMissing targets: " << missingTargets.size() << "\n";
-	for (const auto& t: missingTargets) {
-		dbg << "  MISSING: " << t << "\n";
-	}
-	dbg << "===== END TRACK ANALYSIS =====\n\n";
-	
-
-	for (size_t i = 0; i < 10; i++) dbg << "\n";
-	dbg << "===== anim names =====\n";
-
-	// process
+	// トラックの対象ノードを解決し、実行時形式へ変換する。
 	for (const auto& [key,value]: j["body"].items()) {
 		const AnimImFmt& imf = value.get<AnimImFmt>();
 		AnimRtFmt_base rf_b = imf;
@@ -86,14 +38,12 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 			auto it = map.find(StrHs(track_i.target));
 			if (it != map.end()) {
 				track_r.target = it->second;
-				// dbg << "D: found: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
 			} else {
 				if (track_i.target.empty()) {
-					track_r.target = NodeId::invalid(); // アバター全体
+					track_r.target = NodeId::invalid(); // アバター全体を対象にするトラックは未対応
 				} else {
-					track_r.target = NodeId::invalid(); // エラー
+					track_r.target = NodeId::invalid(); // 対応するノードが見つからない
 				}
-				// dbg << "D: notfound: i-s:" << track_i.target << " i:" << StrHs(track_i.target).hash << " r:" << track_r.target << "\n";
 				// TODO: track_i.tarket.empty の場合の処理を考える必要があるかもしれない
 				continue;
 			}
@@ -106,7 +56,6 @@ std::unordered_map<StrHs,AnimRtFmt> loadAnim(const std::string& path, const Avat
 		StrHs hs = strsv().entry(key);
 		anims[hs] = rf;
 
-		dbg << key << "\t\t\t" << StrHs(key).hash << "\n";
 	}
 
 	return anims;

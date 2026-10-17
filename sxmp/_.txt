@@ -68,7 +68,6 @@ bazel build -c opt \
   --reuse_sandbox_directories \
   --define MEDIAPIPE_DISABLE_GPU=1 \
   --copt=-fno-canonical-system-headers \
-  --linkopt=-lopencv_geometry \
   @sxmp//:sxmp_be
 
 

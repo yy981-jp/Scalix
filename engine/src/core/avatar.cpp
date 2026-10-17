@@ -1,4 +1,3 @@
-#include <mocap/poseSolver.h>
 #include <core/avatar.h>
 #include <model/humanoid.h>
 
@@ -12,7 +11,6 @@
 #include <physics/springBone.h>
 #include <core/nodeRegistry.h>
 
-#include <cstdio>
 
 
 void Avatar::update(GameContext& ctx, float dt) {
@@ -20,7 +18,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 	float fx = -lutsv.getSin(yaw);
 	float fz =  lutsv.getCos(yaw);
 
-	float rx = -fz;   // = cos(yaw)
+	float rx = -fz;   // -cos(yaw)
 	float rz = -fx;   // = sin(yaw)
 
 	bool walking = false;
@@ -48,9 +46,6 @@ void Avatar::update(GameContext& ctx, float dt) {
 		pos.x += rx * aplSpeed * rlMove;
 		pos.z += rz * aplSpeed * rlMove;
 	}
-
-	// if (has(ctx.keyStat, KCode::T))
-	// 	ctx.poseSolver->requestCalibration();
 
 	status = (walking? Status::walk : Status::stay);
 
@@ -98,20 +93,14 @@ void Avatar::update(GameContext& ctx, float dt) {
 
 		headNode.trs.rot = Quat::fromAxisAngle({0,1,0}, head.yaw);
 
-		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
 	
-	// printf("ava.pos: %.3f %.3f %.3f\n"
-	// 		, pos.x, pos.y, pos.z
-	// );
 }
 
 
 void Avatar::draw(Camera& cam) {
-	// if (!humanoid.has(HBT::neck)) return;
 
 	NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
-	const Node& headNode = nodeReg.get(headHandle);
 
 	int headIdx = nodeReg.getId(headHandle);
 	if (headIdx < 0) return;
@@ -157,12 +146,8 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 
 	humanoid.init(model);
 
-	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_left_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65)); // deg=65
-	// nodeReg.get(humanoid.bones[static_cast<int>(HBT::arm_right_up)]).trs.rot.setAxisAngle({1,0,0}, deg2rad(65));
-
 	anim.init("test.sxa",*this);
 
-	// anim.run("Sweater_OFF"_hs);
 }
 
 Avatar::~Avatar() {

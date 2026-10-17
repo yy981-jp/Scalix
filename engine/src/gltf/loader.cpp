@@ -344,10 +344,8 @@ void GltfLoader::parse() {
 	for (const auto& model_skin : model.skins) {
 		Skin skin;
 		// joint (=bone)
-		// printf("model_skin.joints.size: %d\n", model_skin.joints.size());
 		for (int joint: model_skin.joints) {
 			skin.joints.push_back(joint);
-			// printf("joint: %d\n", joint);
 		}
 		// skin
 		if (model_skin.inverseBindMatrices >= 0) {
@@ -379,12 +377,6 @@ void GltfLoader::parse() {
 		
 		scalixModel.skins.push_back(skin);
 
-		// for (int i = 0; i < skin.joints.size(); i++) {
-		// 	printf("joint[%d] = node %d\n", i, skin.joints[i]);
-		// }
-		// for (int i = 0; i < skin.invBind.size(); i++) {
-		// 	printf("invBind[%d] loaded\n", i);
-		// }
 	}
 }
 
@@ -492,7 +484,6 @@ void GltfLoader::load() {
 		}
 		
 		scalixModel.materialToImage[matIdx] = imgIdx;
-		// printf("Material[%zu] -> Texture[%d] -> Image[%d]\n", matIdx, texIdx, imgIdx);
 	}
 	
 	// ===== イメージから一意のテクスチャを読み込み =====
@@ -528,7 +519,6 @@ void GltfLoader::load() {
 				scalixModel.textures.resize(imgIdx + 1);
 			}
 			scalixModel.textures[imgIdx] = std::move(tex);
-			// printf("Texture[%d] created successfully\n", imgIdx);
 		} catch (const std::exception& e) {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
 		} catch (...) {

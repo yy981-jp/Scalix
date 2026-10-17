@@ -41,8 +41,6 @@ std::vector<NodeHandle> detectBonePath(NodeHandle begin) {
 	if (!nodeReg.is_alive(begin))
 		return path;
 
-	// Avatar* avatar = nodeReg.getAvatar(begin);
-	// const AvatarId avatarId = avatar->id;
 
 	NodeHandle cur = begin;
 

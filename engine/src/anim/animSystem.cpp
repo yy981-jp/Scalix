@@ -35,8 +35,6 @@ void AnimSystem::tick(Avatar& avatar, float dt) {
 
 
 void AnimSystem::apply(Avatar& avatar) {
-	// ライブ楽しかった! 昨日の話だけど余韻が抜けん
-	
 	size_t blendIdx = 0;
 
 	for (size_t playIdx = 0; playIdx < playing.size();) {
@@ -104,7 +102,6 @@ void AnimSystem::blend(float dt) {
 		int trackNumber = 0;
 
 		for (const auto& track : anim.fmt.tracks) {
-			// if (track.target == -404) continue;
 			if (!track.target.isValid()) continue; // TODO: これどうすんねん 全体動かすとか...
 
 			auto& crtKeyIdx = anim_p.crtKeyIdxs[trackNumber];

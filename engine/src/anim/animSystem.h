@@ -15,10 +15,8 @@ struct PlayingAnim {
 
 	float time = 0.0f;
 	std::vector<int> crtKeyIdxs;
-	// float speed = 1.0f;
 
 	bool loop = false;
-	// bool finished = false;
 };
 
 class AnimSystem {

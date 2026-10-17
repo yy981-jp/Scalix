@@ -6,7 +6,6 @@
 
 #include <def/quat.h>
 #include <def/transform.h>
-// #include <def/vec3.h>
 
 
 class Mtx {
@@ -25,14 +24,12 @@ public:
 	vec3f pos();
 	const vec3f pos() const;
 
-	// bx::mtxDecompose でスケール/回転/平行移動を分解して回転(Quat)を取り出す。
-	// PoseSolver などトラッキング側は Mtx ではなく回転そのものを必要とするため、
-	// trackingMtx から都度これを使って取得する。
+	// 行列から回転成分を抽出する。PoseSolver など、回転だけを必要とする処理で使う。
 	Quat rot() const;
 	vec3f scale() const;
 
-	// Transform(pos/rot/scale)への変換。globalTransforms/trackingTransforms を廃止し
-	// globalMtx/trackingMtx を単一のソースオブトゥルースにするためのヘルパー。
+	// 行列を位置・回転・スケールに分解して Transform に変換する。
+	// Transform は TRS のみを保持するため、shear を含む行列は完全には再現できない。
 	Transform toTransform() const;
 
 	static Mtx fromTRS(const Transform& trs);
