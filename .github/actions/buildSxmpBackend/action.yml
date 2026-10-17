@@ -95,8 +95,8 @@ runs:
 
         "$BAZEL" \
           --output_base="$OUTPUT_BASE" \
-          --announce_rc \
           build \
+          --announce_rc \
           --disk_cache="$DISK_CACHE" \
           --repository_cache="$REPOSITORY_CACHE" \
           -c opt \
