@@ -45,3 +45,4 @@ list(PREPEND CMAKE_PREFIX_PATH
 add_subdirectory(engine)
 add_subdirectory(importer)
 add_subdirectory(dev)
+add_subdirectory(ui)
