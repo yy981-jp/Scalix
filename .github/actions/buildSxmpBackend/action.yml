@@ -66,7 +66,9 @@ runs:
         bazelisk-version: 1.29.0
         bazelisk-cache: true
         disk-cache: sxmp-backend-${{ runner.os }}-${{ runner.arch }}
-        external-cache: true
+        # Windows cache restores of Bazel's extracted external repositories trigger
+        # absolute-path include errors; keep disk and repository caches enabled there.
+        external-cache: ${{ runner.os != 'Windows' }}
         repository-cache: true
         module-root: sxmp/external/mediapipe
 
@@ -83,18 +85,15 @@ runs:
           exit 1
         fi
 
-        # setup-bazel's cache paths are D:/_bazel-{disk,repo} on hosted Windows.
-        # Pass them directly to Bazel as MSYS2 may use a different HOME than the
-        # setup-bazel action that writes the user .bazelrc.
-        OUTPUT_BASE="D:/_bazel"
+        # setup-bazel's disk/repository cache paths are on D: for hosted Windows.
+        # Pass these paths directly because MSYS2 may use a different HOME than
+        # the setup-bazel action that writes the user .bazelrc.
         DISK_CACHE="D:/_bazel-disk"
         REPOSITORY_CACHE="D:/_bazel-repo"
-        mkdir -p "$(cygpath -u "$OUTPUT_BASE")" \
-          "$(cygpath -u "$DISK_CACHE")" \
+        mkdir -p "$(cygpath -u "$DISK_CACHE")" \
           "$(cygpath -u "$REPOSITORY_CACHE")"
 
         "$BAZEL" \
-          --output_base="$OUTPUT_BASE" \
           build \
           --announce_rc \
           --disk_cache="$DISK_CACHE" \
