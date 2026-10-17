@@ -21,6 +21,7 @@ runs:
           mingw-w64-x86_64-protobuf
           mingw-w64-x86_64-python
           mingw-w64-x86_64-yaml-cpp
+          mingw-w64-x86_64-libwebp
           perl
 
     - name: Setup Linux
@@ -28,39 +29,40 @@ runs:
       shell: bash
       run: |
         sudo apt update
-        sudo apt install -y \
-          build-essential \
-          ninja-build \
-          libprotobuf-dev \
-          protobuf-compiler \
-          protobuf-compiler-grpc \
-          libyaml-cpp-dev \
-          libx11-dev \
-          libxext-dev \
-          libxrandr-dev \
-          libxcursor-dev \
-          libxi-dev \
-          libxinerama-dev \
-          libxss-dev \
-          libxtst-dev \
-          libwayland-dev \
-          wayland-protocols \
-          libdecor-0-dev \
-          libgl-dev \
-          libopengl-dev \
-          libglx-dev \
-          libegl1-mesa-dev \
-          libdrm-dev \
-          libgbm-dev \
-          libpulse-dev \
-          libasound2-dev \
-          libusb-1.0-0-dev \
-          libudev-dev \
-          libunwind-dev \
-          libfribidi-dev \
-          libthai-dev \
+        sudo apt install -y \\
+          build-essential \\
+          ninja-build \\
+          libprotobuf-dev \\
+          protobuf-compiler \\
+          protobuf-compiler-grpc \\
+          libyaml-cpp-dev \\
+          libwebp-dev \\
+          libx11-dev \\
+          libxext-dev \\
+          libxrandr-dev \\
+          libxcursor-dev \\
+          libxi-dev \\
+          libxinerama-dev \\
+          libxss-dev \\
+          libxtst-dev \\
+          libwayland-dev \\
+          wayland-protocols \\
+          libdecor-0-dev \\
+          libgl-dev \\
+          libopengl-dev \\
+          libglx-dev \\
+          libegl1-mesa-dev \\
+          libdrm-dev \\
+          libgbm-dev \\
+          libpulse-dev \\
+          libasound2-dev \\
+          libusb-1.0-0-dev \\
+          libudev-dev \\
+          libunwind-dev \\
+          libfribidi-dev \\
+          libthai-dev \\
           libprotobuf-dev
-          
+
     - name: Setup CMake(Linux)
       if: runner.os == 'Linux'
       uses: lukka/get-cmake@latest
@@ -72,8 +74,9 @@ runs:
       if: runner.os == 'macOS'
       shell: bash
       run: |
-        brew install \
-          cmake \
-          ninja \
-          protobuf \
-          yaml-cpp
+        brew install \\
+          cmake \\
+          ninja \\
+          protobuf \\
+          yaml-cpp \\
+          webp
