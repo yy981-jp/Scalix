@@ -46,16 +46,6 @@ jobs:
           name: build-${{ runner.os }}-${{ runner.arch }}
           path: build/
 
-      - name: Build with Nuitka
-        uses: ./.github/actions/buildWithNuitka
-
-      - name: install sxtr module
-        shell: bash
-        run: |
-          mkdir -p build/tracker
-          cp -r tracker/build/camera.dist/* build/tracker/
-
-
       - name: Setup env
         uses: ./.github/actions/setupCENV
 

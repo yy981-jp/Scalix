@@ -54,13 +54,6 @@ install(
 	DESTINATION resources
 )
 
-# tracker
-install(
-	DIRECTORY ${CMAKE_SOURCE_DIR}/tracker/build/camera.dist/
-	DESTINATION bin/tracker
-)
-
-
 # CPack
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
