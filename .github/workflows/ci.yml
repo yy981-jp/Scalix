@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - ci/github-actions
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
