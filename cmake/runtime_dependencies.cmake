@@ -81,14 +81,93 @@ function(scalix_resolve_runtime_dependencies)
 		POST_EXCLUDE_REGEXES ${_post_exclude}
 	)
 
+	# CMake's platform resolver may leave a dependency unresolved even when its
+	# file exists in one of the explicitly supplied search directories. Resolve
+	# such names by exact filename, then inspect those files for their own
+	# runtime dependencies. This keeps development copies and packages on the
+	# same dependency-resolution path.
+	set(_resolved_dependency_names)
+	foreach(_dependency IN LISTS _resolved_dependencies)
+		get_filename_component(_dependency_name "${_dependency}" NAME)
+		if(WIN32)
+			string(TOLOWER "${_dependency_name}" _dependency_name)
+		endif()
+		list(APPEND _resolved_dependency_names "${_dependency_name}")
+	endforeach()
+
+	while(_unresolved_dependencies)
+		set(_remaining_unresolved)
+		set(_fallback_dependencies)
+
+		foreach(_dependency IN LISTS _unresolved_dependencies)
+			set(_dependency_name "${_dependency}")
+			if(WIN32)
+				string(TOLOWER "${_dependency_name}" _dependency_name)
+			endif()
+
+			if(_dependency_name IN_LIST _resolved_dependency_names)
+				continue()
+			endif()
+
+			find_file(_fallback_dependency
+				NAMES "${_dependency}"
+				PATHS ${_search_directories}
+				NO_DEFAULT_PATH
+				NO_CACHE
+			)
+
+			if(_fallback_dependency)
+				list(APPEND _fallback_dependencies "${_fallback_dependency}")
+				list(APPEND _resolved_dependencies "${_fallback_dependency}")
+				list(APPEND _resolved_dependency_names "${_dependency_name}")
+				unset(_fallback_dependency)
+			else()
+				list(APPEND _remaining_unresolved "${_dependency}")
+			endif()
+		endforeach()
+
+		if(NOT _fallback_dependencies)
+			set(_unresolved_dependencies ${_remaining_unresolved})
+			break()
+		endif()
+
+		list(REMOVE_DUPLICATES _fallback_dependencies)
+		file(GET_RUNTIME_DEPENDENCIES
+			LIBRARIES ${_fallback_dependencies}
+			DIRECTORIES ${_search_directories}
+			RESOLVED_DEPENDENCIES_VAR _additional_resolved_dependencies
+			UNRESOLVED_DEPENDENCIES_VAR _additional_unresolved_dependencies
+			PRE_EXCLUDE_REGEXES ${_pre_exclude}
+			POST_EXCLUDE_REGEXES ${_post_exclude}
+		)
+
+		foreach(_dependency IN LISTS _additional_resolved_dependencies)
+			get_filename_component(_dependency_name "${_dependency}" NAME)
+			if(WIN32)
+				string(TOLOWER "${_dependency_name}" _dependency_name)
+			endif()
+			list(APPEND _resolved_dependency_names "${_dependency_name}")
+		endforeach()
+
+		list(APPEND _resolved_dependencies ${_additional_resolved_dependencies})
+		list(REMOVE_DUPLICATES _resolved_dependencies)
+		list(REMOVE_DUPLICATES _resolved_dependency_names)
+
+		list(APPEND _remaining_unresolved ${_additional_unresolved_dependencies})
+		list(REMOVE_DUPLICATES _remaining_unresolved)
+		set(_unresolved_dependencies ${_remaining_unresolved})
+	endwhile()
+
 	if(_unresolved_dependencies)
 		if(ARG_STRICT)
 			message(FATAL_ERROR
-				"Unresolved runtime dependencies:\n${_unresolved_dependencies}"
+				"Unresolved runtime dependencies:\n${_unresolved_dependencies}\n"
+				"Searched directories:\n${_search_directories}"
 			)
 		else()
 			message(WARNING
-				"Unresolved runtime dependencies:\n${_unresolved_dependencies}"
+				"Unresolved runtime dependencies:\n${_unresolved_dependencies}\n"
+				"Searched directories:\n${_search_directories}"
 			)
 		endif()
 	endif()
