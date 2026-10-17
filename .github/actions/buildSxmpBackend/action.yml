@@ -66,6 +66,8 @@ runs:
         bazelisk-version: 1.29.0
         bazelisk-cache: true
         disk-cache: sxmp-backend-${{ runner.os }}-${{ runner.arch }}
+        # Rotate Windows caches because the initial failed run saved an empty cache.
+        cache-version: ${{ runner.os == 'Windows' && '2' || '1' }}
         # Windows cache restores of Bazel's extracted external repositories trigger
         # absolute-path include errors; keep disk and repository caches enabled there.
         external-cache: ${{ runner.os != 'Windows' }}
