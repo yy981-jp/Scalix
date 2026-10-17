@@ -1,5 +1,5 @@
 name: Build sxmp backend
-description: Build the MediaPipe-based sxmp backend with MinGW
+description: Build the MediaPipe-based sxmp backend against Scalix-owned OpenCV.
 
 runs:
   using: composite
@@ -14,11 +14,30 @@ runs:
       shell: bash
       run: |
         workspace="sxmp/external/mediapipe/WORKSPACE"
-        sed -i 's|http://zlib.net/fossils/zlib-1.2.13.tar.gz|https://zlib.net/fossils/zlib-1.2.13.tar.gz|' "$workspace"
-        grep -F 'https://zlib.net/fossils/zlib-1.2.13.tar.gz' "$workspace"
+        python3 - <<'PY'
+        from pathlib import Path
 
-    - name: Verify Python
+        workspace = Path("sxmp/external/mediapipe/WORKSPACE")
+        old = "http://zlib.net/fossils/zlib-1.2.13.tar.gz"
+        new = "https://zlib.net/fossils/zlib-1.2.13.tar.gz"
+        content = workspace.read_text()
+        if old in content:
+            workspace.write_text(content.replace(old, new))
+        elif new not in content:
+            raise SystemExit(f"Could not find the expected zlib URL in {workspace}")
+        print(f"Using {new}")
+        PY
+
+    - name: Verify Python (Windows)
+      if: runner.os == 'Windows'
       shell: msys2 {0}
+      run: |
+        command -v python3
+        python3 --version
+
+    - name: Verify Python (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
       run: |
         command -v python3
         python3 --version
@@ -33,7 +52,8 @@ runs:
         repository-cache: true
         module-root: sxmp/external/mediapipe
 
-    - name: Build sxmp backend
+    - name: Build sxmp backend (Windows)
+      if: runner.os == 'Windows'
       shell: msys2 {0}
       working-directory: sxmp/external/mediapipe
       env:
@@ -63,3 +83,27 @@ runs:
           --copt=-fno-canonical-system-headers \
           --reuse_sandbox_directories \
           @sxmp//:sxmp_be_import_lib
+
+    - name: Build sxmp backend (Linux and macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: sxmp/external/mediapipe
+      env:
+        USE_BAZEL_VERSION: 7.4.1
+      run: |
+        LINK_GC_ARGS=()
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          LINK_GC_ARGS+=(--linkopt=-Wl,--gc-sections)
+        fi
+
+        bazel build \
+          -c opt \
+          --copt=-O3 \
+          --copt=-fomit-frame-pointer \
+          --copt=-ffunction-sections \
+          --copt=-fdata-sections \
+          "${LINK_GC_ARGS[@]}" \
+          --define MEDIAPIPE_DISABLE_GPU=1 \
+          --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
+          --reuse_sandbox_directories \
+          @sxmp//:sxmp_be
