@@ -10,10 +10,18 @@ runs:
       run: |
         git submodule update --init --depth 1 sxmp/external/mediapipe
 
-    - name: Fix zlib download URL
+    - name: Fix zlib download URL (Windows)
+      if: runner.os == 'Windows'
       shell: bash
       run: |
         workspace="sxmp/external/mediapipe/WORKSPACE"
+        sed -i 's|http://zlib.net/fossils/zlib-1.2.13.tar.gz|https://zlib.net/fossils/zlib-1.2.13.tar.gz|' "$workspace"
+        grep -F 'https://zlib.net/fossils/zlib-1.2.13.tar.gz' "$workspace"
+
+    - name: Fix zlib download URL (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
         python3 - <<'PY'
         from pathlib import Path
 
