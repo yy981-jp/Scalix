@@ -1,5 +1,9 @@
 #pragma once
 
+#if defined(_WIN32)
+#include <thread>
+#endif
+
 #include <SDL3/SDL.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>

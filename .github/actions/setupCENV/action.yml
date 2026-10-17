@@ -21,6 +21,7 @@ runs:
           mingw-w64-x86_64-protobuf
           mingw-w64-x86_64-python
           mingw-w64-x86_64-yaml-cpp
+          mingw-w64-x86_64-freetype
           perl
 
     - name: Setup Linux
@@ -31,6 +32,7 @@ runs:
         sudo apt install -y \
           build-essential \
           ninja-build \
+          libfreetype-dev \
           libprotobuf-dev \
           protobuf-compiler \
           protobuf-compiler-grpc \
@@ -76,4 +78,5 @@ runs:
           cmake \
           ninja \
           protobuf \
-          yaml-cpp
+          yaml-cpp \
+          freetype

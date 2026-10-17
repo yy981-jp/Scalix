@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stop_token>
+
 #include <opencv2/opencv.hpp>
 #include <asio.hpp>
 

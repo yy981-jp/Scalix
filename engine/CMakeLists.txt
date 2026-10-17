@@ -4,6 +4,12 @@ file(GLOB_RECURSE SOURCES
 	../shared/*.cpp
 )
 
+if(NOT WIN32)
+	list(REMOVE_ITEM SOURCES
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/mocap/mocap.cpp"
+	)
+endif()
+
 set(EXE_NAME sl)
 set(SDLIMAGE_DEPS_SHARED ON)
 
