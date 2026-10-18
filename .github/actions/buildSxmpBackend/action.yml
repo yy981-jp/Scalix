@@ -126,12 +126,22 @@ runs:
       working-directory: sxmp/external/mediapipe
       run: |
         expected="bazel-bin/external/sxmp/libsxmp_be.dll"
-        runtime_dll="$(find bazel-out -type f -iname 'libsxmp_be.dll' -print -quit 2>/dev/null || true)"
 
+        # Prefer Bazel's public output path. The bazel-out directory is often a
+        # symlink on Windows, so a plain find does not necessarily descend into it.
+        if [[ -f "$expected" ]]; then
+          echo "Using runtime DLL: $expected"
+          exit 0
+        fi
+
+        runtime_dll="$(find -L bazel-out bazel-bin -iname 'libsxmp_be.dll' -type f -print -quit 2>/dev/null || true)"
         if [[ -z "$runtime_dll" ]]; then
           echo "::error::Bazel finished without producing libsxmp_be.dll."
+          echo "Bazel's declared output files:"
+          BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
+          "$BAZEL" cquery --output=files @sxmp//:sxmp_be || true
           echo "Available sxmp backend outputs:"
-          find bazel-out -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
+          find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
           exit 1
         fi
 
