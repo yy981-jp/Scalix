@@ -5,7 +5,6 @@ file(GLOB_RECURSE SOURCES
 )
 
 set(EXE_NAME sl)
-set(SDLIMAGE_DEPS_SHARED ON)
 
 # External install prefix
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -107,9 +106,6 @@ add_custom_target(${EXE_NAME}_shaders ALL
 )
 
 add_dependencies(${EXE_NAME} ${EXE_NAME}_shaders)
-
-
-include(../cmake/cpack.cmake)
 
 
 # External packages

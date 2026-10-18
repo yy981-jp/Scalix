@@ -21,6 +21,7 @@ runs:
           mingw-w64-x86_64-protobuf
           mingw-w64-x86_64-python
           mingw-w64-x86_64-yaml-cpp
+          mingw-w64-x86_64-libwebp
           perl
 
     - name: Setup Linux
@@ -35,6 +36,7 @@ runs:
           protobuf-compiler \
           protobuf-compiler-grpc \
           libyaml-cpp-dev \
+          libwebp-dev \
           libx11-dev \
           libxext-dev \
           libxrandr-dev \
@@ -60,7 +62,7 @@ runs:
           libfribidi-dev \
           libthai-dev \
           libprotobuf-dev
-          
+
     - name: Setup CMake(Linux)
       if: runner.os == 'Linux'
       uses: lukka/get-cmake@latest
@@ -76,4 +78,5 @@ runs:
           cmake \
           ninja \
           protobuf \
-          yaml-cpp
+          yaml-cpp \
+          webp
