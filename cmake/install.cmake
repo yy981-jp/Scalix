@@ -21,7 +21,7 @@ list(APPEND _scalix_runtime_search_directories ${_scalix_sxmp_bazel_output_direc
 
 set(_scalix_runtime_search_code "")
 foreach(_directory IN LISTS _scalix_runtime_search_directories)
-	string(APPEND _scalix_runtime_search_code "\n\t\t\t\\\"${_directory}\\\"")
+	string(APPEND _scalix_runtime_search_code "\n\t\t\t\"${_directory}\"")
 endforeach()
 
 install(
