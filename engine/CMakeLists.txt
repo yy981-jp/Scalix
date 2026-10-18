@@ -54,6 +54,11 @@ else()
 	set_target_properties(sxmp_be PROPERTIES
 		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sxmp_be${CMAKE_SHARED_LIBRARY_SUFFIX}"
 	)
+
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		# Avoid embedding the Bazel output path in the executable's ELF dependencies.
+		set_property(TARGET sxmp_be PROPERTY IMPORTED_NO_SONAME TRUE)
+	endif()
 endif()
 
 if(WIN32)
