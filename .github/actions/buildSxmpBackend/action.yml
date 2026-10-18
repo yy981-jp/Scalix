@@ -117,7 +117,30 @@ runs:
           --host_copt=-D_WIN32_WINNT=0x0601 \
           --copt=-fno-canonical-system-headers \
           --reuse_sandbox_directories \
+          @sxmp//:sxmp_be \
           @sxmp//:sxmp_be_import_lib
+
+    - name: Verify sxmp backend runtime DLL (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      working-directory: sxmp/external/mediapipe
+      run: |
+        expected="bazel-bin/external/sxmp/libsxmp_be.dll"
+        runtime_dll="$(find bazel-out -type f -iname 'libsxmp_be.dll' -print -quit 2>/dev/null || true)"
+
+        if [[ -z "$runtime_dll" ]]; then
+          echo "::error::Bazel finished without producing libsxmp_be.dll."
+          echo "Available sxmp backend outputs:"
+          find bazel-out -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
+          exit 1
+        fi
+
+        mkdir -p "$(dirname "$expected")"
+        if [[ ! -e "$expected" || ! "$runtime_dll" -ef "$expected" ]]; then
+          cp -f "$runtime_dll" "$expected"
+        fi
+        test -f "$expected"
+        echo "Using runtime DLL: $expected"
 
     - name: Build sxmp backend (Linux and macOS)
       if: runner.os != 'Windows'
