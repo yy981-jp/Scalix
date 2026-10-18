@@ -46,3 +46,7 @@ add_subdirectory(engine)
 add_subdirectory(importer)
 add_subdirectory(dev)
 add_subdirectory(ui)
+
+# Project-wide install and package definitions
+include(cmake/install.cmake)
+include(cmake/cpack.cmake)

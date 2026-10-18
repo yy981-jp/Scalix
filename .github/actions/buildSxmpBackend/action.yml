@@ -1,5 +1,5 @@
 name: Build sxmp backend
-description: Build the MediaPipe-based sxmp backend with MinGW
+description: Build the MediaPipe-based sxmp backend against Scalix-owned OpenCV.
 
 runs:
   using: composite
@@ -10,15 +10,52 @@ runs:
       run: |
         git submodule update --init --depth 1 sxmp/external/mediapipe
 
-    - name: Fix zlib download URL
+    - name: Verify zlib macOS compatibility patch
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        patch="sxmp/external/mediapipe/third_party/zlib.diff"
+        if ! grep -Fq '+#if defined(MACOS)' "$patch"; then
+          echo "::error::MediaPipe zlib patch is missing the macOS compatibility fix."
+          exit 1
+        fi
+
+    - name: Fix zlib download URL (Windows)
+      if: runner.os == 'Windows'
       shell: bash
       run: |
         workspace="sxmp/external/mediapipe/WORKSPACE"
         sed -i 's|http://zlib.net/fossils/zlib-1.2.13.tar.gz|https://zlib.net/fossils/zlib-1.2.13.tar.gz|' "$workspace"
         grep -F 'https://zlib.net/fossils/zlib-1.2.13.tar.gz' "$workspace"
 
-    - name: Verify Python
+    - name: Fix zlib download URL (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+
+        workspace = Path("sxmp/external/mediapipe/WORKSPACE")
+        old = "http://zlib.net/fossils/zlib-1.2.13.tar.gz"
+        new = "https://zlib.net/fossils/zlib-1.2.13.tar.gz"
+        content = workspace.read_text()
+        if old in content:
+            workspace.write_text(content.replace(old, new))
+        elif new not in content:
+            raise SystemExit(f"Could not find the expected zlib URL in {workspace}")
+        print(f"Using {new}")
+        PY
+
+    - name: Verify Python (Windows)
+      if: runner.os == 'Windows'
       shell: msys2 {0}
+      run: |
+        command -v python3
+        python3 --version
+
+    - name: Verify Python (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
       run: |
         command -v python3
         python3 --version
@@ -29,11 +66,16 @@ runs:
         bazelisk-version: 1.29.0
         bazelisk-cache: true
         disk-cache: sxmp-backend-${{ runner.os }}-${{ runner.arch }}
-        external-cache: true
+        # Rotate Windows caches because the initial failed run saved an empty cache.
+        cache-version: ${{ runner.os == 'Windows' && '2' || '1' }}
+        # Windows cache restores of Bazel's extracted external repositories trigger
+        # absolute-path include errors; keep disk and repository caches enabled there.
+        external-cache: ${{ runner.os != 'Windows' }}
         repository-cache: true
         module-root: sxmp/external/mediapipe
 
-    - name: Build sxmp backend
+    - name: Build sxmp backend (Windows)
+      if: runner.os == 'Windows'
       shell: msys2 {0}
       working-directory: sxmp/external/mediapipe
       env:
@@ -44,7 +86,20 @@ runs:
           echo "::error::Bazelisk executable not found: $BAZEL"
           exit 1
         fi
-        "$BAZEL" build \
+
+        # setup-bazel's disk/repository cache paths are on D: for hosted Windows.
+        # Pass these paths directly because MSYS2 may use a different HOME than
+        # the setup-bazel action that writes the user .bazelrc.
+        DISK_CACHE="D:/_bazel-disk"
+        REPOSITORY_CACHE="D:/_bazel-repo"
+        mkdir -p "$(cygpath -u "$DISK_CACHE")" \
+          "$(cygpath -u "$REPOSITORY_CACHE")"
+
+        "$BAZEL" \
+          build \
+          --announce_rc \
+          --disk_cache="$DISK_CACHE" \
+          --repository_cache="$REPOSITORY_CACHE" \
           -c opt \
           --copt=-O3 \
           --copt=-fomit-frame-pointer \
@@ -62,4 +117,61 @@ runs:
           --host_copt=-D_WIN32_WINNT=0x0601 \
           --copt=-fno-canonical-system-headers \
           --reuse_sandbox_directories \
+          @sxmp//:sxmp_be \
           @sxmp//:sxmp_be_import_lib
+
+    - name: Verify sxmp backend runtime DLL (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      working-directory: sxmp/external/mediapipe
+      run: |
+        expected="bazel-bin/external/sxmp/libsxmp_be.dll"
+
+        # Prefer Bazel's public output path. The bazel-out directory is often a
+        # symlink on Windows, so a plain find does not necessarily descend into it.
+        if [[ -f "$expected" ]]; then
+          echo "Using runtime DLL: $expected"
+          exit 0
+        fi
+
+        runtime_dll="$(find -L bazel-out bazel-bin -iname 'libsxmp_be.dll' -type f -print -quit 2>/dev/null || true)"
+        if [[ -z "$runtime_dll" ]]; then
+          echo "::error::Bazel finished without producing libsxmp_be.dll."
+          echo "Bazel's declared output files:"
+          BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
+          "$BAZEL" cquery --output=files @sxmp//:sxmp_be || true
+          echo "Available sxmp backend outputs:"
+          find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
+          exit 1
+        fi
+
+        mkdir -p "$(dirname "$expected")"
+        if [[ ! -e "$expected" || ! "$runtime_dll" -ef "$expected" ]]; then
+          cp -f "$runtime_dll" "$expected"
+        fi
+        test -f "$expected"
+        echo "Using runtime DLL: $expected"
+
+    - name: Build sxmp backend (Linux and macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: sxmp/external/mediapipe
+      env:
+        USE_BAZEL_VERSION: 7.4.1
+      run: |
+        LINK_GC_ARGS=()
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          LINK_GC_ARGS+=(--linkopt=-Wl,--gc-sections)
+        fi
+
+        bazel build \
+          -c opt \
+          --copt=-O3 \
+          --copt=-fomit-frame-pointer \
+          --copt=-ffunction-sections \
+          --copt=-fdata-sections \
+          "${LINK_GC_ARGS[@]}" \
+          --define MEDIAPIPE_DISABLE_GPU=1 \
+          --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
+          --reuse_sandbox_directories \
+          @sxmp//:sxmp_be

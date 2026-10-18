@@ -168,9 +168,9 @@ cameraから見て手前がZ-
 
 pose_world_landmark使用
 
-releaseSysをgithubactionsで作りたい
-build自体はできるが、sxtrのpy依存をどうすべきか
-dep-dllはSHTからシステムを転用できそう?
+release/packaging
+sxmp導入後、sxtrのPython実行環境を配布する必要はなくなった
+配布物の構築はCMake/CPackに集約する
 
 
 設定UIは埋め込みの外部ブラウザにして、画面のみscalix内部の3D空間やoverlayに転送 とか?
@@ -199,15 +199,3 @@ sxtr-debug:
 	よｓｓｓｓっしゃああああああああ!!!!! 200時間のデバッグ地獄がやっと報われた!!!!!
 	あとは操作がいろいろ反転しちゃってるから修正して完全解決
 	-> 解決済み (cc258b31b0706ba1df906ece28b7cdaf2aee4cf9)
-
-
-pyコンパイルコマンド案
-	nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --include-data-files=..\.venv\Lib\site-packages\mediapipe\tasks\c\libmediapipe.dll=mediapipe\tasks\c\libmediapipe.dll --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py
-
-	nuitka --standalone --include-package=mediapipe --include-package-data=mediapipe --jobs=0 --user-package-configuration-file=..\mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task --verbose ..\camera.py > _.log 2>&1
-	
-	nuitka --standalone --jobs=0 --user-package-configuration-file=..\mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=..\models\pose_landmarker_full.task=models\pose_landmarker_full.task ..\camera.py
-	
-	
-	
-	nuitka --standalone --jobs=0 --user-package-configuration-file=mediapipe-tasks-c.nuitka-package.config.yml --include-data-files=models/pose_landmarker_full.task=models/pose_landmarker_full.task camera.py --output-dir=../build/tracker

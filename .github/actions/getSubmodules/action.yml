@@ -9,9 +9,16 @@ runs:
       id: submodule-key
       shell: bash
       run: |
-        hash=$(git submodule status | sha256sum | cut -d' ' -f1)
-        # Version the key so old full-history caches are not restored.
-        echo "key=submodules-depth1-${hash}" >> "$GITHUB_OUTPUT"
+        # Hash pinned external submodule commits, independent of initialization
+        # state in other submodule paths such as resources/assets.
+        hash=$(
+          git ls-tree HEAD:external |
+            awk '$1 == "160000" { print $3, $4 }' |
+            sort |
+            sha256sum |
+            cut -d' ' -f1
+        )
+        echo "key=submodules-depth1-external-${hash}" >> "$GITHUB_OUTPUT"
 
     - name: Restore submodule cache
       id: submodules
