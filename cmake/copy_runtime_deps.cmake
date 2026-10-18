@@ -20,6 +20,16 @@ foreach(_directory IN ITEMS
 	endif()
 endforeach()
 
+# Include Bazel's direct output directories as well as its bazel-bin view.
+get_filename_component(_bazel_external_directory "${RUNTIME_BAZEL_BIN}" DIRECTORY)
+get_filename_component(_bazel_bin_directory "${_bazel_external_directory}" DIRECTORY)
+get_filename_component(_bazel_workspace "${_bazel_bin_directory}" DIRECTORY)
+file(GLOB _runtime_bazel_output_directories
+	LIST_DIRECTORIES true
+	"${_bazel_workspace}/bazel-out/*/bin/external/sxmp"
+)
+list(APPEND _runtime_search_directories ${_runtime_bazel_output_directories})
+
 scalix_resolve_runtime_dependencies(
 	EXECUTABLE "${RUNTIME_EXE}"
 	DESTINATION "${RUNTIME_DEST}"
