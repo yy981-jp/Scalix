@@ -109,21 +109,35 @@ function(scalix_resolve_runtime_dependencies)
 				continue()
 			endif()
 
-			find_file(_fallback_dependency
-				NAMES "${_dependency}"
-				PATHS ${_search_directories}
-				NO_DEFAULT_PATH
-				NO_CACHE
-			)
+			# Prefer explicit paths before find_file(). On Windows/MinGW this
+			# avoids relying on CMake's find search behavior for runtime DLLs
+			# installed by our external projects.
+			unset(_fallback_dependency)
+			foreach(_directory IN LISTS _search_directories)
+				set(_candidate "${_directory}/${_dependency}")
+				if(EXISTS "${_candidate}" AND NOT IS_DIRECTORY "${_candidate}")
+					set(_fallback_dependency "${_candidate}")
+					break()
+				endif()
+			endforeach()
+
+			if(NOT _fallback_dependency)
+				find_file(_fallback_dependency
+					NAMES "${_dependency}"
+					PATHS ${_search_directories}
+					NO_DEFAULT_PATH
+					NO_CACHE
+				)
+			endif()
 
 			if(_fallback_dependency)
 				list(APPEND _fallback_dependencies "${_fallback_dependency}")
 				list(APPEND _resolved_dependencies "${_fallback_dependency}")
 				list(APPEND _resolved_dependency_names "${_dependency_name}")
-				unset(_fallback_dependency)
 			else()
 				list(APPEND _remaining_unresolved "${_dependency}")
 			endif()
+			unset(_fallback_dependency)
 		endforeach()
 
 		if(NOT _fallback_dependencies)
