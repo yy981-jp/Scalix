@@ -39,26 +39,31 @@ list(APPEND SOURCES
 add_executable(${EXE_NAME} ${SOURCES})
 
 
+# sxmp-backend is built by Bazel before CMake configuration.
+set(SXMP_BACKEND_BAZEL_DIR
+	"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
+)
+
+add_library(sxmp_be SHARED IMPORTED GLOBAL)
+if(WIN32)
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
+		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+	)
+else()
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sxmp_be${CMAKE_SHARED_LIBRARY_SUFFIX}"
+	)
+endif()
+
 if(WIN32)
 	target_compile_definitions(${EXE_NAME} PRIVATE
 		_WIN32_WINNT=0x0A00
 	)
 
-	set(SXMP_BACKEND_BAZEL_DIR
-		"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
-	)
-
-	add_library(sxmp_be SHARED IMPORTED GLOBAL)
-	set_target_properties(sxmp_be PROPERTIES
-		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
-		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
-	)
-
 	target_link_libraries(${EXE_NAME} PRIVATE
 		ws2_32
-		sxmp_be
 	)
-
 
 	get_filename_component(SXMP_MINGW_BIN
 		"${CMAKE_CXX_COMPILER}" DIRECTORY
@@ -90,7 +95,6 @@ if(WIN32)
 	)
 
 	add_dependencies(${EXE_NAME}_runtime_deps ${EXE_NAME})
-
 endif()
 
 
@@ -161,6 +165,7 @@ target_link_libraries(${EXE_NAME} PRIVATE
 	${OpenCV_LIBS}
 
 	protobuf::libprotobuf
+	sxmp_be
 )
 
 
