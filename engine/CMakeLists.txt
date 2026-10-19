@@ -104,7 +104,7 @@ endif()
 
 
 # shaders
-# compiles engine/shaders/<name>/{vs,fs}.sc into build/runtime/*.bin
+# compiles engine/shaders/<name>/{vs,fs}.sc
 compile_shader(tex)
 compile_shader(grid)
 

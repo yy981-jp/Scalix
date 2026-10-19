@@ -29,10 +29,10 @@ install(
 	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 
-install(
-	DIRECTORY "${CMAKE_BINARY_DIR}/runtime/"
-	DESTINATION "${CMAKE_INSTALL_BINDIR}/runtime"
-)
+# install(
+# 	DIRECTORY "${CMAKE_BINARY_DIR}/runtime/"
+# 	DESTINATION "${CMAKE_INSTALL_BINDIR}/runtime"
+# )
 
 install(
 	DIRECTORY "${CMAKE_SOURCE_DIR}/resources/"

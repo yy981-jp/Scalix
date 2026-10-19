@@ -1,11 +1,10 @@
 #include <gfx/shader.h>
-#include <def/fs.h>
 
 
-bgfx::ShaderHandle loadShader(const char* path) {
+bgfx::ShaderHandle loadShader(const std::string& path) {
 	if (!fs::exists(path)) throw std::runtime_error(std::string{"Shader not found: "} + path);
 
-	FILE* f = fopen(path, "rb");
+	FILE* f = fopen(path.c_str(), "rb");
 	if (!f) throw std::runtime_error("fopen failed");
 	fseek(f, 0, SEEK_END);
 	size_t size = ftell(f);
@@ -20,7 +19,7 @@ bgfx::ShaderHandle loadShader(const char* path) {
 	return bgfx::createShader(mem);
 }
 
-bgfx::ProgramHandle loadProgram(const char* vs, const char* fs) {
+bgfx::ProgramHandle loadProgram(const std::string& vs, const std::string& fs) {
 	auto vsh = loadShader(vs);
 	auto fsh = loadShader(fs);
 	return bgfx::createProgram(vsh, fsh, true);

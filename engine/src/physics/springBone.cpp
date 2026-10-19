@@ -44,7 +44,7 @@ void SpringBoneChain::update(float dt) {
 		bone.prevPos = bone.currPos;
 		
 		bone.currPos += vel;
-		bone.currPos += def::gravity * dt * dt;
+		bone.currPos -= def::gravity * dt * dt;
 	}
 
 	// 制約: ボーン長を保つ
