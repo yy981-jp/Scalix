@@ -18,7 +18,7 @@ elseif(UNIX)
 endif()
 
 
-# Compiles engine/shaders/${NAME}/{vs,fs}.sc into runtime/{vs,fs}_${NAME}.bin
+# Compiles engine/shaders/${NAME}/{vs,fs}.sc
 # under the build directory, and exposes the outputs to the caller as
 # ${NAME}_SHADER_OUTPUTS so they can be wired as a build dependency.
 function(compile_shader NAME)
@@ -27,11 +27,11 @@ function(compile_shader NAME)
 	)
 
 	set(VS_OUTPUT
-		${CMAKE_BINARY_DIR}/runtime/vs_${NAME}.bin
+		${CMAKE_SOURCE_DIR}/resources/runtime/vs_${NAME}.bin
 	)
 
 	set(FS_OUTPUT
-		${CMAKE_BINARY_DIR}/runtime/fs_${NAME}.bin
+		${CMAKE_SOURCE_DIR}/resources/runtime/fs_${NAME}.bin
 	)
 
 	add_custom_command(

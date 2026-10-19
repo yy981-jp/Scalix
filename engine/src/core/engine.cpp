@@ -177,9 +177,15 @@ void Engine::gameInit() {
 	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
-	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
-	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
-
+	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(
+		(syspath.resource / "runtime/vs_tex.bin").string(),
+		(syspath.resource / "runtime/fs_tex.bin").string()
+	);
+	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram(
+		(syspath.resource / "runtime/vs_grid.bin").string(),
+		(syspath.resource / "runtime/fs_grid.bin").string()
+	);
+	
 	debug.init();
 
 	// const bgfx::Caps* caps = bgfx::getCaps();
