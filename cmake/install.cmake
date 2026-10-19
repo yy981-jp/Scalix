@@ -52,3 +52,5 @@ install(CODE "
 		SEARCH_DIRECTORIES ${_scalix_runtime_search_code}
 	)
 ")
+
+include("${CMAKE_SOURCE_DIR}/cmake/third_party_licenses.cmake")
