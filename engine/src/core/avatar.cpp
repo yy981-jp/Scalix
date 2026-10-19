@@ -47,6 +47,12 @@ void Avatar::update(GameContext& ctx, float dt) {
 		pos.z += rz * aplSpeed * rlMove;
 	}
 
+	if ( has(ctx.keyStat, KCode::Space) ) {
+		jump.jump(10);
+	}
+	jump.tick(dt);
+	pos.y = jump.getHeight();
+
 	status = (walking? Status::walk : Status::stay);
 
 	// --- アニメーション ---
