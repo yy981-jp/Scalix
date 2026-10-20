@@ -8,4 +8,4 @@
 #include <vector>
 #include <string_view>
 
-std::vector<std::string> tokenizer(const std::string_view& input);
+std::vector<std::string_view> tokenizer(const std::string_view& input);
