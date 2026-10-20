@@ -1,14 +1,24 @@
 #include <util/fmutil.h>
 #include <cctype>
+#include <string>
+#include <string_view>
+#include <vector>
 
-
-std::vector<std::string_view> tokenizer(const std::string_view& input) {
-	std::vector<std::string_view> result;
+std::vector<std::string> tokenizer(const std::string_view& input) {
+	std::vector<std::string> result;
 	size_t start = 0;
 
 	auto push = [&](size_t end) {
 		if (start < end) {
-			result.push_back(input.substr(start, end - start));
+			std::string token(input.substr(start, end - start));
+
+			for (char& c : token) {
+				c = static_cast<char>(
+					std::tolower(static_cast<unsigned char>(c))
+				);
+			}
+
+			result.push_back(std::move(token));
 		}
 	};
 
