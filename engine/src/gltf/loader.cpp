@@ -547,30 +547,51 @@ void GltfLoader::procHdl(Avatar* avatar) {
 		node.id = lnode.id;
 	}
 
+	std::vector<NodeId> origRoot;
+
 	// parentとchildrenもhdl解決
 	for (int i = 0; i < scalixModel.nodes.size(); i++) {
 		Node& node = scalixModel.nodes[i];
 		LoadingNode& lnode = lnodes[i];
 
-		// parent
 		if (lnode.parent.isValid()) {
-			// 通常
 			node.parent = scalixModel.nodeHandles[lnode.parent];
 		} else {
-			// root
 			node.parent = NodeHandle::invalid();
+			origRoot.push_back(lnode.id);
 		}
 
 		node.children.resize(lnode.children.size());
 		for (int j = 0; j < lnode.children.size(); j++) {
 			NodeId& lchild = lnode.children[j];
-			NodeHandle& child = node.children[j];
-
-			// child
-			child = scalixModel.nodeHandles[lchild];
+			node.children[j] = scalixModel.nodeHandles[lchild];
 		}
+	}
 
+	// 仮想rootを作成
+	Node root;
+	root.id = scalixModel.nodes.size();
+	root.parent = NodeHandle::invalid();
+
+	// 子のハンドルを登録
+	for (NodeId rootId: origRoot) {
+		const size_t index = static_cast<size_t>(rootId);
+		root.children.push_back(scalixModel.nodeHandles[index]);
+	}
+
+	// nodesに追加してからハンドルを割り当て
+	scalixModel.nodes.push_back(root);
+
+	const NodeHandle rootHdl = nodeReg.create(avatar, root.id);
+	scalixModel.root = rootHdl;
+	scalixModel.nodeHandles.push_back(rootHdl);
+
+	// 元のrootを仮想rootに接続
+	for (NodeId rootId : origRoot) {
+		const size_t index = static_cast<size_t>(rootId);
+		scalixModel.nodes[index].parent = rootHdl;
 	}
 
 	handleSolved = true;
+
 }
