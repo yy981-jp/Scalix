@@ -11,6 +11,7 @@ cmake_policy(SET CMP0207 NEW)
 set(CMAKE_CXX_STANDARD 23)
 add_compile_options(-fdiagnostics-color=always)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
 include_directories(
@@ -45,3 +46,7 @@ list(PREPEND CMAKE_PREFIX_PATH
 add_subdirectory(engine)
 add_subdirectory(importer)
 add_subdirectory(dev)
+
+# Project-wide install and package definitions
+include(cmake/install.cmake)
+include(cmake/cpack.cmake)

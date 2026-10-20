@@ -29,9 +29,6 @@ struct StrHs {
 
 	constexpr StrHs() = default;
 
-	// explicit constexpr StrHs(uint64_t i)
-		// : hash(i) {}
-
 	explicit constexpr StrHs(std::string_view s)
 		: hash(fnv1a(s)) {}
 
@@ -67,7 +64,6 @@ public:
 };
 
 
-// string table server ...関数名はそのうち改名しても良いかもね
 constexpr StrTable& strsv() {
 	static StrTable table;
 	return table;

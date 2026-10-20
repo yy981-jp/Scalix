@@ -4,6 +4,7 @@
 #include <model/humanoid.h>
 #include <model/avatarDef.h>
 #include <anim/animSystem.h>
+#include <util/jump.h>
 #include <def/euler.h>
 #include <def/pose.h>
 #include <def/transform.h>
@@ -29,6 +30,9 @@ struct Avatar {
 	float yaw = 0.0f;
 	vec3f scale = {1.0f, 1.0f, 1.0f};
 
+	Jump jump;
+	const float floor_y = 0;
+
 	Euler head{};
 	static constexpr float sensitivity = 0.01f;
 	static constexpr float headPitchLimit = 1.2f;
@@ -51,5 +55,4 @@ struct Avatar {
 	Avatar& operator=(const Avatar&) = delete;
 
 	Avatar(Avatar&&) noexcept = default;
-	Avatar& operator=(Avatar&&) noexcept = default;
 };

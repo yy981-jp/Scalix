@@ -46,7 +46,6 @@ public:
 	explicit PoseSolver(Avatar& avatar);
 	
 	void solve(const PoseFrame& frame);
-	void traceAfterGlobalRebuild() const;
 
 	void debug_(const PoseFrame& frame);
 };

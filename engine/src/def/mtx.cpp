@@ -2,7 +2,6 @@
 
 
 Mtx::Mtx() {
-	// m_data.fill(0.f);
 }
 
 float* Mtx::data() {return m_data.data(); }

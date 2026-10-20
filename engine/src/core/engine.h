@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+
+#include <thread>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
@@ -54,9 +56,7 @@ class Engine {
 
 	Grid grid;
 
-#if defined(_WIN32)
 	std::jthread mocapThr;
-#endif
 	Recv receiver;
 	PoseSolver* poseSolver;
 

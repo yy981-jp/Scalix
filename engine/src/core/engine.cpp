@@ -1,8 +1,6 @@
 #include <core/engine.h>
 
-#if defined(_WIN32)
 #include <mocap/mocap.h>
-#endif
 
 #include <stdexcept>
 #include <bx/math.h>
@@ -11,7 +9,7 @@
 #include <debug/debugDraw.h>
 #include <util/path.h>
 #include <core/config.h>
-#include <physics/detect.h>
+#include <physics/util.h>
 
 
 Engine::Engine() {
@@ -179,9 +177,15 @@ void Engine::gameInit() {
 	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
-	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram("runtime/vs_tex.bin", "runtime/fs_tex.bin");
-	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram("runtime/vs_grid.bin", "runtime/fs_grid.bin");
-
+	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(
+		(syspath.resource / "runtime/vs_tex.bin").string(),
+		(syspath.resource / "runtime/fs_tex.bin").string()
+	);
+	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram(
+		(syspath.resource / "runtime/vs_grid.bin").string(),
+		(syspath.resource / "runtime/fs_grid.bin").string()
+	);
+	
 	debug.init();
 
 	// const bgfx::Caps* caps = bgfx::getCaps();
@@ -214,9 +218,8 @@ void Engine::gameInit() {
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
 
-#if defined(_WIN32)
-	mocapThr = std::jthread(mocapWorker);
-#endif
+	if (cfg.get()["mocap"].get<bool>())
+		mocapThr = std::jthread(mocapWorker);
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {

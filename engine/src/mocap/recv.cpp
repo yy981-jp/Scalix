@@ -3,7 +3,6 @@
 #include <proto/pose.pb.h>
 #include <mocap/motionDebug.h>
 
-#include <cmath>
 #include <cstdio>
 
 Recv::Recv(uint16_t port):

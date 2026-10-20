@@ -1,67 +1,4 @@
-get_filename_component(COMPILER_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
-
-
-if(WIN32)
-	set(_rd_pre_exclude "api-ms-" "ext-ms-")
-	set(_rd_post_exclude ".*system32/.*\\.dll")
-	set(_webp_pattern "libwebp*.dll")
-	set(_webp_from "${CMAKE_SOURCE_DIR}/external/SDL-image/VisualC/external/optional/x64/")
-elseif(APPLE)
-	set(_rd_pre_exclude "")
-	set(_rd_post_exclude "^/usr/lib/.*" "^/System/Library/.*")
-	set(_webp_pattern "libwebp*.dylib")
-	set(_webp_from "${CMAKE_SOURCE_DIR}/external/")
-elseif(UNIX)
-	set(_rd_pre_exclude "^linux-vdso\\.so.*" "^ld-linux.*\\.so.*")
-	set(_rd_post_exclude "^/lib/.*" "^/lib64/.*" "^/usr/lib/.*")
-	set(_webp_pattern "libwebp*.so*")
-	set(_webp_from "${CMAKE_SOURCE_DIR}/external/")
-endif()
-
-include(${CMAKE_CURRENT_LIST_DIR}/install_dlls.cmake)
-
-install(
-	TARGETS ${EXE_NAME}
-	RUNTIME_DEPENDENCIES
-		DIRECTORIES
-			${EXTERNAL_INSTALL_PREFIX}/bin
-			${COMPILER_BIN_DIR}
-		PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
-		POST_EXCLUDE_REGEXES ${_rd_post_exclude}
-		RUNTIME DESTINATION bin
-		LIBRARY DESTINATION bin
-		FRAMEWORK DESTINATION bin
-	RUNTIME DESTINATION bin
-)
-
-install_dlls_by_wildcard(
-	"${_webp_pattern}"
-	"${_webp_from}"
-	"bin"
-	PRE_EXCLUDE_REGEXES ${_rd_pre_exclude}
-	POST_EXCLUDE_REGEXES ${_rd_post_exclude}
-)
-
-# shaders
-install(
-	DIRECTORY ${CMAKE_BINARY_DIR}/runtime/
-	DESTINATION bin/runtime
-)
-
-# resources
-install(
-	DIRECTORY ${CMAKE_SOURCE_DIR}/resources/
-	DESTINATION resources
-)
-
-# tracker
-install(
-	DIRECTORY ${CMAKE_SOURCE_DIR}/tracker/build/camera.dist/
-	DESTINATION bin/tracker
-)
-
-
-# CPack
+# Package metadata and output formats.
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/dist")
@@ -78,7 +15,6 @@ set(CPACK_THREADS 0)
 
 if(WIN32)
 	set(CPACK_GENERATOR "ZIP;NSIS")
-	# set(CPACK_GENERATOR "ZIP")
 elseif(APPLE)
 	set(CPACK_GENERATOR "DragNDrop")
 elseif(UNIX)

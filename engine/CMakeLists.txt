@@ -5,7 +5,6 @@ file(GLOB_RECURSE SOURCES
 )
 
 set(EXE_NAME sl)
-set(SDLIMAGE_DEPS_SHARED ON)
 
 # External install prefix
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -40,26 +39,36 @@ list(APPEND SOURCES
 add_executable(${EXE_NAME} ${SOURCES})
 
 
+# sxmp-backend is built by Bazel before CMake configuration.
+set(SXMP_BACKEND_BAZEL_DIR
+	"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
+)
+
+add_library(sxmp_be SHARED IMPORTED GLOBAL)
+if(WIN32)
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
+		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+	)
+else()
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sxmp_be${CMAKE_SHARED_LIBRARY_SUFFIX}"
+	)
+
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		# Avoid embedding the Bazel output path in the executable's ELF dependencies.
+		set_property(TARGET sxmp_be PROPERTY IMPORTED_NO_SONAME TRUE)
+	endif()
+endif()
+
 if(WIN32)
 	target_compile_definitions(${EXE_NAME} PRIVATE
 		_WIN32_WINNT=0x0A00
 	)
 
-	set(SXMP_BACKEND_BAZEL_DIR
-		"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
-	)
-
-	add_library(sxmp_be SHARED IMPORTED GLOBAL)
-	set_target_properties(sxmp_be PROPERTIES
-		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
-		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
-	)
-
 	target_link_libraries(${EXE_NAME} PRIVATE
 		ws2_32
-		sxmp_be
 	)
-
 
 	get_filename_component(SXMP_MINGW_BIN
 		"${CMAKE_CXX_COMPILER}" DIRECTORY
@@ -91,12 +100,11 @@ if(WIN32)
 	)
 
 	add_dependencies(${EXE_NAME}_runtime_deps ${EXE_NAME})
-
 endif()
 
 
 # shaders
-# compiles engine/shaders/<name>/{vs,fs}.sc into build/runtime/*.bin
+# compiles engine/shaders/<name>/{vs,fs}.sc
 compile_shader(tex)
 compile_shader(grid)
 
@@ -107,9 +115,6 @@ add_custom_target(${EXE_NAME}_shaders ALL
 )
 
 add_dependencies(${EXE_NAME} ${EXE_NAME}_shaders)
-
-
-include(../cmake/cpack.cmake)
 
 
 # External packages
@@ -165,6 +170,7 @@ target_link_libraries(${EXE_NAME} PRIVATE
 	${OpenCV_LIBS}
 
 	protobuf::libprotobuf
+	sxmp_be
 )
 
 

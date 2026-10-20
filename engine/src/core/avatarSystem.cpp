@@ -155,7 +155,6 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 	
 	for (auto& avatar: avatars) {
 
-		// printf("D: avatar.id: %d, playable: %d\n", avatar.id, playableAvatar);
 		if (avatar.id != playableAvatar) continue; // player以外の制御はしない
 
 		traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
@@ -169,21 +168,15 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		Transform entityTransform;
 		entityTransform.pos = avatar.pos;
 		entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
-		// glTF座標系からのX軸反転もEntityのTRSとして扱う。
 		entityTransform.scale = avatar.scale;
 		Mtx entityMtx = Mtx::fromTRS(entityTransform);
 
-		// entityTransform.rebuildMatrix();
-
-		// トラッキング(PoseSolver)用のentityTransform。
-		// モーションキャプチャの入力はカメラ空間の相対ベクトルであり、
-		// アバターがワールド上でどこを向いている(yaw)か・どこにいる(pos)かとは
-		// 無関係なため、そのぶんは含めない。glTFのX軸反転(scale)は座標系の
-		// 補正であって向きではないので、そのまま維持する。
+		// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
+		// スケールは entityTransform と同じにする。
+		// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
 		Transform trackingEntityTransform;
 		trackingEntityTransform.scale = entityTransform.scale;
 		Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
-		// trackingEntityTransform.rebuildMatrix();
 
 		std::vector<bool> calculated;
 		calculated.resize(avatar.model.nodes.size(), false);
@@ -198,7 +191,6 @@ void AvatarSystem::update(GameContext& ctx, float dt) {
 		for (int i = 0; i < avatar.model.nodes.size(); i++) {
 			calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
 		}
-		if (ctx.poseSolver != nullptr) ctx.poseSolver->traceAfterGlobalRebuild();
 
 		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
 
@@ -225,13 +217,6 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 			for (int i = 0; i < (int)skin.joints.size(); i++) {
 				NodeId nodeIdx = skin.joints[i];
 
-				// 順序検証済み
-				// bx::mtxMul(
-				// 	jointMtx[i].data(),
-				// 	skin.invBind[i].data(),
-				// 	avatar.globalMtx[nodeIdx].data()
-				// );
-
 				jointMtx[i] = avatar.globalMtx[nodeIdx] * skin.invBind[i];
 			}
 		}
@@ -245,8 +230,6 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 			if (node.meshCount == 0) continue;
 			if (node.skinIndex < 0) continue;
 			if (!node.visible) continue;
-
-			// printf("DEBUG: node name: %s\n", std::string(strsv().get(node.name)).c_str());
 
 			for (int i = 0; i < node.meshCount; i++) {
 				const Mesh& mesh = avatar.model.meshes[node.meshStartIndex + i];
@@ -262,42 +245,9 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 
 				if (mesh.boneRemapInverse.size() > 120) {
 					printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
-					// printf("rem-inv: %d", mesh.boneRemapInverse.size());
-					continue;
+						continue;
 				}
 				
-
-				// const Mtx& global = avatar.globalMtx[node.id];
-				// const Mtx& tracking = avatar.trackingMtx[node.id];
-
-				// printf(
-				// 	"bone=%d "
-				// 	"globalRot=(%.5f %.5f %.5f %.5f) "
-				// 	"trackingRot=(%.5f %.5f %.5f %.5f)\n",
-				// 	(int)node.id,
-				// 	global.rot().x, global.rot().y, global.rot().z, global.rot().w,
-				// 	tracking.rot().x, tracking.rot().y, tracking.rot().z, tracking.rot().w
-				// );
-
-				// if (node.skinIndex < 0 ||
-				// 	node.jointIndex < 0) {
-				// 	continue;
-				// }
-
-				// const Mtx& skinMtx =
-				// 	allJointMtx[node.skinIndex][node.jointIndex];
-
-				// Quat skinRot = skinMtx.rot();
-
-				// printf(
-				// 	"bone=%d skinRot=(%.5f %.5f %.5f %.5f)\n",
-				// 	(int)node.id,
-				// 	skinRot.x,
-				// 	skinRot.y,
-				// 	skinRot.z,
-				// 	skinRot.w
-				// );
-
 
 				bgfx::setUniform(u_bones, palette.data(), palette.size());
 
@@ -336,7 +286,6 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				// ===== draw =====
 				bgfx::submit(0, program);
 
-				// printf("DEBUG: size: %d\n", mesh.boneRemapInverse.size());
 			}
 
 		}

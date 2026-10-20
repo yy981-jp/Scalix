@@ -19,6 +19,15 @@ bool has(const std::vector<std::string>& w, const Targets&... targets_arg) {
 	return false;
 }
 
+struct StringHash {
+	using is_transparent = void;
+
+	size_t operator()(std::string_view sv) const noexcept {
+		return std::hash<std::string_view>{}(sv);
+	}
+};
+
+
 
 
 enum class BoneType : uint8_t {
@@ -71,7 +80,7 @@ struct NodeInfo {
 };
 
 
-static const std::unordered_map<std::string, BoneType> wordMap = {
+static const std::unordered_map<std::string, BoneType, StringHash, std::equal_to<>> wordMap = {
     {"head", BoneType::head},
 
     {"neck", BoneType::neck},
@@ -105,7 +114,7 @@ static const std::unordered_map<std::string, BoneType> wordMap = {
     {"toes", BoneType::toes},
 };
 
-static const std::unordered_map<std::string, Side> sideMap = {
+static const std::unordered_map<std::string, Side, StringHash, std::equal_to<>> sideMap = {
 	{"l", Side::left},
 	{"left", Side::left},
 
@@ -113,7 +122,7 @@ static const std::unordered_map<std::string, Side> sideMap = {
 	{"right", Side::right},
 };
 
-static const std::unordered_map<std::string, Level> levelMap = {
+static const std::unordered_map<std::string, Level, StringHash, std::equal_to<>> levelMap = {
 	{"upper", Level::upper},
 	{"up", Level::upper},
 
@@ -151,7 +160,7 @@ void Humanoid::init(const Model& model) {
 			const std::vector<std::string> words = tokenizer(strsv().get( nodes[nodeId].name ));
 			NodeInfo cand;
 			cand.handle = nodeReg.find(sampleHdl,nodeId);
-			for (auto& w : words) {
+			for (const std::string_view& w : words) {
 				if (auto it = wordMap.find(w); it != wordMap.end())
 					cand.type = it->second;
 				if (auto it = sideMap.find(w); it != sideMap.end())
@@ -248,7 +257,6 @@ void Humanoid::init(const Model& model) {
 	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
 		
-		// TODO: fix: boneFlagに反映
 		if (bones[i].isValid()) {
 			boneFlag |= HBTFlag(static_cast<HBT>(i));
 		}
