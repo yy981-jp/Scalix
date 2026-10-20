@@ -1,0 +1,27 @@
+# Source-of-truth manifest for third-party software notices.
+# Format: component,license,source_url,path
+# One row is required for each license/notice document. A path may be quoted.
+# Fields may not contain commas or newlines; embedded CSV quoting is not supported.
+# Use SPDX license identifiers and pin source_url to the dependency commit when possible.
+# System-installed Protocol Buffers uses a tracked copy of its upstream license text.
+# NOTE: resources/assets has no license/notice file at the pinned commit. Its terms
+# must be confirmed separately; do not infer a license from this software manifest.
+# Transitive dependencies (including Bazel-fetched repositories) are not auto-discovered.
+component,license,source_url,path
+SDL3,Zlib,https://github.com/libsdl-org/SDL/tree/147a8ee32dbf9ac02f3794964490687b6bbda1bc,"external/SDL/LICENSE.txt"
+SDL3_image,Zlib,https://github.com/libsdl-org/SDL_image/tree/bec9134a26c7d0f31b36d6083c25296e04cabff5,"external/SDL-image/LICENSE.txt"
+Asio,BSL-1.0,https://github.com/chriskohlhoff/asio/tree/8806a6803cde7054c3049d3666d3ec36786568c5,"external/asio/COPYING"
+Asio,BSL-1.0,https://github.com/chriskohlhoff/asio/tree/8806a6803cde7054c3049d3666d3ec36786568c5,"external/asio/LICENSE_1_0.txt"
+bgfx,BSD-2-Clause,https://github.com/bkaradzic/bgfx/tree/9c9843837210c462b80862238619cbac0ca028ab,"external/bgfx/LICENSE"
+bgfx.cmake,CC0-1.0,https://github.com/bkaradzic/bgfx.cmake/tree/668550dc7c47c71860a39c5ef4c162e79294c93f,"external/bgfx.cmake/LICENSE"
+bimg,BSD-2-Clause,https://github.com/bkaradzic/bimg/tree/9114b47f532ce59cd0c6c9f8932df2c48888d4c1,"external/bimg/LICENSE"
+bx,BSD-2-Clause,https://github.com/bkaradzic/bx/tree/cac72f6cfa0893393ea12692ebfacb4495f8c826,"external/bx/LICENSE"
+Dear-ImGui,MIT,https://github.com/ocornut/imgui/tree/b335bf4328054498219afb4188ec39912f2a95b1,"external/dear-imgui/LICENSE.txt"
+nlohmann-json,MIT,https://github.com/nlohmann/json/tree/bdbafc52c0ec52431e4e4aa9992775a734612d4b,"external/nlohmann/LICENSE.MIT"
+OpenCV,Apache-2.0,https://github.com/opencv/opencv/tree/40738fb16ceddb5fb3fea747585f7ce6abb0605b,"external/opencv/LICENSE"
+OpenCV,Apache-2.0,https://github.com/opencv/opencv/tree/40738fb16ceddb5fb3fea747585f7ce6abb0605b,"external/opencv/COPYRIGHT"
+tinygltf,MIT,https://github.com/yy981-jp/tinygltf/tree/c6222f8d7dead3dcea89384fcb4969e602635519,"external/tinygltf/LICENSE"
+yaml-cpp,MIT,https://github.com/jbeder/yaml-cpp/tree/4861d049534ed6f2c51c45b01d7c2926022e5f3f,"external/yaml-cpp/LICENSE"
+y9inc,MIT,https://github.com/yy981-jp/tools/tree/e2ee980f2ec541b5eb37e57451c12cb4b9416170,"external/y9inc/LICENSE"
+MediaPipe,Apache-2.0,https://github.com/yy981-jp/mediapipe/tree/297594fd6610cf79c24786dc8d3a10ea09b6066e,"sxmp/external/mediapipe/LICENSE"
+Protocol-Buffers,BSD-3-Clause,https://github.com/protocolbuffers/protobuf,"cmake/licenses/protobuf-COPYING.txt"

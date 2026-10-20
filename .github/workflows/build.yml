@@ -44,6 +44,12 @@ jobs:
         working-directory: build
         shell: bash
         run: |
+          cmake --install . --prefix "$PWD/license-check"
+          cmake \
+            "-DLICENSE_INSTALL_ROOT=$PWD/license-check" \
+            "-DEXPECTED_FILES=$PWD/generated/THIRD_PARTY_LICENSES_INSTALL_LIST.txt" \
+            -P ../cmake/verify_third_party_licenses.cmake
+          rm -rf license-check
           cpack --config CPackConfig.cmake
           rm -rf dist/_CPack_Packages
 
