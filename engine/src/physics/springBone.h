@@ -1,6 +1,4 @@
 #pragma once
-#include <algorithm>
-#include <array>
 #include <vector>
 
 #include <def/def.h>
