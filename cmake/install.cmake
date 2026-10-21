@@ -40,7 +40,7 @@ if(APPLE)
 		BUNDLE DESTINATION "."
 	)
 
-	set(_scalix_installed_executable "Scalix.app/Contents/MacOS/sl")
+	set(_scalix_installed_executable "Scalix.app/Contents/MacOS/Scalix")
 	set(_scalix_runtime_install_destination "Scalix.app/Contents/Frameworks")
 	set(_scalix_resources_install_destination "Scalix.app/Contents/Resources/resources")
 
