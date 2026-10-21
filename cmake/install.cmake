@@ -24,6 +24,15 @@ foreach(_directory IN LISTS _scalix_runtime_search_directories)
 	string(APPEND _scalix_runtime_search_code "\n\t\t\t\"${_directory}\"")
 endforeach()
 
+# CMake selects the correct runtime dependency inspector for each platform.
+# Explicitly pass objdump only on PE/ELF targets; Mach-O inspection uses otool.
+set(_scalix_runtime_dependency_command_code "")
+if(SCALIX_RUNTIME_DEPENDENCY_TOOL STREQUAL "objdump" AND CMAKE_OBJDUMP)
+	string(APPEND _scalix_runtime_dependency_command_code
+		"\n\t\tCOMMAND \"${CMAKE_OBJDUMP}\""
+	)
+endif()
+
 install(
 	TARGETS sl
 	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
@@ -48,7 +57,7 @@ install(CODE "
 		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
 		PLATFORM \"${SCALIX_RUNTIME_DEPENDENCY_PLATFORM}\"
 		TOOL \"${SCALIX_RUNTIME_DEPENDENCY_TOOL}\"
-		COMMAND \"${CMAKE_OBJDUMP}\"
+		${_scalix_runtime_dependency_command_code}
 		SEARCH_DIRECTORIES ${_scalix_runtime_search_code}
 	)
 ")
