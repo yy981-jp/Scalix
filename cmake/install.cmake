@@ -42,7 +42,7 @@ if(APPLE)
 
 	set(_scalix_installed_executable "Scalix.app/Contents/MacOS/Scalix")
 	set(_scalix_runtime_install_destination "Scalix.app/Contents/Frameworks")
-	set(_scalix_resources_install_destination "Scalix.app/Contents/Resources/resources")
+	set(_scalix_resources_install_destination "Scalix.app/Contents/Resources")
 
 	# Bundle the relocatable MediaPipe library before scanning the app's runtime
 	# dependencies. The build action gives it an @rpath install name.
