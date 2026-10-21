@@ -72,14 +72,27 @@ function(scalix_resolve_runtime_dependencies)
 		endif()
 	endforeach()
 
-	file(GET_RUNTIME_DEPENDENCIES
-		EXECUTABLES "${ARG_EXECUTABLE}"
-		DIRECTORIES ${_search_directories}
-		RESOLVED_DEPENDENCIES_VAR _resolved_dependencies
-		UNRESOLVED_DEPENDENCIES_VAR _unresolved_dependencies
-		PRE_EXCLUDE_REGEXES ${_pre_exclude}
-		POST_EXCLUDE_REGEXES ${_post_exclude}
-	)
+	if(ARG_PLATFORM STREQUAL "macos+macho")
+		# Use BUNDLE_EXECUTABLE for a target built with MACOSX_BUNDLE. This lets
+		# CMake inspect the executable in its app-bundle context on macOS.
+		file(GET_RUNTIME_DEPENDENCIES
+			BUNDLE_EXECUTABLE "${ARG_EXECUTABLE}"
+			DIRECTORIES ${_search_directories}
+			RESOLVED_DEPENDENCIES_VAR _resolved_dependencies
+			UNRESOLVED_DEPENDENCIES_VAR _unresolved_dependencies
+			PRE_EXCLUDE_REGEXES ${_pre_exclude}
+			POST_EXCLUDE_REGEXES ${_post_exclude}
+		)
+	else()
+		file(GET_RUNTIME_DEPENDENCIES
+			EXECUTABLES "${ARG_EXECUTABLE}"
+			DIRECTORIES ${_search_directories}
+			RESOLVED_DEPENDENCIES_VAR _resolved_dependencies
+			UNRESOLVED_DEPENDENCIES_VAR _unresolved_dependencies
+			PRE_EXCLUDE_REGEXES ${_pre_exclude}
+			POST_EXCLUDE_REGEXES ${_post_exclude}
+		)
+	endif()
 
 	# CMake's platform resolver may leave a dependency unresolved even when its
 	# file exists in one of the explicitly supplied search directories. Resolve
