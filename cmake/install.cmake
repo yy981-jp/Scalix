@@ -33,18 +33,32 @@ if(SCALIX_RUNTIME_DEPENDENCY_TOOL STREQUAL "objdump" AND CMAKE_OBJDUMP)
 	)
 endif()
 
-install(
-	TARGETS sl
-	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-)
-
 if(APPLE)
-	# Bundle the staged MediaPipe backend beside sl before resolving Mach-O
-	# runtime dependencies. Its install name is @rpath/libsxmp_be.dylib.
+	# The DMG contains one self-contained app bundle.
+	install(
+		TARGETS sl
+		BUNDLE DESTINATION "."
+	)
+
+	set(_scalix_installed_executable "Scalix.app/Contents/MacOS/sl")
+	set(_scalix_runtime_install_destination "Scalix.app/Contents/Frameworks")
+	set(_scalix_resources_install_destination "Scalix.app/Contents/Resources/resources")
+
+	# Bundle the relocatable MediaPipe library before scanning the app's runtime
+	# dependencies. The build action gives it an @rpath install name.
 	install(
 		FILES "${CMAKE_BINARY_DIR}/runtime-backend/libsxmp_be.dylib"
-		DESTINATION "${CMAKE_INSTALL_BINDIR}"
+		DESTINATION "${_scalix_runtime_install_destination}"
 	)
+else()
+	install(
+		TARGETS sl
+		RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+	)
+
+	set(_scalix_installed_executable "${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:sl>")
+	set(_scalix_runtime_install_destination "${CMAKE_INSTALL_BINDIR}")
+	set(_scalix_resources_install_destination "resources")
 endif()
 
 # install(
@@ -54,7 +68,8 @@ endif()
 
 install(
 	DIRECTORY "${CMAKE_SOURCE_DIR}/resources/"
-	DESTINATION resources
+	DESTINATION "${_scalix_resources_install_destination}"
+	PATTERN ".git" EXCLUDE
 )
 
 install(CODE "
@@ -62,8 +77,8 @@ install(CODE "
 	scalix_resolve_runtime_dependencies(
 		INSTALL_MODE
 		STRICT
-		EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:sl>\"
-		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+		EXECUTABLE \\\"\\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\\\"
+		DESTINATION \\\"\\${CMAKE_INSTALL_PREFIX}/${_scalix_runtime_install_destination}\\\"
 		PLATFORM \"${SCALIX_RUNTIME_DEPENDENCY_PLATFORM}\"
 		TOOL \"${SCALIX_RUNTIME_DEPENDENCY_TOOL}\"
 		${_scalix_runtime_dependency_command_code}
