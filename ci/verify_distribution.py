@@ -204,8 +204,13 @@ def validate_payload(
         f'"{library_path}" ({size_for(library_path):,} bytes)',
     ]
 
+    shader_paths = (
+        [relative.removeprefix("resources/") for relative in SHADERS]
+        if system == "macos"
+        else list(SHADERS)
+    )
     required_files = [
-        *(f"{resources_prefix}{relative}" for relative in SHADERS),
+        *(f"{resources_prefix}{relative}" for relative in shader_paths),
         f"{licenses_prefix}LICENSE",
         f"{licenses_prefix}THIRD_PARTY_NOTICES.md",
     ]
