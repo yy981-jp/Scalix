@@ -38,6 +38,15 @@ install(
 	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 
+if(APPLE)
+	# Bundle the staged MediaPipe backend beside sl before resolving Mach-O
+	# runtime dependencies. Its install name is @rpath/libsxmp_be.dylib.
+	install(
+		FILES "${CMAKE_BINARY_DIR}/runtime-backend/libsxmp_be.dylib"
+		DESTINATION "${CMAKE_INSTALL_BINDIR}"
+	)
+endif()
+
 # install(
 # 	DIRECTORY "${CMAKE_BINARY_DIR}/runtime/"
 # 	DESTINATION "${CMAKE_INSTALL_BINDIR}/runtime"
