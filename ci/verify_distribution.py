@@ -97,7 +97,7 @@ def verify_build() -> None:
     system = operating_system()
     root = Path(__file__).resolve().parents[1]
     if system == "macos":
-        binary = root / "build" / "Scalix.app" / "Contents" / "MacOS" / "sl"
+        binary = root / "build" / "Scalix.app" / "Contents" / "MacOS" / "Scalix"
     else:
         binary = root / "build" / exe_name(system)
     if not binary.is_file():
@@ -163,7 +163,7 @@ def validate_payload(
     source_label: str,
 ) -> list[str]:
     if system == "macos":
-        executable_suffix = "Contents/MacOS/sl"
+        executable_suffix = "Contents/MacOS/Scalix"
         library_suffix = "Contents/Frameworks/libsxmp_be.dylib"
         resources_prefix = "Contents/Resources/"
         licenses_prefix = "Contents/Resources/licenses/Scalix/"
@@ -176,8 +176,8 @@ def validate_payload(
             fail(f"Invalid app bundle Info.plist in {source_label}: {error}")
         if info.get("CFBundlePackageType") != "APPL":
             fail(f"App bundle has an invalid CFBundlePackageType in {source_label}")
-        if info.get("CFBundleExecutable") != "sl":
-            fail(f"App bundle must launch the 'sl' executable in {source_label}")
+        if info.get("CFBundleExecutable") != "Scalix":
+            fail(f"App bundle must launch the 'Scalix' executable in {source_label}")
         if info.get("CFBundleIdentifier") != "jp.yy981.scalix":
             fail(f"App bundle has an unexpected CFBundleIdentifier in {source_label}")
     else:
