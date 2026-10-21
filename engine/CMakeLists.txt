@@ -39,9 +39,17 @@ list(APPEND SOURCES
 add_executable(${EXE_NAME} ${SOURCES})
 
 if(APPLE)
-	# Resolve bundled runtime libraries relative to the installed executable.
+	# Build a conventional Scalix.app bundle while keeping the executable name
+	# stable for scripts and runtime diagnostics.
 	set_target_properties(${EXE_NAME} PROPERTIES
-		INSTALL_RPATH "@executable_path"
+		MACOSX_BUNDLE TRUE
+		OUTPUT_NAME "Scalix"
+		MACOSX_BUNDLE_EXECUTABLE_NAME "sl"
+		MACOSX_BUNDLE_BUNDLE_NAME "Scalix"
+		MACOSX_BUNDLE_GUI_IDENTIFIER "jp.yy981.scalix"
+		MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+		MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+		INSTALL_RPATH "@executable_path/../Frameworks"
 	)
 endif()
 
