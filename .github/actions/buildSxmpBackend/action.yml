@@ -193,7 +193,6 @@ runs:
         esac
 
         expected="bazel-bin/external/sxmp/libsxmp_be.$suffix"
-
         if [[ -f "$expected" ]]; then
           runtime_library="$expected"
         else
@@ -210,8 +209,8 @@ runs:
         fi
 
         if [[ "$RUNNER_OS" == "macOS" ]]; then
-          # Bazel's dylib ID embeds a relative bazel-out path. Stage a copy with
-          # a relocatable install name so CMake can resolve it after installation.
+          # Stage a copy instead of modifying Bazel's output/cache artifact.
+          # Correct the Bazel-relative dylib ID so the package is relocatable.
           staged="$GITHUB_WORKSPACE/build/runtime-backend/libsxmp_be.dylib"
           mkdir -p "$(dirname "$staged")"
           cp -L "$runtime_library" "$staged"
@@ -225,22 +224,4 @@ runs:
           fi
           test -f "$expected"
           echo "Using runtime library: $expected"
-        fi          exit 0
         fi
-
-        runtime_library="$(find -L bazel-out bazel-bin -iname "libsxmp_be.$suffix" -type f -print -quit 2>/dev/null || true)"
-        if [[ -z "$runtime_library" ]]; then
-          echo "::error::Bazel finished without producing libsxmp_be.$suffix."
-          echo "Bazel's declared output files:"
-          bazel cquery --output=files @sxmp//:sxmp_be || true
-          echo "Available sxmp backend outputs:"
-          find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
-          exit 1
-        fi
-
-        mkdir -p "$(dirname "$expected")"
-        if [[ ! -e "$expected" || ! "$runtime_library" -ef "$expected" ]]; then
-          cp -f "$runtime_library" "$expected"
-        fi
-        test -f "$expected"
-        echo "Using runtime library: $expected"
