@@ -100,7 +100,11 @@ function(scalix_resolve_runtime_dependencies)
 		set(_fallback_dependencies)
 
 		foreach(_dependency IN LISTS _unresolved_dependencies)
-			set(_dependency_name "${_dependency}")
+			# Mach-O install names commonly use @rpath/, @loader_path/, or
+			# @executable_path/ prefixes. Search directories contain the actual
+			# library files, so use only the basename when probing those paths.
+			get_filename_component(_dependency_file "${_dependency}" NAME)
+			set(_dependency_name "${_dependency_file}")
 			if(ARG_PLATFORM STREQUAL "windows+pe")
 				string(TOLOWER "${_dependency_name}" _dependency_name)
 			endif()
@@ -114,7 +118,7 @@ function(scalix_resolve_runtime_dependencies)
 			# installed by our external projects.
 			unset(_fallback_dependency)
 			foreach(_directory IN LISTS _search_directories)
-				set(_candidate "${_directory}/${_dependency}")
+				set(_candidate "${_directory}/${_dependency_file}")
 				if(EXISTS "${_candidate}" AND NOT IS_DIRECTORY "${_candidate}")
 					set(_fallback_dependency "${_candidate}")
 					break()
@@ -123,7 +127,7 @@ function(scalix_resolve_runtime_dependencies)
 
 			if(NOT _fallback_dependency)
 				find_file(_fallback_dependency
-					NAMES "${_dependency}"
+					NAMES "${_dependency_file}"
 					PATHS ${_search_directories}
 					NO_DEFAULT_PATH
 					NO_CACHE
