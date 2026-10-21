@@ -138,7 +138,15 @@ def find_entry(entries: list[str], suffix: str, system: str, *, required: bool =
         fail(f'Package contains more than one file matching "{suffix}": {matches}')
     if not matches:
         if required:
-            fail(f"Package is missing required file: {suffix}")
+            basename = PurePosixPath(expected).name
+            basename_key = basename.casefold() if casefold else basename
+            nearby = [
+                candidate for candidate in entries
+                if (PurePosixPath(normalize_path(candidate)).name.casefold() if casefold
+                    else PurePosixPath(normalize_path(candidate)).name) == basename_key
+            ]
+            detail = f"; same-name entries found: {nearby}" if nearby else "; no same-name entry exists"
+            fail(f"Package is missing required file: {suffix}{detail}")
         return None
     return matches[0]
 
@@ -172,10 +180,10 @@ def validate_payload(
             fail(f"Required package file is empty: {source_label}:{path}")
         verified.append(f'"{path}" ({size:,} bytes)')
 
-    third_party_dir = "share/licenses/Scalix/third-party/"
+    third_party_dir = f"/share/licenses/Scalix/third-party/"
     third_party = [
         normalize_path(path) for path in entries
-        if normalize_path(path).startswith(third_party_dir)
+        if third_party_dir in f"/{normalize_path(path)}"
         and not normalize_path(path).endswith("/")
     ]
     if not third_party:
