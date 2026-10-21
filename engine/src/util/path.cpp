@@ -28,7 +28,9 @@ fs::path SysPath::getResourcePath() {
 	fs::path result = path;
 
 #if defined(SDL_PLATFORM_MACOS)
-	return result;
+	// SDL_GetBasePath() points to Contents/MacOS inside a macOS app bundle.
+	// Runtime resources live in Contents/Resources/resources.
+	return (result / ".." / "Resources" / "resources").lexically_normal();
 #else
 	return (result / ".." / "resources").lexically_normal();
 #endif
