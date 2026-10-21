@@ -12,9 +12,15 @@ endif()
 file(STRINGS "${_scalix_license_manifest}" _scalix_license_rows ENCODING UTF-8)
 
 set(_scalix_license_components)
+if(APPLE)
+	set(_scalix_license_install_root "Scalix.app/Contents/Resources/licenses/Scalix")
+else()
+	set(_scalix_license_install_root "${CMAKE_INSTALL_DATADIR}/licenses/Scalix")
+endif()
+
 set(_scalix_license_expected_destinations
-	"${CMAKE_INSTALL_DATADIR}/licenses/Scalix/LICENSE"
-	"${CMAKE_INSTALL_DATADIR}/licenses/Scalix/THIRD_PARTY_NOTICES.md"
+	"${_scalix_license_install_root}/LICENSE"
+	"${_scalix_license_install_root}/THIRD_PARTY_NOTICES.md"
 )
 set(_scalix_license_seen_destinations)
 
@@ -85,7 +91,7 @@ foreach(_row IN LISTS _scalix_license_rows)
 
 	cmake_path(GET _path FILENAME _filename)
 	set(_relative_destination
-		"${CMAKE_INSTALL_DATADIR}/licenses/Scalix/third-party/${_component}/${_filename}"
+		"${_scalix_license_install_root}/third-party/${_component}/${_filename}"
 	)
 	if(_relative_destination IN_LIST _scalix_license_seen_destinations)
 		message(FATAL_ERROR "Duplicate installed third-party license path: ${_relative_destination}")
@@ -123,7 +129,7 @@ foreach(_row IN LISTS _scalix_license_rows)
 
 	install(
 		FILES "${_source_file}"
-		DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Scalix/third-party/${_component}"
+		DESTINATION "${_scalix_license_install_root}/third-party/${_component}"
 	)
 endforeach()
 
@@ -168,5 +174,5 @@ install(
 	FILES
 		"${CMAKE_SOURCE_DIR}/LICENSE"
 		"${_scalix_notices_file}"
-	DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Scalix"
+	DESTINATION "${_scalix_license_install_root}"
 )

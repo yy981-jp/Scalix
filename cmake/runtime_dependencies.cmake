@@ -72,14 +72,28 @@ function(scalix_resolve_runtime_dependencies)
 		endif()
 	endforeach()
 
-	file(GET_RUNTIME_DEPENDENCIES
-		EXECUTABLES "${ARG_EXECUTABLE}"
-		DIRECTORIES ${_search_directories}
-		RESOLVED_DEPENDENCIES_VAR _resolved_dependencies
-		UNRESOLVED_DEPENDENCIES_VAR _unresolved_dependencies
-		PRE_EXCLUDE_REGEXES ${_pre_exclude}
-		POST_EXCLUDE_REGEXES ${_post_exclude}
-	)
+	if(ARG_PLATFORM STREQUAL "macos+macho")
+		# Use BUNDLE_EXECUTABLE for a target built with MACOSX_BUNDLE. This lets
+		# CMake inspect the executable in its app-bundle context on macOS.
+		file(GET_RUNTIME_DEPENDENCIES
+			EXECUTABLES "${ARG_EXECUTABLE}"
+			BUNDLE_EXECUTABLE "${ARG_EXECUTABLE}"
+			DIRECTORIES ${_search_directories}
+			RESOLVED_DEPENDENCIES_VAR _resolved_dependencies
+			UNRESOLVED_DEPENDENCIES_VAR _unresolved_dependencies
+			PRE_EXCLUDE_REGEXES ${_pre_exclude}
+			POST_EXCLUDE_REGEXES ${_post_exclude}
+		)
+	else()
+		file(GET_RUNTIME_DEPENDENCIES
+			EXECUTABLES "${ARG_EXECUTABLE}"
+			DIRECTORIES ${_search_directories}
+			RESOLVED_DEPENDENCIES_VAR _resolved_dependencies
+			UNRESOLVED_DEPENDENCIES_VAR _unresolved_dependencies
+			PRE_EXCLUDE_REGEXES ${_pre_exclude}
+			POST_EXCLUDE_REGEXES ${_post_exclude}
+		)
+	endif()
 
 	# CMake's platform resolver may leave a dependency unresolved even when its
 	# file exists in one of the explicitly supplied search directories. Resolve
@@ -100,7 +114,11 @@ function(scalix_resolve_runtime_dependencies)
 		set(_fallback_dependencies)
 
 		foreach(_dependency IN LISTS _unresolved_dependencies)
-			set(_dependency_name "${_dependency}")
+			# Mach-O install names commonly use @rpath/, @loader_path/, or
+			# @executable_path/ prefixes. Search directories contain the actual
+			# library files, so use only the basename when probing those paths.
+			get_filename_component(_dependency_file "${_dependency}" NAME)
+			set(_dependency_name "${_dependency_file}")
 			if(ARG_PLATFORM STREQUAL "windows+pe")
 				string(TOLOWER "${_dependency_name}" _dependency_name)
 			endif()
@@ -114,7 +132,7 @@ function(scalix_resolve_runtime_dependencies)
 			# installed by our external projects.
 			unset(_fallback_dependency)
 			foreach(_directory IN LISTS _search_directories)
-				set(_candidate "${_directory}/${_dependency}")
+				set(_candidate "${_directory}/${_dependency_file}")
 				if(EXISTS "${_candidate}" AND NOT IS_DIRECTORY "${_candidate}")
 					set(_fallback_dependency "${_candidate}")
 					break()
@@ -123,7 +141,7 @@ function(scalix_resolve_runtime_dependencies)
 
 			if(NOT _fallback_dependency)
 				find_file(_fallback_dependency
-					NAMES "${_dependency}"
+					NAMES "${_dependency_file}"
 					PATHS ${_search_directories}
 					NO_DEFAULT_PATH
 					NO_CACHE
@@ -146,14 +164,26 @@ function(scalix_resolve_runtime_dependencies)
 		endif()
 
 		list(REMOVE_DUPLICATES _fallback_dependencies)
-		file(GET_RUNTIME_DEPENDENCIES
-			LIBRARIES ${_fallback_dependencies}
-			DIRECTORIES ${_search_directories}
-			RESOLVED_DEPENDENCIES_VAR _additional_resolved_dependencies
-			UNRESOLVED_DEPENDENCIES_VAR _additional_unresolved_dependencies
-			PRE_EXCLUDE_REGEXES ${_pre_exclude}
-			POST_EXCLUDE_REGEXES ${_post_exclude}
-		)
+		if(ARG_PLATFORM STREQUAL "macos+macho")
+			file(GET_RUNTIME_DEPENDENCIES
+				LIBRARIES ${_fallback_dependencies}
+				BUNDLE_EXECUTABLE "${ARG_EXECUTABLE}"
+				DIRECTORIES ${_search_directories}
+				RESOLVED_DEPENDENCIES_VAR _additional_resolved_dependencies
+				UNRESOLVED_DEPENDENCIES_VAR _additional_unresolved_dependencies
+				PRE_EXCLUDE_REGEXES ${_pre_exclude}
+				POST_EXCLUDE_REGEXES ${_post_exclude}
+			)
+		else()
+			file(GET_RUNTIME_DEPENDENCIES
+				LIBRARIES ${_fallback_dependencies}
+				DIRECTORIES ${_search_directories}
+				RESOLVED_DEPENDENCIES_VAR _additional_resolved_dependencies
+				UNRESOLVED_DEPENDENCIES_VAR _additional_unresolved_dependencies
+				PRE_EXCLUDE_REGEXES ${_pre_exclude}
+				POST_EXCLUDE_REGEXES ${_post_exclude}
+			)
+		endif()
 
 		foreach(_dependency IN LISTS _additional_resolved_dependencies)
 			get_filename_component(_dependency_name "${_dependency}" NAME)

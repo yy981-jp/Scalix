@@ -38,11 +38,35 @@ list(APPEND SOURCES
 
 add_executable(${EXE_NAME} ${SOURCES})
 
+if(APPLE)
+	# Build a conventional Scalix.app bundle while keeping the executable name
+	# stable for scripts and runtime diagnostics.
+	set_target_properties(${EXE_NAME} PROPERTIES
+		MACOSX_BUNDLE TRUE
+		OUTPUT_NAME "Scalix"
+		MACOSX_BUNDLE_BUNDLE_NAME "Scalix"
+		MACOSX_BUNDLE_GUI_IDENTIFIER "jp.yy981.scalix"
+		MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+		MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+		INSTALL_RPATH "@executable_path/../Frameworks"
+	)
+endif()
+
 
 # sxmp-backend is built by Bazel before CMake configuration.
 set(SXMP_BACKEND_BAZEL_DIR
 	"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
 )
+
+if(APPLE)
+	set(SXMP_BACKEND_RUNTIME_LIBRARY
+		"${CMAKE_BINARY_DIR}/runtime-backend/libsxmp_be.dylib"
+	)
+else()
+	set(SXMP_BACKEND_RUNTIME_LIBRARY
+		"${SXMP_BACKEND_BAZEL_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sxmp_be${CMAKE_SHARED_LIBRARY_SUFFIX}"
+	)
+endif()
 
 add_library(sxmp_be SHARED IMPORTED GLOBAL)
 if(WIN32)
@@ -52,7 +76,7 @@ if(WIN32)
 	)
 else()
 	set_target_properties(sxmp_be PROPERTIES
-		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sxmp_be${CMAKE_SHARED_LIBRARY_SUFFIX}"
+		IMPORTED_LOCATION "${SXMP_BACKEND_RUNTIME_LIBRARY}"
 	)
 
 	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")

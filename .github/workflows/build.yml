@@ -33,6 +33,16 @@ jobs:
       - name: Build Project
         uses: ./.github/actions/buildProject
 
+      - name: Verify build outputs (Unix)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
+        run: python3 ci/verify_distribution.py build
+
+      - name: Verify build outputs (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: msys2 {0}
+        run: python3 ci/verify_distribution.py build
+
       - name: Install NSIS
         if: ${{ inputs.package && runner.os == 'Windows' }}
         run: |
@@ -52,6 +62,16 @@ jobs:
           rm -rf license-check
           cpack --config CPackConfig.cmake
           rm -rf dist/_CPack_Packages
+
+      - name: Verify package outputs (Unix)
+        if: ${{ inputs.package && runner.os != 'Windows' }}
+        shell: bash
+        run: python3 ci/verify_distribution.py package
+
+      - name: Verify package outputs (Windows)
+        if: ${{ inputs.package && runner.os == 'Windows' }}
+        shell: msys2 {0}
+        run: python3 ci/verify_distribution.py package
 
       - name: Upload build artifact
         if: ${{ !inputs.package }}
