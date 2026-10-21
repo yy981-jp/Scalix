@@ -164,14 +164,26 @@ function(scalix_resolve_runtime_dependencies)
 		endif()
 
 		list(REMOVE_DUPLICATES _fallback_dependencies)
-		file(GET_RUNTIME_DEPENDENCIES
-			LIBRARIES ${_fallback_dependencies}
-			DIRECTORIES ${_search_directories}
-			RESOLVED_DEPENDENCIES_VAR _additional_resolved_dependencies
-			UNRESOLVED_DEPENDENCIES_VAR _additional_unresolved_dependencies
-			PRE_EXCLUDE_REGEXES ${_pre_exclude}
-			POST_EXCLUDE_REGEXES ${_post_exclude}
-		)
+		if(ARG_PLATFORM STREQUAL "macos+macho")
+			file(GET_RUNTIME_DEPENDENCIES
+				LIBRARIES ${_fallback_dependencies}
+				BUNDLE_EXECUTABLE "${ARG_EXECUTABLE}"
+				DIRECTORIES ${_search_directories}
+				RESOLVED_DEPENDENCIES_VAR _additional_resolved_dependencies
+				UNRESOLVED_DEPENDENCIES_VAR _additional_unresolved_dependencies
+				PRE_EXCLUDE_REGEXES ${_pre_exclude}
+				POST_EXCLUDE_REGEXES ${_post_exclude}
+			)
+		else()
+			file(GET_RUNTIME_DEPENDENCIES
+				LIBRARIES ${_fallback_dependencies}
+				DIRECTORIES ${_search_directories}
+				RESOLVED_DEPENDENCIES_VAR _additional_resolved_dependencies
+				UNRESOLVED_DEPENDENCIES_VAR _additional_unresolved_dependencies
+				PRE_EXCLUDE_REGEXES ${_pre_exclude}
+				POST_EXCLUDE_REGEXES ${_post_exclude}
+			)
+		endif()
 
 		foreach(_dependency IN LISTS _additional_resolved_dependencies)
 			get_filename_component(_dependency_name "${_dependency}" NAME)
