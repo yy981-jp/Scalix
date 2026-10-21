@@ -76,6 +76,7 @@ function(scalix_resolve_runtime_dependencies)
 		# Use BUNDLE_EXECUTABLE for a target built with MACOSX_BUNDLE. This lets
 		# CMake inspect the executable in its app-bundle context on macOS.
 		file(GET_RUNTIME_DEPENDENCIES
+			EXECUTABLES "${ARG_EXECUTABLE}"
 			BUNDLE_EXECUTABLE "${ARG_EXECUTABLE}"
 			DIRECTORIES ${_search_directories}
 			RESOLVED_DEPENDENCIES_VAR _resolved_dependencies
