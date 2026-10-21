@@ -77,8 +77,8 @@ install(CODE "
 	scalix_resolve_runtime_dependencies(
 		INSTALL_MODE
 		STRICT
-		EXECUTABLE \\\"\\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\\\"
-		DESTINATION \\\"\\${CMAKE_INSTALL_PREFIX}/${_scalix_runtime_install_destination}\\\"
+		EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\"
+		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${_scalix_runtime_install_destination}\"
 		PLATFORM \"${SCALIX_RUNTIME_DEPENDENCY_PLATFORM}\"
 		TOOL \"${SCALIX_RUNTIME_DEPENDENCY_TOOL}\"
 		${_scalix_runtime_dependency_command_code}
