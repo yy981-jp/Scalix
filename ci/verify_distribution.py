@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import os
 import platform
+import plistlib
 import stat
 import subprocess
 import sys
@@ -95,7 +96,10 @@ def append_summary(title: str, lines: list[str]) -> None:
 def verify_build() -> None:
     system = operating_system()
     root = Path(__file__).resolve().parents[1]
-    binary = root / "build" / exe_name(system)
+    if system == "macos":
+        binary = root / "build" / "Scalix.app" / "Contents" / "MacOS" / "sl"
+    else:
+        binary = root / "build" / exe_name(system)
     if not binary.is_file():
         fail(f"Build succeeded without producing the expected executable: {binary}")
 
@@ -158,21 +162,54 @@ def validate_payload(
     read_prefix: Callable[[str, int], bytes],
     source_label: str,
 ) -> list[str]:
-    executable_path = find_entry(entries, f"bin/{exe_name(system)}", system)
+    if system == "macos":
+        executable_suffix = "Contents/MacOS/sl"
+        library_suffix = "Contents/Frameworks/libsxmp_be.dylib"
+        resources_prefix = "Contents/Resources/"
+        licenses_prefix = "Contents/Resources/licenses/Scalix/"
+        info_plist = find_entry(entries, "Contents/Info.plist", system)
+        assert info_plist is not None
+        try:
+            plist_data = read_prefix(info_plist, size_for(info_plist))
+            info = plistlib.loads(plist_data)
+        except (plistlib.InvalidFileException, ValueError, TypeError) as error:
+            fail(f"Invalid app bundle Info.plist in {source_label}: {error}")
+        if info.get("CFBundlePackageType") != "APPL":
+            fail(f"App bundle has an invalid CFBundlePackageType in {source_label}")
+        if info.get("CFBundleExecutable") != "sl":
+            fail(f"App bundle must launch the 'sl' executable in {source_label}")
+        if info.get("CFBundleIdentifier") != "jp.yy981.scalix":
+            fail(f"App bundle has an unexpected CFBundleIdentifier in {source_label}")
+    else:
+        executable_suffix = f"bin/{exe_name(system)}"
+        library_suffix = f"bin/{runtime_library_name(system)}"
+        resources_prefix = ""
+        licenses_prefix = "share/licenses/Scalix/"
+
+    executable_path = find_entry(entries, executable_suffix, system)
     assert executable_path is not None
     validate_executable_bytes(read_prefix(executable_path, 4096), system, f"{source_label}:{executable_path}")
+    if size_for(executable_path) < 4096:
+        fail(f"Executable is unexpectedly small: {source_label}:{executable_path}")
 
-    library_path = find_entry(entries, f"bin/{runtime_library_name(system)}", system)
+    library_path = find_entry(entries, library_suffix, system)
     assert library_path is not None
     if size_for(library_path) < 4096:
         fail(f"Runtime library is unexpectedly small: {source_label}:{library_path}")
+    if system == "macos":
+        validate_executable_bytes(read_prefix(library_path, 4096), system, f"{source_label}:{library_path}")
 
     verified = [
         f'"{executable_path}" ({size_for(executable_path):,} bytes; valid native signature)',
         f'"{library_path}" ({size_for(library_path):,} bytes)',
     ]
 
-    for relative in SHADERS + LICENSES:
+    required_files = [
+        *(f"{resources_prefix}{relative}" for relative in SHADERS),
+        f"{licenses_prefix}LICENSE",
+        f"{licenses_prefix}THIRD_PARTY_NOTICES.md",
+    ]
+    for relative in required_files:
         path = find_entry(entries, relative, system)
         assert path is not None
         size = size_for(path)
@@ -180,7 +217,7 @@ def validate_payload(
             fail(f"Required package file is empty: {source_label}:{path}")
         verified.append(f'"{path}" ({size:,} bytes)')
 
-    third_party_dir = f"/share/licenses/Scalix/third-party/"
+    third_party_dir = f"/{licenses_prefix}third-party/"
     third_party = [
         normalize_path(path) for path in entries
         if third_party_dir in f"/{normalize_path(path)}"
@@ -258,9 +295,17 @@ def verify_dmg(path: Path, system: str) -> list[str]:
                 fail(f"Could not mount macOS package {path.name}:\n{attach.stdout}")
             attached = True
 
-            files = [candidate for candidate in mountpoint.rglob("*") if candidate.is_file()]
-            entries = [candidate.relative_to(mountpoint).as_posix() for candidate in files]
-            file_by_name = {normalize_path(name): mountpoint / name for name in entries}
+            apps = sorted(
+                candidate for candidate in mountpoint.iterdir()
+                if candidate.is_dir() and candidate.suffix == ".app"
+            )
+            if len(apps) != 1:
+                fail(f"Expected exactly one .app bundle at the DMG root, found {len(apps)}")
+            app = apps[0]
+
+            files = [candidate for candidate in app.rglob("*") if candidate.is_file()]
+            entries = [candidate.relative_to(app).as_posix() for candidate in files]
+            file_by_name = {normalize_path(name): app / name for name in entries}
 
             def size_for(name: str) -> int:
                 return file_by_name[name].stat().st_size
@@ -269,7 +314,9 @@ def verify_dmg(path: Path, system: str) -> list[str]:
                 with file_by_name[name].open("rb") as stream:
                     return stream.read(size)
 
-            return validate_payload(system, entries, size_for, read_prefix, path.name)
+            details = [f'App bundle: "{app.name}"']
+            details.extend(validate_payload(system, entries, size_for, read_prefix, path.name))
+            return details
         finally:
             if attached:
                 subprocess.run(
