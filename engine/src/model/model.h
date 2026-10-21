@@ -51,10 +51,20 @@ enum class Status {
 
 /// @brief 構造そのもの
 struct Model {
+	// scalix側で用意した仮想的なroot
+	// 元のデータにrootが複数ある場合も単一である場合も、
+	// このnodeの子に配置する
+	NodeHandle root;
+
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
+	
+	// size = 仮想rootを含む
+	// => nodeHandles.size() + 1 = nodes.size()
 	std::vector<Node> nodes;
-	std::vector<NodeHandle> nodeHandles; // NodeId to NodeHandle
+
+	// NodeId to NodeHandle, size = 仮想rootを含まない
+	std::vector<NodeHandle> nodeHandles;
 	std::vector<Skin> skins;
 	std::vector<int> materialToImage; // map
 };

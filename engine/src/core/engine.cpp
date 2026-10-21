@@ -9,7 +9,7 @@
 #include <debug/debugDraw.h>
 #include <util/path.h>
 #include <core/config.h>
-#include <physics/detect.h>
+#include <physics/util.h>
 
 
 Engine::Engine() {
