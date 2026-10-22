@@ -11,7 +11,9 @@ endforeach()
 set(_runtime_search_directories)
 foreach(_directory IN ITEMS
 	"${RUNTIME_BAZEL_BIN}"
+	"${RUNTIME_DEBUG_PACKAGE_BIN}"
 	"${RUNTIME_DEBUG_BIN}"
+	"${RUNTIME_RELEASE_PACKAGE_BIN}"
 	"${RUNTIME_RELEASE_BIN}"
 	"${RUNTIME_MINGW_BIN}"
 )
@@ -30,11 +32,22 @@ file(GLOB _runtime_bazel_output_directories
 )
 list(APPEND _runtime_search_directories ${_runtime_bazel_output_directories})
 
+string(RANDOM LENGTH 12 ALPHABET 0123456789abcdef _scan_id)
+set(_scan_directory "${RUNTIME_DEST}/.scalix-runtime-scan-${_scan_id}")
+file(MAKE_DIRECTORY "${_scan_directory}")
+get_filename_component(_executable_name "${RUNTIME_EXE}" NAME)
+set(_scan_executable "${_scan_directory}/${_executable_name}")
+file(COPY_FILE "${RUNTIME_EXE}" "${_scan_executable}" ONLY_IF_DIFFERENT)
+
 scalix_resolve_runtime_dependencies(
-	EXECUTABLE "${RUNTIME_EXE}"
+	EXECUTABLE "${_scan_executable}"
 	DESTINATION "${RUNTIME_DEST}"
 	PLATFORM "windows+pe"
 	TOOL "objdump"
 	COMMAND "${CMAKE_GET_RUNTIME_DEPENDENCIES_COMMAND}"
 	SEARCH_DIRECTORIES ${_runtime_search_directories}
+	FALLBACK_DIRECTORIES "${RUNTIME_DEST}"
 )
+
+file(REMOVE "${_scan_executable}")
+file(REMOVE_RECURSE "${_scan_directory}")

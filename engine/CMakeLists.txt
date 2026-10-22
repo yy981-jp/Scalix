@@ -106,11 +106,14 @@ if(WIN32)
 	endif()
 
 	add_custom_target(${EXE_NAME}_runtime_deps
+		ALL
 		COMMAND "${CMAKE_COMMAND}"
 			"-DRUNTIME_EXE=$<TARGET_FILE:${EXE_NAME}>"
 			"-DRUNTIME_DEST=$<TARGET_FILE_DIR:${EXE_NAME}>"
 			"-DRUNTIME_BAZEL_BIN=${SXMP_BACKEND_BAZEL_DIR}"
+			"-DRUNTIME_DEBUG_PACKAGE_BIN=${CMAKE_SOURCE_DIR}/external/install/debug/bin"
 			"-DRUNTIME_DEBUG_BIN=${CMAKE_SOURCE_DIR}/external/install/debug/x64/mingw/bin"
+			"-DRUNTIME_RELEASE_PACKAGE_BIN=${CMAKE_SOURCE_DIR}/external/install/release/bin"
 			"-DRUNTIME_RELEASE_BIN=${CMAKE_SOURCE_DIR}/external/install/release/x64/mingw/bin"
 			"-DRUNTIME_MINGW_BIN=${SXMP_MINGW_BIN}"
 			${SXMP_RUNTIME_OBJDUMP_ARG}

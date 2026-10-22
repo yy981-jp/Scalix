@@ -17,7 +17,7 @@ function(scalix_resolve_runtime_dependencies)
 	cmake_parse_arguments(PARSE_ARGV 0 ARG
 		"INSTALL_MODE;STRICT"
 		"EXECUTABLE;DESTINATION;PLATFORM;TOOL;COMMAND"
-		"SEARCH_DIRECTORIES;PRE_EXCLUDE_REGEXES;POST_EXCLUDE_REGEXES"
+		"SEARCH_DIRECTORIES;FALLBACK_DIRECTORIES;PRE_EXCLUDE_REGEXES;POST_EXCLUDE_REGEXES"
 	)
 
 	if(NOT ARG_EXECUTABLE OR NOT EXISTS "${ARG_EXECUTABLE}")
@@ -71,6 +71,13 @@ function(scalix_resolve_runtime_dependencies)
 			list(APPEND _search_directories "${_directory}")
 		endif()
 	endforeach()
+	set(_fallback_search_directories ${_search_directories})
+	foreach(_directory IN LISTS ARG_FALLBACK_DIRECTORIES)
+		if(IS_DIRECTORY "${_directory}")
+			list(APPEND _fallback_search_directories "${_directory}")
+		endif()
+	endforeach()
+	list(REMOVE_DUPLICATES _fallback_search_directories)
 
 	if(ARG_PLATFORM STREQUAL "macos+macho")
 		# Use BUNDLE_EXECUTABLE for a target built with MACOSX_BUNDLE. This lets
@@ -131,8 +138,8 @@ function(scalix_resolve_runtime_dependencies)
 			# avoids relying on CMake's find search behavior for runtime DLLs
 			# installed by our external projects.
 			unset(_fallback_dependency)
-			foreach(_directory IN LISTS _search_directories)
-				set(_candidate "${_directory}/${_dependency_file}")
+			foreach(_directory IN LISTS _fallback_search_directories)
+				set(_candidate "${_directory}/${_dependency}")
 				if(EXISTS "${_candidate}" AND NOT IS_DIRECTORY "${_candidate}")
 					set(_fallback_dependency "${_candidate}")
 					break()
@@ -141,8 +148,8 @@ function(scalix_resolve_runtime_dependencies)
 
 			if(NOT _fallback_dependency)
 				find_file(_fallback_dependency
-					NAMES "${_dependency_file}"
-					PATHS ${_search_directories}
+					NAMES "${_dependency}"
+					PATHS ${_fallback_search_directories}
 					NO_DEFAULT_PATH
 					NO_CACHE
 				)
@@ -242,10 +249,7 @@ function(scalix_resolve_runtime_dependencies)
 				endif()
 			endif()
 
-			file(COPY "${_dependency}"
-				DESTINATION "${ARG_DESTINATION}"
-				FOLLOW_SYMLINK_CHAIN
-			)
+			file(COPY_FILE "${_dependency}" "${_destination}" ONLY_IF_DIFFERENT)
 		endforeach()
 	endif()
 endfunction()
