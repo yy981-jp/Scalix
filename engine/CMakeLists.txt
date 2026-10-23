@@ -105,8 +105,63 @@ if(WIN32)
 		)
 	endif()
 
-	add_custom_target(${EXE_NAME}_runtime_deps
-		ALL
+	# Track runtime DLL inputs so Ninja can skip dependency scanning when the
+	# executable, backend, resolver scripts, and candidate DLLs are unchanged.
+	set(_runtime_dependency_inputs
+		"${CMAKE_CURRENT_LIST_FILE}"
+		"${CMAKE_SOURCE_DIR}/cmake/copy_runtime_deps.cmake"
+		"${CMAKE_SOURCE_DIR}/cmake/runtime_dependencies.cmake"
+		"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+	)
+	set(_runtime_dependency_directories
+		"${SXMP_BACKEND_BAZEL_DIR}"
+		"${CMAKE_SOURCE_DIR}/external/install/debug/bin"
+		"${CMAKE_SOURCE_DIR}/external/install/debug/x64/mingw/bin"
+		"${CMAKE_SOURCE_DIR}/external/install/release/bin"
+		"${CMAKE_SOURCE_DIR}/external/install/release/x64/mingw/bin"
+		"${SXMP_MINGW_BIN}"
+	)
+
+	# Bazel may place runtime dependencies in a configuration-specific output
+	# directory, in addition to bazel-bin's stable view.
+	get_filename_component(_bazel_external_directory "${SXMP_BACKEND_BAZEL_DIR}" DIRECTORY)
+	get_filename_component(_bazel_bin_directory "${_bazel_external_directory}" DIRECTORY)
+	get_filename_component(_bazel_workspace "${_bazel_bin_directory}" DIRECTORY)
+	file(GLOB _runtime_bazel_output_directories
+		LIST_DIRECTORIES true
+		CONFIGURE_DEPENDS
+		"${_bazel_workspace}/bazel-out/*/bin/external/sxmp"
+	)
+	list(APPEND _runtime_dependency_directories ${_runtime_bazel_output_directories})
+
+	foreach(_directory IN LISTS _runtime_dependency_directories)
+		if(IS_DIRECTORY "${_directory}")
+			file(GLOB _runtime_dlls
+				CONFIGURE_DEPENDS
+				"${_directory}/*.dll"
+				"${_directory}/*.DLL"
+			)
+			list(APPEND _runtime_dependency_inputs ${_runtime_dlls})
+		endif()
+	endforeach()
+	list(REMOVE_DUPLICATES _runtime_dependency_inputs)
+
+	# Keep a stable manifest whose contents change only when the input file set
+	# changes. GLOB CONFIGURE_DEPENDS also makes Ninja notice added/removed DLLs.
+	set(SXMP_RUNTIME_DEPENDENCY_MANIFEST
+		"${CMAKE_CURRENT_BINARY_DIR}/${EXE_NAME}_runtime_dependency_inputs.txt"
+	)
+	string(JOIN "\n" _runtime_dependency_manifest_content ${_runtime_dependency_inputs})
+	file(CONFIGURE
+		OUTPUT "${SXMP_RUNTIME_DEPENDENCY_MANIFEST}"
+		CONTENT "${_runtime_dependency_manifest_content}\n"
+	)
+
+	set(SXMP_RUNTIME_DEPS_STAMP
+		"${CMAKE_CURRENT_BINARY_DIR}/${EXE_NAME}_runtime_deps.stamp"
+	)
+	add_custom_command(
+		OUTPUT "${SXMP_RUNTIME_DEPS_STAMP}"
 		COMMAND "${CMAKE_COMMAND}"
 			"-DRUNTIME_EXE=$<TARGET_FILE:${EXE_NAME}>"
 			"-DRUNTIME_DEST=$<TARGET_FILE_DIR:${EXE_NAME}>"
@@ -123,10 +178,20 @@ if(WIN32)
 			"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
 			"$<TARGET_FILE_DIR:${EXE_NAME}>/libsxmp_be.dll"
 
+		COMMAND "${CMAKE_COMMAND}" -E touch
+			"${SXMP_RUNTIME_DEPS_STAMP}"
+
+		DEPENDS
+			${EXE_NAME}
+			"${SXMP_RUNTIME_DEPENDENCY_MANIFEST}"
+			${_runtime_dependency_inputs}
+
 		VERBATIM
 	)
 
-	add_dependencies(${EXE_NAME}_runtime_deps ${EXE_NAME})
+	add_custom_target(${EXE_NAME}_runtime_deps ALL
+		DEPENDS "${SXMP_RUNTIME_DEPS_STAMP}"
+	)
 endif()
 
 
