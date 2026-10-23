@@ -8,6 +8,7 @@
 #include <def/str.h>
 #include <def/transform.h>
 #include <def/mtx.h>
+#include <model/humanoid.h>
 #include <model/rig.h>
 
 #include <anim/format.h>
@@ -52,7 +53,11 @@ enum class Status {
 
 /// @brief 構造そのもの
 struct Model {
-	// void init(); // TODO: rig準備
+	Humanoid humanoid;
+
+	void init() {
+		humanoid.init(*this);
+	}
 
 	// scalix側で用意した仮想的なroot
 	// 元のデータにrootが複数ある場合も単一である場合も、
