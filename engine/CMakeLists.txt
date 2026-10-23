@@ -112,6 +112,7 @@ if(WIN32)
 		"${CMAKE_SOURCE_DIR}/cmake/copy_runtime_deps.cmake"
 		"${CMAKE_SOURCE_DIR}/cmake/runtime_dependencies.cmake"
 		"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+		"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
 	)
 	set(_runtime_dependency_directories
 		"${SXMP_BACKEND_BAZEL_DIR}"
@@ -183,7 +184,6 @@ if(WIN32)
 			"${SXMP_RUNTIME_DEPS_STAMP}"
 
 		DEPENDS
-			${EXE_NAME}
 			"${SXMP_RUNTIME_DEPENDENCY_MANIFEST}"
 			${_runtime_dependency_inputs}
 
@@ -193,6 +193,7 @@ if(WIN32)
 	add_custom_target(${EXE_NAME}_runtime_deps ALL
 		DEPENDS "${SXMP_RUNTIME_DEPS_STAMP}"
 	)
+	add_dependencies(${EXE_NAME}_runtime_deps ${EXE_NAME})
 endif()
 
 
