@@ -204,10 +204,6 @@ void Engine::gameInit() {
 	poseSolver = new PoseSolver{avatarSystem.player()};
 
 	
-	// for (const NodeHandle& nh: nodeReg.get(nodeReg.findFromAvaId(0, 176)).children ) {
-	// 	springBoneSystem.add(SpringBoneChain( detectBonePath(nh) ));
-	// }
-
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,113)) )); // back d l
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,117)) )); // back d r
 	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,105)) )); // back c l

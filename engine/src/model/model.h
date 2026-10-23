@@ -8,6 +8,7 @@
 #include <def/str.h>
 #include <def/transform.h>
 #include <def/mtx.h>
+#include <model/rig.h>
 
 #include <anim/format.h>
 #include <core/nodeRegistry.h>
@@ -51,6 +52,8 @@ enum class Status {
 
 /// @brief 構造そのもの
 struct Model {
+	// void init(); // TODO: rig準備
+
 	// scalix側で用意した仮想的なroot
 	// 元のデータにrootが複数ある場合も単一である場合も、
 	// このnodeの子に配置する
@@ -67,4 +70,6 @@ struct Model {
 	std::vector<NodeHandle> nodeHandles;
 	std::vector<Skin> skins;
 	std::vector<int> materialToImage; // map
+
+	RigGraph rig;
 };
