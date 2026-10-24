@@ -13,7 +13,6 @@
 /// @brief 状態を含む1つのアバター
 struct Avatar {
 	Model model;
-	Humanoid humanoid;
 
 	// Nodes' global transforms. `mtx` is the rendering cache of each TRS.
 	std::vector<Mtx> globalMtx;

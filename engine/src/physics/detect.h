@@ -47,7 +47,9 @@ public:
 
 	void resolveParam() {
 		for (const auto& [hdl, type]: nodes) {
-			
+			// TODO: 論理bone構造内をたどり、chainを作る?
+			// その場合、modelに論理bone構造を持たせる必要がある?
+			// 論理bone構造 = 骨格, 物理, とか意味を持つnode (supportとかではない)
 		}
 	}
 };

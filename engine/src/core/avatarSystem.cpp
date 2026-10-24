@@ -15,8 +15,8 @@ namespace {
 void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
 	if (!motionTraceEnabled()) return;
 	for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
-		if (!avatar.humanoid.has(bone)) continue;
-		const Quat& q = nodeReg.get(avatar.humanoid.bones[(size_t)bone]).trs.rot;
+		if (!avatar.model.humanoid.has(bone)) continue;
+		const Quat& q = nodeReg.get(avatar.model.humanoid.bones[(size_t)bone]).trs.rot;
 		printf("MOTION %s bone=%d local=(%.5f,%.5f,%.5f,%.5f)\\n", stage, static_cast<int>(bone), q.x, q.y, q.z, q.w);
 	}
 }
@@ -84,7 +84,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 		// ========================================================
 		if (idx == 222 && motionTraceEnabled()) {
 			const NodeHandle boneHdl =
-				avatar.humanoid.bones[(size_t)HBT::leftUpperArm];
+				avatar.model.humanoid.bones[(size_t)HBT::leftUpperArm];
 
 			Node& registryNode = nodeReg.get(boneHdl);
 			Node& modelNode = avatar.model.nodes[idx];

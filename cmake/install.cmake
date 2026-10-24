@@ -24,10 +24,42 @@ foreach(_directory IN LISTS _scalix_runtime_search_directories)
 	string(APPEND _scalix_runtime_search_code "\n\t\t\t\"${_directory}\"")
 endforeach()
 
-install(
-	TARGETS sl
-	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-)
+# CMake selects the correct runtime dependency inspector for each platform.
+# Explicitly pass objdump only on PE/ELF targets; Mach-O inspection uses otool.
+set(_scalix_runtime_dependency_command_code "")
+if(SCALIX_RUNTIME_DEPENDENCY_TOOL STREQUAL "objdump" AND CMAKE_OBJDUMP)
+	string(APPEND _scalix_runtime_dependency_command_code
+		"\n\t\tCOMMAND \"${CMAKE_OBJDUMP}\""
+	)
+endif()
+
+if(APPLE)
+	# The DMG contains one self-contained app bundle.
+	install(
+		TARGETS sl
+		BUNDLE DESTINATION "."
+	)
+
+	set(_scalix_installed_executable "Scalix.app/Contents/MacOS/Scalix")
+	set(_scalix_runtime_install_destination "Scalix.app/Contents/Frameworks")
+	set(_scalix_resources_install_destination "Scalix.app/Contents/Resources")
+
+	# Bundle the relocatable MediaPipe library before scanning the app's runtime
+	# dependencies. The build action gives it an @rpath install name.
+	install(
+		FILES "${CMAKE_BINARY_DIR}/runtime-backend/libsxmp_be.dylib"
+		DESTINATION "${_scalix_runtime_install_destination}"
+	)
+else()
+	install(
+		TARGETS sl
+		RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+	)
+
+	set(_scalix_installed_executable "${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:sl>")
+	set(_scalix_runtime_install_destination "${CMAKE_INSTALL_BINDIR}")
+	set(_scalix_resources_install_destination "resources")
+endif()
 
 # install(
 # 	DIRECTORY "${CMAKE_BINARY_DIR}/runtime/"
@@ -36,7 +68,8 @@ install(
 
 install(
 	DIRECTORY "${CMAKE_SOURCE_DIR}/resources/"
-	DESTINATION resources
+	DESTINATION "${_scalix_resources_install_destination}"
+	PATTERN ".git" EXCLUDE
 )
 
 install(CODE "
@@ -44,11 +77,11 @@ install(CODE "
 	scalix_resolve_runtime_dependencies(
 		INSTALL_MODE
 		STRICT
-		EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:sl>\"
-		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+		EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\"
+		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${_scalix_runtime_install_destination}\"
 		PLATFORM \"${SCALIX_RUNTIME_DEPENDENCY_PLATFORM}\"
 		TOOL \"${SCALIX_RUNTIME_DEPENDENCY_TOOL}\"
-		COMMAND \"${CMAKE_OBJDUMP}\"
+		${_scalix_runtime_dependency_command_code}
 		SEARCH_DIRECTORIES ${_scalix_runtime_search_code}
 	)
 ")

@@ -194,11 +194,11 @@ runs:
 
         expected="bazel-bin/external/sxmp/libsxmp_be.$suffix"
         if [[ -f "$expected" ]]; then
-          echo "Using runtime library: $expected"
-          exit 0
+          runtime_library="$expected"
+        else
+          runtime_library="$(find -L bazel-out bazel-bin -iname "libsxmp_be.$suffix" -type f -print -quit 2>/dev/null || true)"
         fi
 
-        runtime_library="$(find -L bazel-out bazel-bin -iname "libsxmp_be.$suffix" -type f -print -quit 2>/dev/null || true)"
         if [[ -z "$runtime_library" ]]; then
           echo "::error::Bazel finished without producing libsxmp_be.$suffix."
           echo "Bazel's declared output files:"
@@ -208,9 +208,20 @@ runs:
           exit 1
         fi
 
-        mkdir -p "$(dirname "$expected")"
-        if [[ ! -e "$expected" || ! "$runtime_library" -ef "$expected" ]]; then
-          cp -f "$runtime_library" "$expected"
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          # Stage a copy instead of modifying Bazel's output/cache artifact.
+          # Correct the Bazel-relative dylib ID so the package is relocatable.
+          staged="$GITHUB_WORKSPACE/build/runtime-backend/libsxmp_be.dylib"
+          mkdir -p "$(dirname "$staged")"
+          cp -L "$runtime_library" "$staged"
+          install_name_tool -id "@rpath/libsxmp_be.dylib" "$staged"
+          echo "Staged macOS runtime library: $staged"
+          otool -D "$staged"
+        else
+          mkdir -p "$(dirname "$expected")"
+          if [[ ! -e "$expected" || ! "$runtime_library" -ef "$expected" ]]; then
+            cp -f "$runtime_library" "$expected"
+          fi
+          test -f "$expected"
+          echo "Using runtime library: $expected"
         fi
-        test -f "$expected"
-        echo "Using runtime library: $expected"
