@@ -16,7 +16,7 @@ numpy==2.4.6
 opencv-contrib-python==5.0.0.93
 opt_einsum==3.4.0
 packaging==26.2
-pillow==12.3.0
+pillow==13.0.0
 protobuf==7.35.1
 pycparser==3.0
 pyparsing==3.3.2
