@@ -3,6 +3,8 @@
 #include <vector>
 #include <bgfx/bgfx.h>
 
+#include <def/view.h>
+
 
 struct PosColorVertex {
 	float x, y, z;
@@ -46,6 +48,6 @@ public:
 	void draw(bgfx::ProgramHandle program) {
 		bgfx::setVertexBuffer(0, vbh);
 		bgfx::setState(BGFX_STATE_DEFAULT | BGFX_STATE_PT_LINES);
-		bgfx::submit(0, program);
+		bgfx::submit((int)ViewId::game, program);
 	}
 };

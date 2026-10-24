@@ -37,10 +37,9 @@ namespace scalix::ui
 	class RmlUiRendererBgfx final : public Rml::RenderInterface
 	{
 	public:
-		explicit RmlUiRendererBgfx(RmlUiRendererBgfxConfig config);
+		void init(const RmlUiRendererBgfxConfig& config);
 		~RmlUiRendererBgfx() override;
 
-		RmlUiRendererBgfx(const RmlUiRendererBgfx&) = delete;
 		RmlUiRendererBgfx& operator=(const RmlUiRendererBgfx&) = delete;
 
 		void Resize(int width, int height);

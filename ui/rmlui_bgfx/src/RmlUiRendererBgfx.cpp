@@ -62,9 +62,9 @@ namespace
 
 namespace scalix::ui
 {
-	RmlUiRendererBgfx::RmlUiRendererBgfx(RmlUiRendererBgfxConfig config)
-		: m_config(std::move(config))
-	{
+	void RmlUiRendererBgfx::init(const RmlUiRendererBgfxConfig& config) {
+		m_config = config;
+
 		if (bgfx::getCaps() == nullptr)
 		{
 			throw std::runtime_error("RmlUiRendererBgfx requires an initialized bgfx instance.");
