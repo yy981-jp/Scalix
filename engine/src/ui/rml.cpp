@@ -295,7 +295,6 @@ namespace
 			return Rml::Input::KI_RWIN;
 #endif
 		case SDL_SCANCODE_APPLICATION: return Rml::Input::KI_APPS;
-		case SDL_SCANCODE_F12 + 1: return Rml::Input::KI_UNKNOWN;
 
 		case SDL_SCANCODE_NUMLOCKCLEAR: return Rml::Input::KI_NUMLOCK;
 		case SDL_SCANCODE_SCROLLLOCK: return Rml::Input::KI_SCROLL;
@@ -308,12 +307,6 @@ namespace
 		case SDL_SCANCODE_MUTE: return Rml::Input::KI_VOLUME_MUTE;
 		case SDL_SCANCODE_VOLUMEDOWN: return Rml::Input::KI_VOLUME_DOWN;
 		case SDL_SCANCODE_VOLUMEUP: return Rml::Input::KI_VOLUME_UP;
-		case SDL_SCANCODE_AUDIONEXT: return Rml::Input::KI_MEDIA_NEXT_TRACK;
-		case SDL_SCANCODE_AUDIOPREV: return Rml::Input::KI_MEDIA_PREV_TRACK;
-		case SDL_SCANCODE_AUDIOSTOP: return Rml::Input::KI_MEDIA_STOP;
-		case SDL_SCANCODE_AUDIOPLAY: return Rml::Input::KI_MEDIA_PLAY_PAUSE;
-		case SDL_SCANCODE_MAIL: return Rml::Input::KI_LAUNCH_MAIL;
-		case SDL_SCANCODE_MEDIASELECT: return Rml::Input::KI_LAUNCH_MEDIA_SELECT;
 		default: return Rml::Input::KI_UNKNOWN;
 		}
 	}
