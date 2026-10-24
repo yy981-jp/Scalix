@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <compare>
+#include <concepts>
 
 
 template<typename Tag>
