@@ -23,7 +23,7 @@ HBT childBoneOf(HBT bone) {
 
 PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 	for (const auto& cnct : upperBody_list) {
-		NodeHandle& nodeHdl = avatar.model.humanoid.bones[(size_t)cnct.bone];
+		const NodeHandle& nodeHdl = avatar.model.humanoid.bones[(size_t)cnct.bone];
 
 		// restDir は node.trs.rot（このボーン自身の回転）ではなく、
 		// 「このボーンの根本の関節 -> 次の関節(子ボーンの原点)」の向きでなければならない。
@@ -33,7 +33,7 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 		// solve() 側の currentDir(肩ランドマーク -> 肘ランドマーク)と
 		// そもそも比較対象がズレていた。
 		HBT childBone = childBoneOf(cnct.bone);
-		NodeHandle& childHdl = avatar.model.humanoid.bones[(size_t)childBone];
+		const NodeHandle& childHdl = avatar.model.humanoid.bones[(size_t)childBone];
 
 		bones[(size_t)cnct.bone].restDir =
 			( avatar.trackingMtx[nodeReg.getId(childHdl)].pos()
