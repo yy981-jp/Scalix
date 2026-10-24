@@ -12,7 +12,19 @@ struct RigNode {
 	std::vector<RigNodeId> children;
 };
 
+
+enum class RigNodeFlag : uint32_t {
+	None = 0,
+	Skeleton = 1u << 0,
+	Physics = 1u << 1,
+};
+
+
+struct Model;
+
 struct RigGraph {
+	void init(const Model& model);
+
 	std::vector<RigNode> nodes;
 	RigNodeId root = RigNodeId::invalid();
 };

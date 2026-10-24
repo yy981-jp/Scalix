@@ -51,12 +51,14 @@ enum class Status {
 };
 
 
-/// @brief 構造そのもの
+/// @brief 構造そのもの (静的データ)
 struct Model {
 	Humanoid humanoid;
+	RigGraph rig;
 
 	void init() {
 		humanoid.init(*this);
+		rig.init(*this);
 	}
 
 	// scalix側で用意した仮想的なroot
@@ -67,14 +69,10 @@ struct Model {
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
 	
-	// size = 仮想rootを含む
-	// => nodeHandles.size() + 1 = nodes.size()
 	std::vector<Node> nodes;
 
-	// NodeId to NodeHandle, size = 仮想rootを含まない
+	// NodeId to NodeHandle
 	std::vector<NodeHandle> nodeHandles;
 	std::vector<Skin> skins;
 	std::vector<int> materialToImage; // map
-
-	RigGraph rig;
 };
