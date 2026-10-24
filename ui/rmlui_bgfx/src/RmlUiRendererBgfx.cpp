@@ -63,6 +63,9 @@ namespace
 namespace scalix::ui
 {
 	void RmlUiRendererBgfx::init(const RmlUiRendererBgfxConfig& config) {
+		if (bgfx::isValid(m_program) || bgfx::isValid(m_white_texture))
+			throw std::logic_error("RmlUiRendererBgfx is already initialized.");
+
 		m_config = config;
 
 		if (bgfx::getCaps() == nullptr)
@@ -129,9 +132,14 @@ namespace scalix::ui
 		}
 	}
 
-	RmlUiRendererBgfx::~RmlUiRendererBgfx()
+	void RmlUiRendererBgfx::shutdown() noexcept
 	{
 		DestroyResources();
+	}
+
+	RmlUiRendererBgfx::~RmlUiRendererBgfx()
+	{
+		shutdown();
 	}
 
 	void RmlUiRendererBgfx::DestroyResources() noexcept
