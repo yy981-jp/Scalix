@@ -44,6 +44,12 @@ jobs:
       if: matrix.language == 'c-cpp'
       uses: ./.github/actions/prepareBuild
 
+    # Build the required sxmp shared library before CodeQL starts tracing.
+    # This keeps the MediaPipe/Bazel build out of the Scalix C/C++ database.
+    - name: Build sxmp backend for CodeQL
+      if: matrix.language == 'c-cpp'
+      uses: ./.github/actions/buildSxmpBackend
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:

@@ -5,10 +5,10 @@
 
 int main() {
 	{
-		Engine game;
+		Engine engine;
 
-		while (game.isRunning()) {
-			game.tick();
+		while (engine.isRunning()) {
+			engine.tick();
 		}
 	}
 	bgfx::shutdown();

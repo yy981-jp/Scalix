@@ -3,9 +3,7 @@
 #include <util/fmutil.h>
 #include <core/nodeRegistry.h>
 #include <unordered_map>
-#include <iostream>
 #include <algorithm>
-#include <ranges>
 
 #include <y9inc/string.h>
 
@@ -18,6 +16,15 @@ bool has(const std::vector<std::string>& w, const Targets&... targets_arg) {
 			if (s == target) return true;
 	return false;
 }
+
+struct StringHash {
+	using is_transparent = void;
+
+	size_t operator()(std::string_view sv) const noexcept {
+		return std::hash<std::string_view>{}(sv);
+	}
+};
+
 
 
 
@@ -71,7 +78,7 @@ struct NodeInfo {
 };
 
 
-static const std::unordered_map<std::string, BoneType> wordMap = {
+static const std::unordered_map<std::string, BoneType, StringHash, std::equal_to<>> wordMap = {
     {"head", BoneType::head},
 
     {"neck", BoneType::neck},
@@ -105,7 +112,7 @@ static const std::unordered_map<std::string, BoneType> wordMap = {
     {"toes", BoneType::toes},
 };
 
-static const std::unordered_map<std::string, Side> sideMap = {
+static const std::unordered_map<std::string, Side, StringHash, std::equal_to<>> sideMap = {
 	{"l", Side::left},
 	{"left", Side::left},
 
@@ -113,7 +120,7 @@ static const std::unordered_map<std::string, Side> sideMap = {
 	{"right", Side::right},
 };
 
-static const std::unordered_map<std::string, Level> levelMap = {
+static const std::unordered_map<std::string, Level, StringHash, std::equal_to<>> levelMap = {
 	{"upper", Level::upper},
 	{"up", Level::upper},
 
@@ -140,31 +147,27 @@ static inline void selectHelper(std::span<NodeHandle> to,
 }
 
 void Humanoid::init(const Model& model) {
-	const auto& nodes = model.nodes;
-	const auto& skins = model.skins;
-	NodeHandle sampleHdl = model.nodeHandles[0];
-	
+	NodeHandle sampleHdl = model.root;
 	std::vector<NodeInfo> cands;
 	// 属性をつける
-	for (const auto& skin: skins) { // skins.size() == 1 であることも多い
-		for (const NodeId& nodeId: skin.joints) {
-			const std::vector<std::string> words = tokenizer(strsv().get( nodes[nodeId].name ));
-			NodeInfo cand;
-			cand.handle = nodeReg.find(sampleHdl,nodeId);
-			for (auto& w : words) {
-				if (auto it = wordMap.find(w); it != wordMap.end())
-					cand.type = it->second;
-				if (auto it = sideMap.find(w); it != sideMap.end())
-					cand.side = it->second;
-				if (auto it = levelMap.find(w); it != levelMap.end())
-					cand.level = it->second;
+	for (const auto& node: model.nodes) {
+		if (!node.name.hash) continue; // hash == 0 のnodeはバグのもと
+		const auto& words = tokenizer(strsv().get( node.name ));
+		NodeInfo cand;
+		cand.handle = nodeReg.find(sampleHdl,node.id);
+		for (const std::string_view& w : words) {
+			if (auto it = wordMap.find(w); it != wordMap.end())
+				cand.type = it->second;
+			if (auto it = sideMap.find(w); it != sideMap.end())
+				cand.side = it->second;
+			if (auto it = levelMap.find(w); it != levelMap.end())
+				cand.level = it->second;
 
-				// blacklist
-				if (is_or(w,"support","ik","twist","roll"))
-					cand.score -= 100;
-			}
-			cands.push_back(cand);
+			// blacklist
+			if (is_or(w,"support","ik","twist","roll"))
+				cand.score -= 100;
 		}
+		cands.push_back(cand);
 	}
 
 	std::array<std::vector<NodeInfo>,static_cast<size_t>(HBT::Count)> bones_init;

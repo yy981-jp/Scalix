@@ -4,6 +4,7 @@
 #include <model/humanoid.h>
 #include <model/avatarDef.h>
 #include <anim/animSystem.h>
+#include <util/jump.h>
 #include <def/euler.h>
 #include <def/pose.h>
 #include <def/transform.h>
@@ -12,7 +13,6 @@
 /// @brief 状態を含む1つのアバター
 struct Avatar {
 	Model model;
-	Humanoid humanoid;
 
 	// Nodes' global transforms. `mtx` is the rendering cache of each TRS.
 	std::vector<Mtx> globalMtx;
@@ -28,6 +28,9 @@ struct Avatar {
 	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float yaw = 0.0f;
 	vec3f scale = {1.0f, 1.0f, 1.0f};
+
+	Jump jump;
+	const float floor_y = 0;
 
 	Euler head{};
 	static constexpr float sensitivity = 0.01f;
@@ -51,5 +54,4 @@ struct Avatar {
 	Avatar& operator=(const Avatar&) = delete;
 
 	Avatar(Avatar&&) noexcept = default;
-	Avatar& operator=(Avatar&&) noexcept = default;
 };

@@ -44,27 +44,61 @@ list(APPEND SOURCES
 
 add_executable(${EXE_NAME} ${SOURCES})
 
+if(APPLE)
+	# Build a conventional Scalix.app bundle while keeping the executable name
+	# stable for scripts and runtime diagnostics.
+	set_target_properties(${EXE_NAME} PROPERTIES
+		MACOSX_BUNDLE TRUE
+		OUTPUT_NAME "Scalix"
+		MACOSX_BUNDLE_BUNDLE_NAME "Scalix"
+		MACOSX_BUNDLE_GUI_IDENTIFIER "jp.yy981.scalix"
+		MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+		MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+		INSTALL_RPATH "@executable_path/../Frameworks"
+	)
+endif()
+
+
+# sxmp-backend is built by Bazel before CMake configuration.
+set(SXMP_BACKEND_BAZEL_DIR
+	"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
+)
+
+if(APPLE)
+	set(SXMP_BACKEND_RUNTIME_LIBRARY
+		"${CMAKE_BINARY_DIR}/runtime-backend/libsxmp_be.dylib"
+	)
+else()
+	set(SXMP_BACKEND_RUNTIME_LIBRARY
+		"${SXMP_BACKEND_BAZEL_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sxmp_be${CMAKE_SHARED_LIBRARY_SUFFIX}"
+	)
+endif()
+
+add_library(sxmp_be SHARED IMPORTED GLOBAL)
+if(WIN32)
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
+		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+	)
+else()
+	set_target_properties(sxmp_be PROPERTIES
+		IMPORTED_LOCATION "${SXMP_BACKEND_RUNTIME_LIBRARY}"
+	)
+
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		# Avoid embedding the Bazel output path in the executable's ELF dependencies.
+		set_property(TARGET sxmp_be PROPERTY IMPORTED_NO_SONAME TRUE)
+	endif()
+endif()
 
 if(WIN32)
 	target_compile_definitions(${EXE_NAME} PRIVATE
 		_WIN32_WINNT=0x0A00
 	)
 
-	set(SXMP_BACKEND_BAZEL_DIR
-		"${CMAKE_SOURCE_DIR}/sxmp/external/mediapipe/bazel-bin/external/sxmp"
-	)
-
-	add_library(sxmp_be SHARED IMPORTED GLOBAL)
-	set_target_properties(sxmp_be PROPERTIES
-		IMPORTED_IMPLIB "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
-		IMPORTED_LOCATION "${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
-	)
-
 	target_link_libraries(${EXE_NAME} PRIVATE
 		ws2_32
-		sxmp_be
 	)
-
 
 	get_filename_component(SXMP_MINGW_BIN
 		"${CMAKE_CXX_COMPILER}" DIRECTORY
@@ -77,12 +111,72 @@ if(WIN32)
 		)
 	endif()
 
-	add_custom_target(${EXE_NAME}_runtime_deps
+	# Track runtime DLL inputs so Ninja can skip dependency scanning when the
+	# executable, backend, resolver scripts, and candidate DLLs are unchanged.
+	set(_runtime_dependency_inputs
+		"${CMAKE_CURRENT_LIST_FILE}"
+		"${CMAKE_SOURCE_DIR}/cmake/copy_runtime_deps.cmake"
+		"${CMAKE_SOURCE_DIR}/cmake/runtime_dependencies.cmake"
+		"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
+		"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.if.lib"
+	)
+	set(_runtime_dependency_directories
+		"${SXMP_BACKEND_BAZEL_DIR}"
+		"${CMAKE_SOURCE_DIR}/external/install/debug/bin"
+		"${CMAKE_SOURCE_DIR}/external/install/debug/x64/mingw/bin"
+		"${CMAKE_SOURCE_DIR}/external/install/release/bin"
+		"${CMAKE_SOURCE_DIR}/external/install/release/x64/mingw/bin"
+		"${SXMP_MINGW_BIN}"
+	)
+
+	# Bazel may place runtime dependencies in a configuration-specific output
+	# directory, in addition to bazel-bin's stable view.
+	get_filename_component(_bazel_external_directory "${SXMP_BACKEND_BAZEL_DIR}" DIRECTORY)
+	get_filename_component(_bazel_bin_directory "${_bazel_external_directory}" DIRECTORY)
+	get_filename_component(_bazel_workspace "${_bazel_bin_directory}" DIRECTORY)
+	file(GLOB _runtime_bazel_output_directories
+		LIST_DIRECTORIES true
+		CONFIGURE_DEPENDS
+		"${_bazel_workspace}/bazel-out/*/bin/external/sxmp"
+	)
+	list(APPEND _runtime_dependency_directories ${_runtime_bazel_output_directories})
+
+	foreach(_directory IN LISTS _runtime_dependency_directories)
+		if(IS_DIRECTORY "${_directory}")
+			file(GLOB _runtime_dlls
+				CONFIGURE_DEPENDS
+				"${_directory}/*.dll"
+				"${_directory}/*.DLL"
+			)
+			list(APPEND _runtime_dependency_inputs ${_runtime_dlls})
+		endif()
+	endforeach()
+	list(REMOVE_DUPLICATES _runtime_dependency_inputs)
+
+	# Keep a stable manifest whose contents change only when the input file set
+	# changes. GLOB CONFIGURE_DEPENDS also makes Ninja notice added/removed DLLs.
+	set(SXMP_RUNTIME_DEPENDENCY_MANIFEST
+		"${CMAKE_CURRENT_BINARY_DIR}/${EXE_NAME}_runtime_dependency_inputs.txt"
+	)
+	string(JOIN "\n" _runtime_dependency_manifest_content ${_runtime_dependency_inputs})
+	file(CONFIGURE
+		OUTPUT "${SXMP_RUNTIME_DEPENDENCY_MANIFEST}"
+		CONTENT "${_runtime_dependency_manifest_content}\n"
+	)
+
+	set(SXMP_RUNTIME_DEPS_STAMP
+		"${CMAKE_CURRENT_BINARY_DIR}/${EXE_NAME}_runtime_deps.stamp"
+	)
+	add_custom_command(
+		OUTPUT "${SXMP_RUNTIME_DEPS_STAMP}"
+		BYPRODUCTS "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libsxmp_be.dll"
 		COMMAND "${CMAKE_COMMAND}"
 			"-DRUNTIME_EXE=$<TARGET_FILE:${EXE_NAME}>"
 			"-DRUNTIME_DEST=$<TARGET_FILE_DIR:${EXE_NAME}>"
 			"-DRUNTIME_BAZEL_BIN=${SXMP_BACKEND_BAZEL_DIR}"
+			"-DRUNTIME_DEBUG_PACKAGE_BIN=${CMAKE_SOURCE_DIR}/external/install/debug/bin"
 			"-DRUNTIME_DEBUG_BIN=${CMAKE_SOURCE_DIR}/external/install/debug/x64/mingw/bin"
+			"-DRUNTIME_RELEASE_PACKAGE_BIN=${CMAKE_SOURCE_DIR}/external/install/release/bin"
 			"-DRUNTIME_RELEASE_BIN=${CMAKE_SOURCE_DIR}/external/install/release/x64/mingw/bin"
 			"-DRUNTIME_MINGW_BIN=${SXMP_MINGW_BIN}"
 			${SXMP_RUNTIME_OBJDUMP_ARG}
@@ -92,16 +186,25 @@ if(WIN32)
 			"${SXMP_BACKEND_BAZEL_DIR}/libsxmp_be.dll"
 			"$<TARGET_FILE_DIR:${EXE_NAME}>/libsxmp_be.dll"
 
+		COMMAND "${CMAKE_COMMAND}" -E touch
+			"${SXMP_RUNTIME_DEPS_STAMP}"
+
+		DEPENDS
+			"${SXMP_RUNTIME_DEPENDENCY_MANIFEST}"
+			${_runtime_dependency_inputs}
+
 		VERBATIM
 	)
 
+	add_custom_target(${EXE_NAME}_runtime_deps ALL
+		DEPENDS "${SXMP_RUNTIME_DEPS_STAMP}"
+	)
 	add_dependencies(${EXE_NAME}_runtime_deps ${EXE_NAME})
-
 endif()
 
 
 # shaders
-# compiles engine/shaders/<name>/{vs,fs}.sc into build/runtime/*.bin
+# compiles engine/shaders/<name>/{vs,fs}.sc
 compile_shader(tex)
 compile_shader(grid)
 
@@ -167,6 +270,7 @@ target_link_libraries(${EXE_NAME} PRIVATE
 	${OpenCV_LIBS}
 
 	protobuf::libprotobuf
+	sxmp_be
 )
 
 

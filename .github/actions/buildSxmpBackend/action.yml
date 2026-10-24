@@ -68,9 +68,9 @@ runs:
         disk-cache: sxmp-backend-${{ runner.os }}-${{ runner.arch }}
         # Rotate Windows caches because the initial failed run saved an empty cache.
         cache-version: ${{ runner.os == 'Windows' && '2' || '1' }}
-        # Windows cache restores of Bazel's extracted external repositories trigger
-        # absolute-path include errors; keep disk and repository caches enabled there.
-        external-cache: ${{ runner.os != 'Windows' }}
+        # Temporarily enable this on Windows to measure the impact on CI time.
+        # Revert if restoring extracted repositories brings back absolute-path include errors.
+        external-cache: true
         repository-cache: true
         module-root: sxmp/external/mediapipe
 
@@ -175,3 +175,53 @@ runs:
           --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
           --reuse_sandbox_directories \
           @sxmp//:sxmp_be
+
+    - name: Verify sxmp backend runtime library (Linux and macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: sxmp/external/mediapipe
+      env:
+        USE_BAZEL_VERSION: 7.4.1
+      run: |
+        case "$RUNNER_OS" in
+          Linux) suffix=so ;;
+          macOS) suffix=dylib ;;
+          *)
+            echo "::error::Unsupported sxmp backend runtime platform: $RUNNER_OS"
+            exit 1
+            ;;
+        esac
+
+        expected="bazel-bin/external/sxmp/libsxmp_be.$suffix"
+        if [[ -f "$expected" ]]; then
+          runtime_library="$expected"
+        else
+          runtime_library="$(find -L bazel-out bazel-bin -iname "libsxmp_be.$suffix" -type f -print -quit 2>/dev/null || true)"
+        fi
+
+        if [[ -z "$runtime_library" ]]; then
+          echo "::error::Bazel finished without producing libsxmp_be.$suffix."
+          echo "Bazel's declared output files:"
+          bazel cquery --output=files @sxmp//:sxmp_be || true
+          echo "Available sxmp backend outputs:"
+          find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
+          exit 1
+        fi
+
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          # Stage a copy instead of modifying Bazel's output/cache artifact.
+          # Correct the Bazel-relative dylib ID so the package is relocatable.
+          staged="$GITHUB_WORKSPACE/build/runtime-backend/libsxmp_be.dylib"
+          mkdir -p "$(dirname "$staged")"
+          cp -L "$runtime_library" "$staged"
+          install_name_tool -id "@rpath/libsxmp_be.dylib" "$staged"
+          echo "Staged macOS runtime library: $staged"
+          otool -D "$staged"
+        else
+          mkdir -p "$(dirname "$expected")"
+          if [[ ! -e "$expected" || ! "$runtime_library" -ef "$expected" ]]; then
+            cp -f "$runtime_library" "$expected"
+          fi
+          test -f "$expected"
+          echo "Using runtime library: $expected"
+        fi
