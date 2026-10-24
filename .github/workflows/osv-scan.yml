@@ -1,0 +1,70 @@
+name: OSV vulnerability scan
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "security/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+  merge_group:
+    branches:
+      - main
+      - develop
+  schedule:
+    - cron: "27 14 * * 1"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to scan
+        required: true
+        type: choice
+        options:
+          - main
+          - develop
+        default: main
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  scan-current:
+    name: Scan pinned dependencies
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.6.0
+    with:
+      # Include submodules so OSV-Scanner can inspect their pinned Git commits.
+      checkout-submodules: true
+      # Report existing vulnerabilities without making the whole workflow fail.
+      fail-on-vuln: false
+      ref: ${{ inputs.branch || github.ref_name }}
+      scan-args: |-
+        --recursive
+        ./
+
+  scan-develop:
+    name: Scan develop (scheduled)
+    if: ${{ github.event_name == 'schedule' }}
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.6.0
+    with:
+      checkout-submodules: true
+      fail-on-vuln: false
+      ref: develop
+      scan-args: |-
+        --recursive
+        ./
+
+  scan-pull-request:
+    name: Check for newly introduced vulnerabilities
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.6.0
+    with:
+      checkout-submodules: true
+      scan-args: |-
+        --recursive
+        ./
