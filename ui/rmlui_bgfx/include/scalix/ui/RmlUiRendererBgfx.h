@@ -38,6 +38,7 @@ namespace scalix::ui
 	{
 	public:
 		void init(const RmlUiRendererBgfxConfig& config);
+		void shutdown() noexcept;
 		~RmlUiRendererBgfx() override;
 
 		RmlUiRendererBgfx& operator=(const RmlUiRendererBgfx&) = delete;
