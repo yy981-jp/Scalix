@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Track submodule revisions on the default branch.
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Keep the development branch's submodule revisions monitored as well.
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
