@@ -2,6 +2,7 @@
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
+#include <RmlUi/Core/ElementDocument.h>
 
 #include <def/view.h>
 #include <util/image.h>
@@ -352,6 +353,33 @@ void RmlUiLayer::init(int width, int height) {
 		shutdown();
 		throw std::runtime_error("Failed to create the RmlUi context.");
 	}
+}
+
+Rml::ElementDocument* RmlUiLayer::loadDocument(const fs::path& path) {
+	if (!initialized || context == nullptr)
+		throw std::logic_error("RmlUiLayer is not initialized.");
+	if (path.empty())
+		throw std::invalid_argument("RmlUi document path must not be empty.");
+
+	fs::path document_path = path;
+	if (document_path.is_relative())
+		document_path = syspath.resource / document_path;
+	document_path = document_path.lexically_normal();
+
+	const auto path_utf8 = document_path.u8string();
+	const std::string path_string(
+		reinterpret_cast<const char*>(path_utf8.data()),
+		path_utf8.size()
+	);
+
+	Rml::ElementDocument* document = context->LoadDocument(path_string);
+	if (document == nullptr) {
+		SDL_Log("RmlUi: failed to load document '%s'.", path_string.c_str());
+		return nullptr;
+	}
+
+	document->Show();
+	return document;
 }
 
 void RmlUiLayer::processEvent(const SDL_Event &event) {
