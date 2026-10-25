@@ -4,8 +4,7 @@
 
 #include <SDL3/SDL.h>
 
-namespace Rml
-{
+namespace Rml {
 	class Context;
 }
 

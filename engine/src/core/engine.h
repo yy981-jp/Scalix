@@ -18,6 +18,7 @@
 #include <core/grid.h>
 #include <util/time.h>
 #include <ui/logo.h>
+#include <ui/rml.h>
 
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
@@ -29,6 +30,10 @@
 enum class ShaderId {
 	tex, grid,
 	Count
+};
+
+enum class SceneId {
+	game, ui
 };
 
 class Engine {
@@ -47,6 +52,9 @@ class Engine {
 	bool mouseRelMode = true;
 	MouseState mStat;
 	ElapsedTime elap;
+
+	SceneId sceneId = SceneId::game;
+	RmlUiLayer rml;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
 	bgfx::UniformHandle u_bones;
