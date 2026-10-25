@@ -87,7 +87,7 @@ Engine::Engine() {
 
 	// set mouse mode
 
-	SDL_SetWindowRelativeMouseMode(window, true);
+	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
 	rml.init(width, height);
 	rml.loadDocument("ui/sample.rml");
@@ -129,13 +129,14 @@ void Engine::tick() {
 	const float dt = elap.get();
 	if (has(keyStat,KCode::Q)) running = false;
 
-	if (has(keyStat, KCode::G)) {
-		SDL_SetWindowRelativeMouseMode(window, true);
-		sceneId = SceneId::game;
-	}
-	if (has(keyStat, KCode::U)) {
-		SDL_SetWindowRelativeMouseMode(window, false);
-		sceneId = SceneId::ui;
+	static float wait = 0;
+	if (wait > 0) wait -= dt;
+
+	if (has(keyStat, KCode::Esc) && wait <= 0) {
+		wait += 0.5;
+		mouseRelMode = !mouseRelMode;
+		SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
+		sceneId = (sceneId == SceneId::game? SceneId::ui : SceneId::game);
 	}
 	switch (sceneId) {
 		case SceneId::game: {
@@ -180,7 +181,7 @@ void Engine::draw() {
 }
 
 void Engine::gameInit() {
-	mStat.relMode = true;
+	mStat.relMode = mouseRelMode;
 
 	// set camera
 	camId = CameraType::_1;

@@ -49,7 +49,7 @@ class Engine {
 
 	bool running = true;
 	KCodes keyStat = 0; // KCode
-	// bool mouseRelMode = true;
+	bool mouseRelMode = true;
 	MouseState mStat;
 	ElapsedTime elap;
 

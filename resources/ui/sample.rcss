@@ -9,6 +9,17 @@ body {
 	font-size: 15px;
 	color: #e6edf7;
 	background-color: #0b1020;
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	left: 0px;
+	margin: 0px;
+}
+
+div {
+	display: block;
+	box-sizing: border-box;
 }
 
 #app {
