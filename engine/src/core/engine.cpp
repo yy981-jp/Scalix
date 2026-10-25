@@ -90,6 +90,7 @@ Engine::Engine() {
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
 	rml.init(width, height);
+	rml.loadDocument("ui/sample.rml");
 
 	cfg.init((syspath.userdata/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();

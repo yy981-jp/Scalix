@@ -10,6 +10,7 @@ install/
 *.exe
 *.zip
 *.bin
+*.ttf
 
 .venv/
 models/

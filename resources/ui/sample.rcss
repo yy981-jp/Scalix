@@ -1,0 +1,425 @@
+/*
+ * RCSS controls the appearance of sample.rml.
+ * If you know CSS, start with the colors, spacing, borders, and layout here.
+ * RmlUi supports a CSS-like subset; it is not a full browser CSS engine.
+ */
+body {
+	margin: 0px;
+	font-family: "Noto Sans JP";
+	font-size: 15px;
+	color: #e6edf7;
+	background-color: #0b1020;
+}
+
+#app {
+	width: 100%;
+	height: 100%;
+	display: flex;
+}
+
+#sidebar {
+	width: 220px;
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 24px 18px;
+	background-color: #111827;
+	border-right: 1px solid #263449;
+}
+
+.brand {
+	display: flex;
+	align-items: center;
+	margin-bottom: 34px;
+}
+
+.brand-mark {
+	width: 38px;
+	height: 38px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-right: 11px;
+	border-radius: 9px;
+	background-color: #528bff;
+	color: #ffffff;
+	font-size: 21px;
+	font-weight: bold;
+}
+
+.brand-name {
+	font-size: 17px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #f4f7ff;
+}
+
+.brand-subtitle {
+	margin-top: 3px;
+	font-size: 10px;
+	letter-spacing: 1px;
+	color: #8292ab;
+}
+
+.sidebar-label {
+	margin: 0px 0px 10px 9px;
+	font-size: 10px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #74849c;
+}
+
+.nav-item {
+	display: flex;
+	align-items: center;
+	padding: 11px 10px;
+	margin-bottom: 5px;
+	border-radius: 7px;
+	color: #aab8ce;
+}
+
+.nav-item:hover {
+	background-color: #1b2940;
+	color: #ffffff;
+}
+
+.nav-item.active {
+	background-color: #20395e;
+	color: #ffffff;
+}
+
+.nav-number {
+	width: 27px;
+	font-size: 11px;
+	color: #7c9ac7;
+}
+
+.sidebar-spacer {
+	flex: 1;
+}
+
+.sidebar-status {
+	padding: 13px;
+	border: 1px #2b3a50;
+	border-radius: 8px;
+	background-color: #151f30;
+}
+
+.status-line {
+	display: flex;
+	align-items: center;
+}
+
+.status-dot {
+	width: 7px;
+	height: 7px;
+	margin-right: 8px;
+	border-radius: 4px;
+	background-color: #5bd6a2;
+}
+
+.status-caption {
+	font-size: 11px;
+	color: #92a3bd;
+}
+
+.status-detail {
+	margin-top: 7px;
+	font-size: 12px;
+	font-weight: bold;
+	color: #e6edf7;
+}
+
+#main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	padding: 30px 34px;
+}
+
+#topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 26px;
+}
+
+.breadcrumb {
+	font-size: 11px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #8292ab;
+}
+
+#page-title {
+	margin-top: 8px;
+	font-size: 29px;
+	font-weight: bold;
+	color: #f5f7fc;
+}
+
+#page-subtitle {
+	margin-top: 5px;
+	font-size: 13px;
+	color: #9aa9bf;
+}
+
+.sample-badge {
+	padding: 8px 11px;
+	border: 1px #315b8d;
+	border-radius: 7px;
+	background-color: #142947;
+	color: #92c5ff;
+	font-size: 11px;
+	font-weight: bold;
+	letter-spacing: 1px;
+}
+
+#hero {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 24px 26px;
+	margin-bottom: 18px;
+	border: 1px #2b466b;
+	border-radius: 12px;
+	background-color: #152640;
+}
+
+.hero-copy {
+	flex: 1;
+}
+
+.eyebrow {
+	margin-bottom: 9px;
+	font-size: 10px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #80b7ff;
+}
+
+#hero-title {
+	font-size: 23px;
+	font-weight: bold;
+	color: #f6f8ff;
+}
+
+#hero-description {
+	max-width: 580px;
+	margin-top: 9px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #adbed5;
+}
+
+.hero-mark {
+	width: 98px;
+	height: 98px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: 24px;
+	border: 1px #385b84;
+	border-radius: 18px;
+	background-color: #1a3557;
+	color: #8cc4ff;
+	font-size: 23px;
+	font-weight: bold;
+}
+
+#metrics {
+	display: flex;
+	margin-bottom: 18px;
+}
+
+.metric-card {
+	flex: 1;
+	padding: 17px 19px;
+	margin-right: 13px;
+	border: 1px #26364e;
+	border-radius: 10px;
+	background-color: #121c2c;
+}
+
+#last-metric {
+	margin-right: 0px;
+}
+
+.metric-label {
+	font-size: 10px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #8292ab;
+}
+
+.metric-value {
+	margin-top: 12px;
+	font-size: 22px;
+	font-weight: bold;
+	color: #f0f5ff;
+}
+
+.metric-note {
+	margin-top: 5px;
+	font-size: 12px;
+	color: #94a5bd;
+}
+
+#lower-grid {
+	display: flex;
+	flex: 1;
+}
+
+.panel {
+	flex: 1;
+	padding: 19px 21px;
+	border: 1px #26364e;
+	border-radius: 10px;
+	background-color: #121c2c;
+}
+
+#status-panel {
+	margin-right: 14px;
+}
+
+.panel-title {
+	margin-bottom: 17px;
+	font-size: 14px;
+	font-weight: bold;
+	color: #f0f5ff;
+}
+
+.info-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 11px 0px;
+	border-bottom: 1px solid #263348;
+}
+
+.info-name {
+	font-size: 12px;
+	color: #aab8ce;
+}
+
+.info-value {
+	font-size: 12px;
+	font-weight: bold;
+	color: #77d7ae;
+}
+
+.info-value.muted {
+	color: #93a4bd;
+}
+
+.edit-title {
+	margin-top: 20px;
+	margin-bottom: 9px;
+	font-size: 10px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #8292ab;
+}
+
+.edit-row {
+	display: flex;
+	align-items: flex-start;
+	margin-bottom: 11px;
+}
+
+.edit-file {
+	width: 116px;
+	flex-shrink: 0;
+	font-size: 12px;
+	font-weight: bold;
+	color: #8fc3ff;
+}
+
+.edit-description {
+	flex: 1;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #aab8ce;
+}
+
+.button-heading {
+	margin-bottom: 11px;
+	font-size: 10px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #8292ab;
+}
+
+.button-row {
+	display: flex;
+	margin-bottom: 18px;
+}
+
+button {
+	padding: 10px 14px;
+	margin-right: 9px;
+	border: 1px #38506e;
+	border-radius: 7px;
+	background-color: #1a2940;
+	color: #dce7f8;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+button.primary {
+	border-color: #528bff;
+	background-color: #528bff;
+	color: #ffffff;
+}
+
+button:hover {
+	background-color: #29415f;
+}
+
+button.primary:hover {
+	border-color: #78a7ff;
+	background-color: #78a7ff;
+}
+
+#shortcuts {
+	padding-top: 15px;
+	border-top: 1px solid #263348;
+}
+
+.shortcut-row {
+	display: flex;
+	align-items: center;
+	margin-top: 10px;
+}
+
+.keycap {
+	width: 24px;
+	flex-shrink: 0;
+	padding: 5px 0px;
+	margin-right: 10px;
+	border: 1px #394a63;
+	border-radius: 5px;
+	background-color: #1a2638;
+	color: #dce7f8;
+	font-size: 11px;
+	font-weight: bold;
+	text-align: center;
+}
+
+.shortcut-description {
+	font-size: 12px;
+	color: #aab8ce;
+}
+
+#footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: 17px;
+	margin-top: 17px;
+	border-top: 1px solid #263348;
+	color: #71829b;
+	font-size: 10px;
+	letter-spacing: 1px;
+}

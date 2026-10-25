@@ -25,7 +25,7 @@ bool loadRmlUiTexture(const Rml::String &source, Rml::Vector2i &dimensions,
 	dimensions.y = 0;
 	rgba_pixels.clear();
 
-	fs::path path = fs::u8path(source);
+	fs::path path = source;
 	if (path.is_relative())
 		path = syspath.resource / path;
 	path = path.lexically_normal();
@@ -353,6 +353,8 @@ void RmlUiLayer::init(int width, int height) {
 		shutdown();
 		throw std::runtime_error("Failed to create the RmlUi context.");
 	}
+
+	Rml::LoadFontFace((syspath.resource / "ui"/"NotoSansJP.ttf").string());
 }
 
 Rml::ElementDocument* RmlUiLayer::loadDocument(const fs::path& path) {
