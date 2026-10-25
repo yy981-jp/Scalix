@@ -24,7 +24,7 @@ body {
 	flex-direction: column;
 	padding: 24px 18px;
 	background-color: #111827;
-	border-right: 1px solid #263449;
+	border-right: 1px #263449;
 }
 
 .brand {
@@ -295,7 +295,7 @@ body {
 	align-items: center;
 	justify-content: space-between;
 	padding: 11px 0px;
-	border-bottom: 1px solid #263348;
+	border-bottom: 1px #263348;
 }
 
 .info-name {
@@ -384,7 +384,7 @@ button.primary:hover {
 
 #shortcuts {
 	padding-top: 15px;
-	border-top: 1px solid #263348;
+	border-top: 1px #263348;
 }
 
 .shortcut-row {
@@ -418,7 +418,7 @@ button.primary:hover {
 	justify-content: space-between;
 	padding-top: 17px;
 	margin-top: 17px;
-	border-top: 1px solid #263348;
+	border-top: 1px #263348;
 	color: #71829b;
 	font-size: 10px;
 	letter-spacing: 1px;

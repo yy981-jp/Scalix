@@ -82,12 +82,12 @@ Engine::Engine() {
 	
 	if (!bgfx::init(init)) throw std::runtime_error("bgfx init failed");
 	
-	bgfx::setDebug(BGFX_DEBUG_STATS);
+	// bgfx::setDebug(BGFX_DEBUG_STATS);
 	// bgfx::setDebug(BGFX_DEBUG_TEXT);
 
 	// set mouse mode
 
-	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
+	SDL_SetWindowRelativeMouseMode(window, true);
 
 	rml.init(width, height);
 	rml.loadDocument("ui/sample.rml");
@@ -129,8 +129,14 @@ void Engine::tick() {
 	const float dt = elap.get();
 	if (has(keyStat,KCode::Q)) running = false;
 
-	if (has(keyStat, KCode::G)) sceneId = SceneId::game;
-	if (has(keyStat, KCode::U)) sceneId = SceneId::ui;
+	if (has(keyStat, KCode::G)) {
+		SDL_SetWindowRelativeMouseMode(window, true);
+		sceneId = SceneId::game;
+	}
+	if (has(keyStat, KCode::U)) {
+		SDL_SetWindowRelativeMouseMode(window, false);
+		sceneId = SceneId::ui;
+	}
 	switch (sceneId) {
 		case SceneId::game: {
 			update(dt);
@@ -174,7 +180,7 @@ void Engine::draw() {
 }
 
 void Engine::gameInit() {
-	mStat.relMode = mouseRelMode;
+	mStat.relMode = true;
 
 	// set camera
 	camId = CameraType::_1;
