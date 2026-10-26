@@ -16,7 +16,7 @@ class AvatarSystem {
 
 public:
 	void loadData(const std::vector<AvatarId> ids);
-	void update(GameContext& gctx, float dt);
+	void update(GlobalContext& gctx, float dt);
 	void draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones);
 
 	Avatar& player();

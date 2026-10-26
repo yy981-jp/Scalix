@@ -1,6 +1,8 @@
 #include <debug/debugDraw.h>
 #include <bgfx/bgfx.h>
 
+#include <def/view.h>
+
 DebugDraw debug;
 
 DebugDraw::DebugDraw() {
@@ -76,7 +78,7 @@ void DebugDraw::render(bgfx::ProgramHandle program) {
 
 	bgfx::setVertexBuffer(0, &tvb);
 	bgfx::setState(BGFX_STATE_DEFAULT | BGFX_STATE_PT_LINES | BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS);
-	bgfx::submit(0, program);
+	bgfx::submit((int)ViewId::game, program);
 
 	reset();
 }

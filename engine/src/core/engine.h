@@ -1,5 +1,9 @@
 #pragma once
 
+#if defined(_WIN32)
+#include <thread>
+#endif
+
 #include <SDL3/SDL.h>
 
 #include <thread>
@@ -14,6 +18,7 @@
 #include <core/grid.h>
 #include <util/time.h>
 #include <ui/logo.h>
+#include <ui/rml.h>
 
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
@@ -27,10 +32,14 @@ enum class ShaderId {
 	Count
 };
 
+enum class SceneId {
+	game, ui
+};
+
 class Engine {
-	GameContext gctx = {
-		.keyStat = keyStat,
-		.mStat = mStat,
+	GlobalContext gctx = {
+		// .keyStat = keyStat,
+		// .mStat = mStat,
 		.cam = cam0,
 		.cam_type = camId,
 		.poseSolver = nullptr,
@@ -43,6 +52,9 @@ class Engine {
 	bool mouseRelMode = true;
 	MouseState mStat;
 	ElapsedTime elap;
+
+	SceneId sceneId = SceneId::game;
+	RmlUiLayer rml;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
 	bgfx::UniformHandle u_bones;

@@ -6,6 +6,7 @@
 #include <core/nodeRegistry.h>
 #include <util/cache.h>
 #include <def/mtx.h>
+#include <def/view.h>
 #include <mocap/motionDebug.h>
 #include <mocap/poseSolver.h>
 
@@ -151,7 +152,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 }
 
 
-void AvatarSystem::update(GameContext& ctx, float dt) {
+void AvatarSystem::update(GlobalContext& ctx, float dt) {
 	
 	for (auto& avatar: avatars) {
 
@@ -284,7 +285,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				);
 
 				// ===== draw =====
-				bgfx::submit(0, program);
+				bgfx::submit((int)ViewId::game, program);
 
 			}
 

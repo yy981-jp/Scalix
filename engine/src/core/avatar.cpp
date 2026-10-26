@@ -13,7 +13,7 @@
 
 
 
-void Avatar::update(GameContext& ctx, float dt) {
+void Avatar::update(GlobalContext& ctx, float dt) {
 	// --- 移動 ---
 	float fx = -lutsv.getSin(yaw);
 	float fz =  lutsv.getCos(yaw);

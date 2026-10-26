@@ -265,6 +265,7 @@ target_link_libraries(${EXE_NAME} PRIVATE
 
 	protobuf::libprotobuf
 	sxmp_be
+	scalix_rmlui_bgfx
 )
 
 

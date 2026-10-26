@@ -1,9 +1,9 @@
 #pragma once
 
 #include <util/path.h>
+#include <util/image.h>
 
 #include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
 
 #include <stdexcept>
 
@@ -21,7 +21,7 @@ public:
 			throw std::runtime_error(SDL_GetError());
 
 		SDL_Surface* surface =
-			IMG_Load((syspath.resource / "assets" / "logo.webp").string().c_str());
+			loadImageSurface(syspath.resource / "assets" / "logo.webp");
 
 		if (!surface) {
 			SDL_DestroyRenderer(renderer);

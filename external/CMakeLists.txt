@@ -38,6 +38,31 @@ ExternalProject_Add(bgfx_release
 )
 
 
+# RmlUi
+# RmlUi uses the system FreeType package for its default font engine.
+# The installed package is consumed by the main Scalix build and dev tools.
+foreach(CONFIGURATION IN ITEMS Debug Release)
+	string(TOLOWER ${CONFIGURATION} CONFIGURATION_LOWER)
+	ExternalProject_Add(RmlUi_${CONFIGURATION_LOWER}
+		SOURCE_DIR ${CMAKE_SOURCE_DIR}/RmlUi
+		BINARY_DIR ${CMAKE_SOURCE_DIR}/build_${CONFIGURATION_LOWER}/RmlUi
+
+		CMAKE_ARGS
+			-DCMAKE_BUILD_TYPE=${CONFIGURATION}
+			-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}/${CONFIGURATION_LOWER}
+			-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/${CONFIGURATION_LOWER}
+			-DBUILD_SHARED_LIBS=OFF
+			-DBUILD_TESTING=OFF
+			-DRMLUI_SAMPLES=OFF
+			-DRMLUI_FONT_ENGINE=freetype
+
+		USES_TERMINAL_CONFIGURE TRUE
+		USES_TERMINAL_BUILD TRUE
+		INSTALL_COMMAND ${CMAKE_COMMAND} --install .
+	)
+endforeach()
+
+
 # SDL
 ExternalProject_Add(SDL_debug
 	SOURCE_DIR ${CMAKE_SOURCE_DIR}/SDL
@@ -110,7 +135,6 @@ ExternalProject_Add(SDL-image_release
 set(OPENCV_COMMON_ARGS
 	-DBUILD_LIST=core,imgproc,imgcodecs,videoio,geometry,calib,stereo,ptcloud,features,photo,objdetect,video
 	-DBUILD_opencv_dnn=OFF
-	-DBUILD_opencv_highgui=OFF
 	-DWITH_QT=OFF
 	-DWITH_WIN32UI=OFF
 	-DWITH_OPENGL=OFF
