@@ -152,7 +152,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 }
 
 
-void AvatarSystem::update(GameContext& ctx, float dt) {
+void AvatarSystem::update(GlobalContext& ctx, float dt) {
 	
 	for (auto& avatar: avatars) {
 

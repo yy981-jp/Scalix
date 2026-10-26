@@ -11,10 +11,13 @@ namespace Rml {
 }
 
 
+class NoLogSystemInterface;
+
 class RmlUiLayer {
 	scalix::ui::RmlUiRendererBgfx backend;
 	Rml::Context* context = nullptr;
 	bool initialized = false;
+	NoLogSystemInterface* noLogSystemInterface;
 
 public:
 	RmlUiLayer() = default;

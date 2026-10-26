@@ -44,7 +44,7 @@ struct Avatar {
 
 	AvatarId id;
 
-	void update(GameContext& keyStat, float dt);
+	void update(GlobalContext& keyStat, float dt);
 	void draw(Camera& cam);
 	
 	Avatar(const AvatarId& id);

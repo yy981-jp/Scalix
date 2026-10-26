@@ -149,8 +149,8 @@ void Engine::tick() {
 		} break;
 	}
 
-	bgfx::dbgTextClear();
-	bgfx::dbgTextPrintf(5, 50, 0x4f, "fps: %f", 1/dt);
+	// bgfx::dbgTextClear();
+	// bgfx::dbgTextPrintf(5, 50, 0x4f, "fps: %f", 1/dt);
 
 
 	bgfx::frame();

@@ -7,7 +7,7 @@
 class PoseSolver;
 
 
-struct GameContext {
+struct GlobalContext {
 	KCodes& keyStat;
 	MouseState& mStat;
 	Camera& cam;

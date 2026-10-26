@@ -3,6 +3,7 @@
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
 #include <RmlUi/Core/ElementDocument.h>
+#include <RmlUi/Core/SystemInterface.h>
 
 #include <def/view.h>
 #include <util/image.h>
@@ -320,6 +321,15 @@ Rml::Input::KeyIdentifier toRmlKey(SDL_Scancode key) {
 }
 } // namespace
 
+class NoLogSystemInterface : public Rml::SystemInterface {
+public:
+    // LogMessageをオーバーライドして何もしないようにする
+    bool LogMessage(Rml::Log::Type type, const Rml::String& message) override {
+        return true;
+    }
+};
+
+
 RmlUiLayer::~RmlUiLayer() { shutdown(); }
 
 void RmlUiLayer::init(int width, int height) {
@@ -346,6 +356,9 @@ void RmlUiLayer::init(int width, int height) {
 		backend.shutdown();
 		throw std::runtime_error("RmlUi initialization failed.");
 	}
+
+	noLogSystemInterface = new NoLogSystemInterface;
+	Rml::SetSystemInterface(noLogSystemInterface);
 
 	initialized = true;
 	context = Rml::CreateContext("scalix_ui", Rml::Vector2i{width, height});

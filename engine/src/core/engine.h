@@ -37,7 +37,7 @@ enum class SceneId {
 };
 
 class Engine {
-	GameContext gctx = {
+	GlobalContext gctx = {
 		.keyStat = keyStat,
 		.mStat = mStat,
 		.cam = cam0,
