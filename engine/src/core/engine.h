@@ -36,6 +36,17 @@ enum class SceneId {
 	game, ui
 };
 
+class BGFXMan {
+public:
+	void init(const bgfx::Init& param) {
+		if (!bgfx::init(param)) throw std::runtime_error("bgfx init failed");
+	}
+
+	~BGFXMan() {
+		bgfx::shutdown();
+	}
+};
+
 class Engine {
 	GlobalContext gctx = {
 		// .keyStat = keyStat,
@@ -46,6 +57,7 @@ class Engine {
 	};
 
 	SDL_Window* window;
+	BGFXMan bgfxMan;
 
 	bool running = true;
 	KCodes keyStat = 0; // KCode

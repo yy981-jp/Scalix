@@ -4,12 +4,9 @@
 
 
 int main() {
-	{
-		Engine engine;
+	Engine engine;
 
-		while (engine.isRunning()) {
-			engine.tick();
-		}
+	while (engine.isRunning()) {
+		engine.tick();
 	}
-	bgfx::shutdown();
 }
