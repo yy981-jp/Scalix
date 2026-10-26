@@ -366,6 +366,10 @@ void RmlUiLayer::init(int width, int height) {
 		shutdown();
 		throw std::runtime_error("Failed to create the RmlUi context.");
 	}
+	model = context->CreateDataModel("engine");
+	if (!model)
+		throw std::runtime_error("Failed to create UI data model.");
+	modelHandle = model.GetModelHandle();
 
 	Rml::LoadFontFace((syspath.resource / "ui"/"NotoSansJP.ttf").string());
 }
@@ -489,4 +493,8 @@ void RmlUiLayer::shutdown() noexcept {
 	}
 
 	backend.shutdown();
+}
+
+void RmlUiLayer::dirty(const std::string& name) {
+	modelHandle.DirtyVariable(name);
 }

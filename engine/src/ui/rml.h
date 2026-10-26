@@ -1,5 +1,6 @@
 #pragma once
 
+#include <RmlUi/Core/DataModelHandle.h>
 #include <scalix/ui/RmlUiRendererBgfx.h>
 #include <def/fs.h>
 
@@ -18,6 +19,8 @@ class RmlUiLayer {
 	Rml::Context* context = nullptr;
 	bool initialized = false;
 	NoLogSystemInterface* noLogSystemInterface;
+	Rml::DataModelConstructor model;
+	Rml::DataModelHandle modelHandle;
 
 public:
 	RmlUiLayer() = default;
@@ -32,4 +35,7 @@ public:
 	void update();
 	void render();
 	void shutdown() noexcept;
+	void dirty(const std::string& name);
+	template <typename T>
+	bool bind(const std::string& name, T* ptr) { return model.Bind(name, ptr); }
 };
