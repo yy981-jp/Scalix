@@ -86,7 +86,6 @@ Engine::Engine() {
 	// bgfx::setDebug(BGFX_DEBUG_TEXT);
 
 	// set mouse mode
-
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 
 	rml.init(width, height);
@@ -138,14 +137,28 @@ void Engine::tick() {
 		SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
 		sceneId = (sceneId == SceneId::game? SceneId::ui : SceneId::game);
 	}
+
+	// global ctx
 	switch (sceneId) {
 		case SceneId::game: {
-			update(dt);
-			draw();
-		} break;
+			gctx.keyStat = keyStat;
+			gctx.mStat = mStat;
+		}; break;
+		case SceneId::ui: {
+			gctx.keyStat = {};
+			gctx.mStat = {};
+		}
+	}
+
+	// update & draw
+	switch (sceneId) {
 		case SceneId::ui: {
 			rml.update();
 			rml.render();
+		} // ここにbreakがないのは仕様です
+		case SceneId::game: {
+			update(dt);
+			draw();
 		} break;
 	}
 
@@ -158,9 +171,10 @@ void Engine::tick() {
 
 
 void Engine::update(float dt) {
-
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -5},{0.0f, 0.7f, 0});
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
+		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
+	);
 	springBoneSystem.update(dt);
 
 	PoseFrame frame;

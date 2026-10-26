@@ -38,8 +38,8 @@ enum class SceneId {
 
 class Engine {
 	GlobalContext gctx = {
-		.keyStat = keyStat,
-		.mStat = mStat,
+		// .keyStat = keyStat,
+		// .mStat = mStat,
 		.cam = cam0,
 		.cam_type = camId,
 		.poseSolver = nullptr,

@@ -8,8 +8,8 @@ class PoseSolver;
 
 
 struct GlobalContext {
-	KCodes& keyStat;
-	MouseState& mStat;
+	KCodes keyStat;
+	MouseState mStat;
 	Camera& cam;
 	CameraType& cam_type;
 	PoseSolver* poseSolver;
