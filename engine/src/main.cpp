@@ -13,15 +13,16 @@ int main(int argc, char* argv[]) {
 	CLI11_PARSE(app, argc, argv);
 
 
+	EngineMode emode = EngineMode::normal;
+	if (*sub_ui)
+		emode = EngineMode::uiTest;
+	else if (*sub_smokeTest)
+		emode = EngineMode::smokeTest;
 
-	if (*sub_ui) {
 
-	} else if (*sub_smokeTest) {
-
-	} else {
-		Engine engine;
-		while (engine.isRunning()) {
-			engine.tick();
-		}
+	Engine engine(emode);
+	while (engine.isRunning()) {
+		engine.tick();
 	}
+
 }

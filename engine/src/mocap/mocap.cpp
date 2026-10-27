@@ -35,7 +35,7 @@ Mocap::Mocap():
 	socket(io, asio::ip::udp::v4()),
 	endpoint(asio::ip::make_address("127.0.0.1"), 51801)
 {
-	fs::path modelpath = syspath.resource / "models" / "pose_landmarker_full.task";
+	fs::path modelpath = syspath.resource / "models" / "pose" / "full.task";
 	backend.init(modelpath.string());
 	cap.open(0);
 

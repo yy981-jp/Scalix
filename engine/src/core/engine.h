@@ -34,8 +34,14 @@ enum class SceneId {
 	game, ui
 };
 
+enum class EngineMode {
+	normal, smokeTest, uiTest
+};
+
 
 class Engine {
+	EngineMode emode;
+
 	GlobalContext gctx = {
 		// .keyStat = keyStat,
 		// .mStat = mStat,
@@ -92,7 +98,7 @@ public:
 		T_WIDTH = 1200,
 		T_HEIGHT = 900;
 
-	Engine();
+	Engine(EngineMode emode);
 	~Engine();
 
 	void tick();

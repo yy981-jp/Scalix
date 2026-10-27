@@ -12,7 +12,7 @@
 #include <physics/util.h>
 
 
-Engine::Engine() {
+Engine::Engine(EngineMode emode): emode(emode) {
 	SDL_Init(SDL_INIT_VIDEO);
 
 	// ===== window 作成 (SDL) =====
@@ -79,6 +79,7 @@ Engine::Engine() {
 
 	// set mouse mode
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
+	if (emode == EngineMode::uiTest) sceneId = SceneId::ui;
 
 	rml.init(width, height);
 	rml.loadDocument("ui/sample.rml");
@@ -202,11 +203,16 @@ void Engine::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
-	avatarSystem.loadData({
-		UUID::fromString(
-			cfg.get()["avatar"]["id"].get<std::string>()
-		)
-	});
+	const auto& avaIdNode = cfg.get()["avatar"]["id"];
+	if (!avaIdNode.is_null()) {
+		avatarSystem.loadData({
+			UUID::fromString(
+				avaIdNode.get<std::string>()
+			)
+		});
+	} else {
+		
+	}
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(
