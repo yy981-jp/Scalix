@@ -14,17 +14,12 @@
 
 Engine::Engine() {
 	SDL_Init(SDL_INIT_VIDEO);
-	// if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
 
 	// ===== window 作成 (SDL) =====
 	window = SDL_CreateWindow(
 		"Scalix",
-		// SDL_WINDOWPOS_CENTERED,
-		// SDL_WINDOWPOS_CENTERED,
 		T_WIDTH, T_HEIGHT,
 		0
-		// SDL_WINDOW_FULLSCREEN
-		// SDL_WINDOW_FULLSCREEN_DESKTOP
 	);
 	SDL_SetWindowFullscreen(window, true);
 
@@ -67,8 +62,6 @@ Engine::Engine() {
 
 	if (!pd.nwh)
 		throw std::runtime_error("Get native window handle");
-
-	// bgfx::setPlatformData(pd);
 
 	bgfx::Init init{};
 	init.type = bgfx::RendererType::Count;
@@ -214,7 +207,6 @@ void Engine::gameInit() {
 			cfg.get()["avatar"]["id"].get<std::string>()
 		)
 	});
-	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(

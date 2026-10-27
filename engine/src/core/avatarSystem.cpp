@@ -43,6 +43,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 	if (calculated[idx]) return;
 
 	auto& node = avatar.model.nodes[idx];
+	node.mtx = Mtx::fromTRS(node.trs);
 
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent.isValid()) {

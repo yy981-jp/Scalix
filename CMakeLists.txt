@@ -46,7 +46,7 @@ list(PREPEND CMAKE_PREFIX_PATH
 add_subdirectory(ui)
 add_subdirectory(engine)
 add_subdirectory(importer)
-add_subdirectory(dev)
+# add_subdirectory(dev)
 
 # Project-wide install and package definitions
 include(cmake/install.cmake)

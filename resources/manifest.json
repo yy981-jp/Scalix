@@ -1,0 +1,15 @@
+{
+	"version": 1,
+	"remote": {
+		"ghrel": "https://github.com/yy981-jp/Scalix-Assets/releases/download/v0/",
+		"model": "https://storage.googleapis.com/mediapipe-models/"
+	},
+	"files": [
+		{
+			"origin": "ghrel",
+			"remote": "init.glb",
+			"local": "avatars/init.glb",
+			"sha256": "71c68c6f94e34ce5bbe93d9091736e1914fcfb07a609f12bbe474217e651bf4b"
+		}
+	]
+}

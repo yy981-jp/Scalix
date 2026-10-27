@@ -5,11 +5,9 @@
 #endif
 
 #include <SDL3/SDL.h>
-
-#include <thread>
-#include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 
+#include <core/bgfx.h>
 #include <gfx/shader.h>
 #include <gltf/loader.h>
 #include <core/key.h>
@@ -36,16 +34,6 @@ enum class SceneId {
 	game, ui
 };
 
-class BGFXMan {
-public:
-	void init(const bgfx::Init& param) {
-		if (!bgfx::init(param)) throw std::runtime_error("bgfx init failed");
-	}
-
-	~BGFXMan() {
-		bgfx::shutdown();
-	}
-};
 
 class Engine {
 	GlobalContext gctx = {
@@ -84,10 +72,6 @@ class Engine {
 	Recv receiver;
 	PoseSolver* poseSolver;
 
-	static constexpr int
-		T_WIDTH = 1200,
-		T_HEIGHT = 900;
-
 	int width, height;
 
 
@@ -104,6 +88,10 @@ class Engine {
 	void draw();
 
 public:
+	static constexpr int
+		T_WIDTH = 1200,
+		T_HEIGHT = 900;
+
 	Engine();
 	~Engine();
 
