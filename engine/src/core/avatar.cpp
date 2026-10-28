@@ -13,7 +13,7 @@
 
 
 
-void Avatar::update(GameContext& ctx, float dt) {
+void Avatar::update(GlobalContext& ctx, float dt) {
 	// --- 移動 ---
 	float fx = -lutsv.getSin(yaw);
 	float fz =  lutsv.getCos(yaw);
@@ -84,17 +84,17 @@ void Avatar::update(GameContext& ctx, float dt) {
 	}
 
 	// --- neck (pitch) ---
-	if (humanoid.has(HBT::neck)) {
-		NodeHandle neckHandle = humanoid.bones[(size_t)HBT::neck];
+	if (model.humanoid.has(HBT::neck)) {
+		NodeHandle neckHandle = model.humanoid.bones[(size_t)HBT::neck];
 		auto& neckNode = nodeReg.get(neckHandle);
 
 		float qPitch[4];
 		neckNode.trs.rot = Quat::fromAxisAngle({1,0,0}, head.pitch);
 	}
 
-	if (humanoid.has(HBT::head)) {
+	if (model.humanoid.has(HBT::head)) {
 		// --- head (yaw) ---
-		NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
+		NodeHandle headHandle = model.humanoid.bones[(size_t)HBT::head];
 		auto& headNode = nodeReg.get(headHandle);
 
 		headNode.trs.rot = Quat::fromAxisAngle({0,1,0}, head.yaw);
@@ -106,7 +106,7 @@ void Avatar::update(GameContext& ctx, float dt) {
 
 void Avatar::draw(Camera& cam) {
 
-	NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
+	NodeHandle headHandle = model.humanoid.bones[(size_t)HBT::head];
 
 	int headIdx = nodeReg.getId(headHandle);
 	if (headIdx < 0) return;
@@ -149,10 +149,9 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 	loader.load();
 	loader.procHdl(this);
 	model = loader.get();
+	model.init();
 
-	humanoid.init(model);
-
-	anim.init("test.sxa",*this);
+	// anim.init("test.sxa",*this);
 
 }
 

@@ -16,8 +16,8 @@ namespace {
 	mediapipe::Image ToMediaPipeImage(const cv::Mat& rgb) {
 		auto frame = std::make_shared<mediapipe::ImageFrame>();
 		frame->CopyPixelData(mediapipe::ImageFormat::SRGB, rgb.cols, rgb.rows,
-							static_cast<int>(rgb.step), rgb.data,
-							mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+								static_cast<int>(rgb.step), rgb.data,
+								mediapipe::ImageFrame::kDefaultAlignmentBoundary);
 		return mediapipe::Image(std::move(frame));
 	}
 }

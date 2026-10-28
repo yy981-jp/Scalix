@@ -31,7 +31,9 @@ function(generate_proto NAME)
 			--pyi_out=${TRACKER_GENERATED_DIR}
 			${PROTO_FILE}
 
-		DEPENDS ${PROTO_FILE}
+		DEPENDS
+			${PROTO_FILE}
+			${PROTOC_EXECUTABLE}
 
 		VERBATIM
 	)

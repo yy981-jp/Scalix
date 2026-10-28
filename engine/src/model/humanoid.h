@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <array>
 
-#include <model/model.h>
+// #include <model/model.h>
 
 
 enum class HBT {
@@ -41,6 +41,9 @@ enum class HBT {
 constexpr uint64_t HBTFlag(HBT bone) {
 	return 1u << static_cast<uint64_t>(bone);
 }
+
+
+struct Model;
 
 /// @brief 骨格
 struct Humanoid {

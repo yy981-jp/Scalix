@@ -8,6 +8,8 @@
 #include <def/str.h>
 #include <def/transform.h>
 #include <def/mtx.h>
+#include <model/humanoid.h>
+#include <model/rig.h>
 
 #include <anim/format.h>
 #include <core/nodeRegistry.h>
@@ -49,8 +51,16 @@ enum class Status {
 };
 
 
-/// @brief 構造そのもの
+/// @brief 構造そのもの (静的データ)
 struct Model {
+	Humanoid humanoid;
+	RigGraph rig;
+
+	void init() {
+		humanoid.init(*this);
+		// physics.init(*this);
+	}
+
 	// scalix側で用意した仮想的なroot
 	// 元のデータにrootが複数ある場合も単一である場合も、
 	// このnodeの子に配置する
@@ -59,11 +69,9 @@ struct Model {
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
 	
-	// size = 仮想rootを含む
-	// => nodeHandles.size() + 1 = nodes.size()
 	std::vector<Node> nodes;
 
-	// NodeId to NodeHandle, size = 仮想rootを含まない
+	// NodeId to NodeHandle
 	std::vector<NodeHandle> nodeHandles;
 	std::vector<Skin> skins;
 	std::vector<int> materialToImage; // map

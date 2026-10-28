@@ -1,36 +1,11 @@
 #pragma once
 #include <cstdint>
 #include <functional>
+#include <def/id.h>
 
 
-struct NodeId {
-    uint32_t value;
-
-    constexpr NodeId(): value(invalid()) {};
-    constexpr NodeId(uint32_t v): value(v) {}
-
-    constexpr operator uint32_t() const { return value; }
-
-    auto operator<=>(const NodeId&) const = default;
-
-	template <std::integral T>
-	constexpr auto operator<=>(T other) const {
-		return value <=> static_cast<uint32_t>(other);
-	}
-	constexpr NodeId& operator++() {
-		++value;
-		return *this;
-	}
-
-	constexpr NodeId operator++(int) {
-		NodeId tmp = *this;
-		++*this;
-		return tmp;
-	}
-	static constexpr NodeId invalid() { return UINT32_MAX; }
-	
-	constexpr bool isValid() const { return *this != invalid(); }
-};
+struct NodeIdTag {};
+using NodeId = Id<NodeIdTag>;
 
 using NodeEntryId = uint32_t; // NodeRegistry内のentryを指すId
 using NodeGen = uint16_t;

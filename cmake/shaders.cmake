@@ -18,20 +18,18 @@ elseif(UNIX)
 endif()
 
 
-# Compiles engine/shaders/${NAME}/{vs,fs}.sc
-# under the build directory, and exposes the outputs to the caller as
-# ${NAME}_SHADER_OUTPUTS so they can be wired as a build dependency.
-function(compile_shader NAME)
-	set(SHADER_DIR
-		${CMAKE_SOURCE_DIR}/engine/shaders/${NAME}
+# Compiles a bgfx shader pair from an arbitrary source directory into
+# resources/runtime/{vs,fs}_<name>.bin. Outputs are exposed to the caller.
+function(compile_shader_from_dir NAME SHADER_DIR)
+	set(SHADER_OUTPUT_DIR
+		${CMAKE_SOURCE_DIR}/resources/runtime
 	)
 
 	set(VS_OUTPUT
-		${CMAKE_SOURCE_DIR}/resources/runtime/vs_${NAME}.bin
+		${SHADER_OUTPUT_DIR}/vs_${NAME}.bin
 	)
-
 	set(FS_OUTPUT
-		${CMAKE_SOURCE_DIR}/resources/runtime/fs_${NAME}.bin
+		${SHADER_OUTPUT_DIR}/fs_${NAME}.bin
 	)
 
 	add_custom_command(
@@ -40,7 +38,7 @@ function(compile_shader NAME)
 			${FS_OUTPUT}
 
 		COMMAND ${CMAKE_COMMAND} -E make_directory
-			${CMAKE_BINARY_DIR}/runtime
+			${SHADER_OUTPUT_DIR}
 
 		COMMAND ${SHADERC_EXECUTABLE}
 			-f ${SHADER_DIR}/vs.sc
@@ -68,5 +66,24 @@ function(compile_shader NAME)
 		VERBATIM
 	)
 
-	set(${NAME}_SHADER_OUTPUTS ${VS_OUTPUT} ${FS_OUTPUT} PARENT_SCOPE)
+	set(${NAME}_SHADER_OUTPUTS
+		${VS_OUTPUT}
+		${FS_OUTPUT}
+		PARENT_SCOPE
+	)
+endfunction()
+
+
+# Preserve the original engine/shaders/<name> call site.
+function(compile_shader NAME)
+	compile_shader_from_dir(
+		"${NAME}"
+		"${CMAKE_SOURCE_DIR}/engine/shaders/${NAME}"
+	)
+
+	# Forward the outputs through this wrapper to the original call site.
+	set(${NAME}_SHADER_OUTPUTS
+		${${NAME}_SHADER_OUTPUTS}
+		PARENT_SCOPE
+	)
 endfunction()
