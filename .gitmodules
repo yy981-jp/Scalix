@@ -44,3 +44,9 @@
 [submodule "external/opencv"]
 	path = external/opencv
 	url = https://github.com/opencv/opencv.git
+[submodule "external/RmlUi"]
+	path = external/RmlUi
+	url = https://github.com/mikke89/RmlUi.git
+[submodule "external/CLI11"]
+	path = external/CLI11
+	url = https://github.com/CLIUtils/CLI11.git

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'release-*'
+      - 'v*'
     branches:
       - ci/github-actions
 
@@ -18,9 +18,9 @@ jobs:
       package: true
 
   release:
-    if: startsWith(github.ref, 'refs/tags/release-')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
@@ -36,7 +36,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME#release-}"
+          version="${GITHUB_REF_NAME#v}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Release

@@ -6,6 +6,7 @@
 #include <core/nodeRegistry.h>
 #include <util/cache.h>
 #include <def/mtx.h>
+#include <def/view.h>
 #include <mocap/motionDebug.h>
 #include <mocap/poseSolver.h>
 
@@ -23,14 +24,12 @@ void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
 }
 
 
-void AvatarSystem::loadData(const std::vector<AvatarId> ids) {
-	size_t idx = 0;
-	for (const auto& id: ids) {
-		avatars.emplace_back(id);
-		avatarIndex[id] = idx++;
-	}
+void AvatarSystem::loadData(AvatarId id) {
+	// Avatarのコンストラクタがload処理をやってる
+	avatars.try_emplace(id, id);
 
-	playableAvatar = avatars[0].id;
+	if (!playableAvatar.isValid())
+		playableAvatar = id;
 }
 
 void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
@@ -42,34 +41,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 	if (calculated[idx]) return;
 
 	auto& node = avatar.model.nodes[idx];
-
-	// ============================================================
-	// Local TRS -> Local Matrix の変換を検証
-	// ============================================================
 	node.mtx = Mtx::fromTRS(node.trs);
-
-	// leftUpperArm = bone 222 だけ詳細ログ
-	if (idx == 222 && motionTraceEnabled()) {
-		const Quat trsRot = node.trs.rot;
-		const Quat matrixRot = node.mtx.rot();
-
-		printf(
-			"MOTION calcGlobal bone=222 LOCAL "
-			"trsRot=(%.6f,%.6f,%.6f,%.6f) "
-			"matrixRot=(%.6f,%.6f,%.6f,%.6f)\n",
-			trsRot.x, trsRot.y, trsRot.z, trsRot.w,
-			matrixRot.x, matrixRot.y, matrixRot.z, matrixRot.w
-		);
-
-		printf(
-			"MOTION calcGlobal bone=222 LOCAL_DIFF "
-			"d=(%.6f,%.6f,%.6f,%.6f)\n",
-			matrixRot.x - trsRot.x,
-			matrixRot.y - trsRot.y,
-			matrixRot.z - trsRot.z,
-			matrixRot.w - trsRot.w
-		);
-	}
 
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent.isValid()) {
@@ -79,70 +51,6 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 
 		out[idx] = out[parent] * node.mtx;
 
-		// ========================================================
-		// Parent * Local -> Global の変換を検証
-		// ========================================================
-		if (idx == 222 && motionTraceEnabled()) {
-			const NodeHandle boneHdl =
-				avatar.model.humanoid.bones[(size_t)HBT::leftUpperArm];
-
-			Node& registryNode = nodeReg.get(boneHdl);
-			Node& modelNode = avatar.model.nodes[idx];
-
-			printf(
-				"MOTION NODECHECK bone=222 "
-				"modelAddr=%p "
-				"registryAddr=%p "
-				"modelId=%d "
-				"registryId=%d "
-				"modelRot=(%.6f,%.6f,%.6f,%.6f) "
-				"registryRot=(%.6f,%.6f,%.6f,%.6f)\n",
-				(void*)&modelNode,
-				(void*)&registryNode,
-				(int)modelNode.id,
-				(int)registryNode.id,
-				modelNode.trs.rot.x,
-				modelNode.trs.rot.y,
-				modelNode.trs.rot.z,
-				modelNode.trs.rot.w,
-				registryNode.trs.rot.x,
-				registryNode.trs.rot.y,
-				registryNode.trs.rot.z,
-				registryNode.trs.rot.w
-			);
-		}
-
-		if (idx == 222 && motionTraceEnabled()) {
-			const Quat parentRot = out[parent].rot();
-			const Quat localRot  = node.mtx.rot();
-			const Quat globalRot = out[idx].rot();
-
-			const Quat expectedGlobalRot = parentRot * localRot;
-
-			printf(
-				"MOTION calcGlobal bone=222 HIERARCHY "
-				"parentRot=(%.6f,%.6f,%.6f,%.6f) "
-				"localRot=(%.6f,%.6f,%.6f,%.6f) "
-				"globalRot=(%.6f,%.6f,%.6f,%.6f) "
-				"expected=(%.6f,%.6f,%.6f,%.6f)\n",
-				parentRot.x, parentRot.y, parentRot.z, parentRot.w,
-				localRot.x, localRot.y, localRot.z, localRot.w,
-				globalRot.x, globalRot.y, globalRot.z, globalRot.w,
-				expectedGlobalRot.x,
-				expectedGlobalRot.y,
-				expectedGlobalRot.z,
-				expectedGlobalRot.w
-			);
-
-			printf(
-				"MOTION calcGlobal bone=222 HIERARCHY_DIFF "
-				"d=(%.6f,%.6f,%.6f,%.6f)\n",
-				globalRot.x - expectedGlobalRot.x,
-				globalRot.y - expectedGlobalRot.y,
-				globalRot.z - expectedGlobalRot.z,
-				globalRot.w - expectedGlobalRot.w
-			);
-		}
 	} else {
 		out[idx] = node.mtx * entityMtx;
 	}
@@ -151,55 +59,51 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 }
 
 
-void AvatarSystem::update(GameContext& ctx, float dt) {
-	
-	for (auto& avatar: avatars) {
+void AvatarSystem::update(GlobalContext& ctx, float dt) {
+	// player以外の制御はしない
+	Avatar& avatar = player();
 
-		if (avatar.id != playableAvatar) continue; // player以外の制御はしない
+	traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
+	// avatar update
+	avatar.update(ctx,dt);
+	traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
-		traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
-		// avatar update
-		avatar.update(ctx,dt);
-		traceSolverLocalRotations(avatar, "afterAvatarUpdate");
+	avatar.globalMtx.resize(avatar.model.nodes.size());
+	avatar.trackingMtx.resize(avatar.model.nodes.size());
 
-		avatar.globalMtx.resize(avatar.model.nodes.size());
-		avatar.trackingMtx.resize(avatar.model.nodes.size());
+	Transform entityTransform;
+	entityTransform.pos = avatar.pos;
+	entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
+	entityTransform.scale = avatar.scale;
+	Mtx entityMtx = Mtx::fromTRS(entityTransform);
 
-		Transform entityTransform;
-		entityTransform.pos = avatar.pos;
-		entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
-		entityTransform.scale = avatar.scale;
-		Mtx entityMtx = Mtx::fromTRS(entityTransform);
+	// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
+	// スケールは entityTransform と同じにする。
+	// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
+	Transform trackingEntityTransform;
+	trackingEntityTransform.scale = entityTransform.scale;
+	Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
 
-		// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
-		// スケールは entityTransform と同じにする。
-		// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
-		Transform trackingEntityTransform;
-		trackingEntityTransform.scale = entityTransform.scale;
-		Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
+	std::vector<bool> calculated;
+	calculated.resize(avatar.model.nodes.size(), false);
 
-		std::vector<bool> calculated;
-		calculated.resize(avatar.model.nodes.size(), false);
-
-		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
-		}
-
-		std::vector<bool> trackingCalculated;
-		trackingCalculated.resize(avatar.model.nodes.size(), false);
-
-		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
-		}
-
-		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
-
+	for (int i = 0; i < avatar.model.nodes.size(); i++) {
+		calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
 	}
+
+	std::vector<bool> trackingCalculated;
+	trackingCalculated.resize(avatar.model.nodes.size(), false);
+
+	for (int i = 0; i < avatar.model.nodes.size(); i++) {
+		calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
+	}
+
+	if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
 }
 
 
 void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
-	for (auto& avatar: avatars) {
+	for (auto& [id,avatar]: avatars) {
 
 		// 骨構造を持たないavatarは処理しない
 		if (avatar.model.skins.empty()) continue;
@@ -284,7 +188,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				);
 
 				// ===== draw =====
-				bgfx::submit(0, program);
+				bgfx::submit((int)ViewId::game, program);
 
 			}
 
@@ -293,5 +197,9 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 }
 
 Avatar& AvatarSystem::player() {
-	return avatars[avatarIndex[playableAvatar]]; // TODO: 仮
+	return get(playableAvatar);
+}
+
+Avatar& AvatarSystem::get(const AvatarId& id) {
+	return avatars.at(id);
 }

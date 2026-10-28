@@ -58,7 +58,7 @@ struct Model {
 
 	void init() {
 		humanoid.init(*this);
-		rig.init(*this);
+		// physics.init(*this);
 	}
 
 	// scalix側で用意した仮想的なroot

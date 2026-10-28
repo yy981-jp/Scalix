@@ -12,19 +12,14 @@
 #include <physics/util.h>
 
 
-Engine::Engine() {
+Engine::Engine(EngineMode emode): emode(emode) {
 	SDL_Init(SDL_INIT_VIDEO);
-	// if(!(IMG_Init(IMG_INIT_WEBP) & IMG_INIT_WEBP)) return;
 
 	// ===== window 作成 (SDL) =====
 	window = SDL_CreateWindow(
 		"Scalix",
-		// SDL_WINDOWPOS_CENTERED,
-		// SDL_WINDOWPOS_CENTERED,
 		T_WIDTH, T_HEIGHT,
 		0
-		// SDL_WINDOW_FULLSCREEN
-		// SDL_WINDOW_FULLSCREEN_DESKTOP
 	);
 	SDL_SetWindowFullscreen(window, true);
 
@@ -68,8 +63,6 @@ Engine::Engine() {
 	if (!pd.nwh)
 		throw std::runtime_error("Get native window handle");
 
-	// bgfx::setPlatformData(pd);
-
 	bgfx::Init init{};
 	init.type = bgfx::RendererType::Count;
 
@@ -79,15 +72,17 @@ Engine::Engine() {
 	init.resolution.height = height;
 	init.resolution.reset = BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4/* | BGFX_RESET_MAXANISOTROPY*/;
 
+	bgfxMan.init(init);
 	
-	if (!bgfx::init(init)) throw std::runtime_error("bgfx init failed");
-	
-	bgfx::setDebug(BGFX_DEBUG_STATS);
+	// bgfx::setDebug(BGFX_DEBUG_STATS);
 	// bgfx::setDebug(BGFX_DEBUG_TEXT);
 
 	// set mouse mode
-
 	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
+	if (emode == EngineMode::uiTest) sceneId = SceneId::ui;
+
+	rml.init(width, height);
+	rml.loadDocument("ui/sample.rml");
 
 	cfg.init((syspath.userdata/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
 	gameInit();
@@ -105,24 +100,63 @@ Engine::~Engine() {
 void Engine::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		switch(event.type) {
-			case SDL_EVENT_QUIT: running = false; break;
-			case SDL_EVENT_KEY_DOWN: onKeyDown(event.key); break;
-			case SDL_EVENT_KEY_UP: onKeyUp(event.key); break;
-			case SDL_EVENT_MOUSE_BUTTON_DOWN: onMouseBtDown(event.button); break;
-			case SDL_EVENT_MOUSE_BUTTON_UP: onMouseBtUp(event.button); break;
-			// case SDL_WINDOWEVENT: onWindowEve(event.window); break;
-			case SDL_EVENT_MOUSE_MOTION: onMouseMt(event.motion); break;
+        if (event.type == SDL_EVENT_QUIT) {
+            running = false;
+            continue;
+        }
+
+		switch (event.type) {
+			case SDL_EVENT_KEY_DOWN:			onKeyDown(event.key);			break;
+			case SDL_EVENT_KEY_UP:				onKeyUp(event.key);			break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:	onMouseBtDown(event.button);	break;
+			case SDL_EVENT_MOUSE_BUTTON_UP:		onMouseBtUp(event.button);	break;
+			case SDL_EVENT_MOUSE_MOTION:		onMouseMt(event.motion);		break;
+		}
+
+		if (sceneId == SceneId::ui) {
+			rml.processEvent(event);
 		}
 	}
 
 	const float dt = elap.get();
-	update(dt);
-	
-	draw();
+	if (has(keyStat,KCode::Q)) running = false;
 
-	bgfx::dbgTextClear();
-	bgfx::dbgTextPrintf(5, 50, 0x4f, "fps: %f", 1/dt);
+	static float wait = 0;
+	if (wait > 0) wait -= dt;
+
+	if (has(keyStat, KCode::Esc) && wait <= 0) {
+		wait += 0.5;
+		mouseRelMode = !mouseRelMode;
+		SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
+		sceneId = (sceneId == SceneId::game? SceneId::ui : SceneId::game);
+	}
+
+	// global ctx
+	switch (sceneId) {
+		case SceneId::game: {
+			gctx.keyStat = keyStat;
+			gctx.mStat = mStat;
+		}; break;
+		case SceneId::ui: {
+			gctx.keyStat = {};
+			gctx.mStat = {};
+		}
+	}
+
+	// update & draw
+	switch (sceneId) {
+		case SceneId::ui: {
+			rml.update();
+			rml.render();
+		} // ここにbreakがないのは仕様です
+		case SceneId::game: {
+			update(dt);
+			draw();
+		} break;
+	}
+
+	// bgfx::dbgTextClear();
+	// bgfx::dbgTextPrintf(5, 50, 0x4f, "fps: %f", 1/dt);
 
 
 	bgfx::frame();
@@ -130,10 +164,10 @@ void Engine::tick() {
 
 
 void Engine::update(float dt) {
-	if (has(keyStat,KCode::Esc)) running = false;
-
 	// ===== Entityごと =====
-	if (gctx.cam_type == CameraType::DEBUG) cam0.update({0.0f, 0.7f, -5},{0.0f, 0.7f, 0});
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
+		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
+	);
 	springBoneSystem.update(dt);
 
 	PoseFrame frame;
@@ -169,12 +203,15 @@ void Engine::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
+	// nodeReg.setAvatarSystemPtr(&avatarSystem);
+	const auto& avaIdNode = cfg.get()["avatar"]["id"];
+	// if (!avaIdNode.is_null()) {
 	avatarSystem.loadData({
 		UUID::fromString(
-			cfg.get()["avatar"]["id"].get<std::string>()
+			avaIdNode.get<std::string>()
 		)
 	});
-	// avatarSystem.loadData({"glTF-Sponza/Sponza.gltf"});
+
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(

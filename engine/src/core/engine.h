@@ -1,11 +1,13 @@
 #pragma once
 
-#include <SDL3/SDL.h>
-
+#if defined(_WIN32)
 #include <thread>
-#include <bgfx/bgfx.h>
+#endif
+
+#include <SDL3/SDL.h>
 #include <bgfx/platform.h>
 
+#include <core/bgfx.h>
 #include <gfx/shader.h>
 #include <gltf/loader.h>
 #include <core/key.h>
@@ -14,6 +16,7 @@
 #include <core/grid.h>
 #include <util/time.h>
 #include <ui/logo.h>
+#include <ui/rml.h>
 
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
@@ -27,22 +30,37 @@ enum class ShaderId {
 	Count
 };
 
+enum class SceneId {
+	game, ui
+};
+
+enum class EngineMode {
+	normal, smokeTest, uiTest
+};
+
+
 class Engine {
-	GameContext gctx = {
-		.keyStat = keyStat,
-		.mStat = mStat,
+	EngineMode emode;
+
+	GlobalContext gctx = {
+		// .keyStat = keyStat,
+		// .mStat = mStat,
 		.cam = cam0,
 		.cam_type = camId,
 		.poseSolver = nullptr,
 	};
 
 	SDL_Window* window;
+	BGFXMan bgfxMan;
 
 	bool running = true;
 	KCodes keyStat = 0; // KCode
 	bool mouseRelMode = true;
 	MouseState mStat;
 	ElapsedTime elap;
+
+	SceneId sceneId = SceneId::game;
+	RmlUiLayer rml;
 
 	std::array<bgfx::ProgramHandle,static_cast<size_t>(ShaderId::Count)> shaders;
 	bgfx::UniformHandle u_bones;
@@ -60,10 +78,6 @@ class Engine {
 	Recv receiver;
 	PoseSolver* poseSolver;
 
-	static constexpr int
-		T_WIDTH = 1200,
-		T_HEIGHT = 900;
-
 	int width, height;
 
 
@@ -80,7 +94,11 @@ class Engine {
 	void draw();
 
 public:
-	Engine();
+	static constexpr int
+		T_WIDTH = 1200,
+		T_HEIGHT = 900;
+
+	Engine(EngineMode emode);
 	~Engine();
 
 	void tick();

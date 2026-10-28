@@ -2,6 +2,8 @@
 #include <bgfx/bgfx.h>
 #include <vector>
 
+#include <def/view.h>
+
 struct Vertex {
 	float x,y,z;
 	float nx,ny,nz;
@@ -53,6 +55,6 @@ struct Mesh {
 	void submit(bgfx::ProgramHandle program) {
 		bgfx::setVertexBuffer(0, vbh);
 		bgfx::setIndexBuffer(ibh);
-		bgfx::submit(0, program);
+		bgfx::submit((int)ViewId::game, program);
 	}
 };
