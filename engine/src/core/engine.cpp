@@ -203,16 +203,15 @@ void Engine::gameInit() {
 	bgfx::setViewRect(0, 0, 0, width, height);
 
 	// ===== load glTF ====
+	// nodeReg.setAvatarSystemPtr(&avatarSystem);
 	const auto& avaIdNode = cfg.get()["avatar"]["id"];
-	if (!avaIdNode.is_null()) {
-		avatarSystem.loadData({
-			UUID::fromString(
-				avaIdNode.get<std::string>()
-			)
-		});
-	} else {
-		
-	}
+	// if (!avaIdNode.is_null()) {
+	avatarSystem.loadData({
+		UUID::fromString(
+			avaIdNode.get<std::string>()
+		)
+	});
+
 
 	// ===== load Shader =====
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(

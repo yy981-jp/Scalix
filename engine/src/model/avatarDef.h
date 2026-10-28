@@ -21,6 +21,9 @@ struct UUID {
 	}
 
 	std::string hex() const { return std::format("{:016x}{:016x}", high, low); }
+	
+	static UUID invalid() { return UUID{UINT64_MAX,UINT64_MAX}; }
+	bool isValid() const { return *this != invalid(); }
 
 	auto operator<=>(const UUID&) const = default;
 };

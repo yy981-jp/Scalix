@@ -15,8 +15,10 @@ class NodeRegistry {
 		uint32_t nextFree; // 次の空きID（linked list）
 		NodeGen gen = 0; // 世代
 
+		// AvatarSystem::avatarsがunordered_mapだからできる
 		Avatar* avatar = nullptr;
 		AvatarId avatarId;
+		
 		NodeId node = UINT32_MAX;
 	};
 	uint32_t aliveCount = 0;
@@ -25,14 +27,17 @@ class NodeRegistry {
 	uint32_t freeHead = UINT32_MAX; // フリーリストの先頭
 	static constexpr uint32_t INVALID = std::numeric_limits<uint32_t>::max();
 
-
 	NodeHandle find(Entry entry, NodeId nodeId) const;
+
+	// AvatarSystem* avatarSys = nullptr;
 
 public:
 	NodeHandle create(Avatar* avatar, NodeId id);
 	void destroy(NodeHandle h);
 	bool is_alive(NodeHandle h) const;
 	uint32_t size() const;
+
+	// void setAvatarSystemPtr(AvatarSystem* ptr) { avatarSys = ptr; };
 
 	Node& get(NodeHandle h);
 	NodeId getId(NodeHandle h);
@@ -42,7 +47,7 @@ public:
 	NodeHandle find(NodeHandle avaRefHandle, NodeId nodeId) const;
 
 	// ほぼデバッグ用
-	// 計算コスト的に過度な呼び出しは注意
+	// 計算コスト的に過度な呼び出しには注意
 	NodeHandle findFromAvaId(AvatarId avatarId, NodeId nodeId) const;
 
 };

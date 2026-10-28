@@ -157,19 +157,21 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 
 rig構想 中断
 
-TODO: 配布データにモデルも同梱する ciを修正したら完了 dlスクリプトは作った
+1プロセス内での複数Engineの同時起動はサポートしない
+
 TODO: Engine::u_bonesはavatarSystemの責務か? ほかにも整理していきたい
 mesh::submit()使われてなくない? 使われてないコードをいつか一斉に整理したい
 
 TODO:
-	AvatarSystem::loadData vec廃止 単一 そして、直接パス指定サポート追加(overloadにする?)
-	AvatarSystem::loadData::idx これ問題では? 関数内でしか状態が維持されてない気が というか、avatarあたりの管理も見直すべき
-		nodeRegがavatarのptrを直接参照してるからこんなことになるのでは?
 	smoketestは1回tickしたら終了
 	uitestはどうしたものか... avatarがなくともposesolverとかをちゃんと止めたらクラッシュせずに動くやろうか
 		とにかくavatar管理周辺の整理が必要に思える
+avatarIdはmodelではなくavatarに一意なIDとする 同じmodelを使ったavatarに関しても現時点では別のIDを発行する
+	modelをmodelidで参照するような設計が考えられるが、将来的な課題として残す
+
 
 main.cppにCLI11ベースでrmlui,起動テストとかいろいろの分岐作ったらめっちゃ面白そうじゃない?!
+	-> 基盤は整備した 基盤は
 
 // ==================================================
 // 対処済み
