@@ -139,7 +139,7 @@ function(scalix_resolve_runtime_dependencies)
 			# installed by our external projects.
 			unset(_fallback_dependency)
 			foreach(_directory IN LISTS _fallback_search_directories)
-				set(_candidate "${_directory}/${_dependency}")
+				set(_candidate "${_directory}/${_dependency_file}")
 				if(EXISTS "${_candidate}" AND NOT IS_DIRECTORY "${_candidate}")
 					set(_fallback_dependency "${_candidate}")
 					break()
@@ -148,7 +148,7 @@ function(scalix_resolve_runtime_dependencies)
 
 			if(NOT _fallback_dependency)
 				find_file(_fallback_dependency
-					NAMES "${_dependency}"
+					NAMES "${_dependency_file}"
 					PATHS ${_fallback_search_directories}
 					NO_DEFAULT_PATH
 					NO_CACHE
