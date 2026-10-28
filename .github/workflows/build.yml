@@ -60,6 +60,8 @@ jobs:
             "-DEXPECTED_FILES=$PWD/generated/THIRD_PARTY_LICENSES_INSTALL_LIST.txt" \
             -P ../cmake/verify_third_party_licenses.cmake
           rm -rf license-check
+          # Download runtime assets before CPack stages the install tree.
+          python3 ../ci/dl.py ../resources
           cpack --config CPackConfig.cmake
           rm -rf dist/_CPack_Packages
 
@@ -67,14 +69,12 @@ jobs:
         if: ${{ inputs.package && runner.os != 'Windows' }}
         shell: bash
         run: |
-          python3 ci/dl.py resources
           python3 ci/verify_distribution.py package
 
       - name: Verify package outputs (Windows)
         if: ${{ inputs.package && runner.os == 'Windows' }}
         shell: msys2 {0}
         run: |
-          python3 ci/dl.py resources
           python3 ci/verify_distribution.py package
 
       - name: Upload build artifact
