@@ -22,7 +22,7 @@ runs:
             sha256sum external/CMakeLists.txt
           } | sha256sum | cut -d' ' -f1
         )
-        key="external-${{ runner.os }}-${{ runner.arch }}-${hash}"
+        key="external-v2-${{ runner.os }}-${{ runner.arch }}-${hash}"
         echo "key=$key" >> "$GITHUB_OUTPUT"
 
 
