@@ -168,6 +168,9 @@ TODO:
 	smoketestは1回tickしたら終了
 	uitestはどうしたものか... avatarがなくともposesolverとかをちゃんと止めたらクラッシュせずに動くやろうか
 		とにかくavatar管理周辺の整理が必要に思える
+avatarIdはmodelではなくavatarに一意なIDとする 同じmodelを使ったavatarに関しても現時点では別のIDを発行する
+	modelをmodelidで参照するような設計が考えられるが、将来的な課題として残す
+
 
 main.cppにCLI11ベースでrmlui,起動テストとかいろいろの分岐作ったらめっちゃ面白そうじゃない?!
 

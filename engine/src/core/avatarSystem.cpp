@@ -24,14 +24,12 @@ void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
 }
 
 
-void AvatarSystem::loadData(const std::vector<AvatarId> ids) {
-	size_t idx = 0;
-	for (const auto& id: ids) {
-		avatars.emplace_back(id);
-		avatarIndex[id] = idx++;
-	}
+void AvatarSystem::loadData(AvatarId id) {
+	// Avatarのコンストラクタがload処理をやってる
+	avatars.try_emplace(id, id);
 
-	playableAvatar = avatars[0].id;
+	if (!playableAvatar.isValid())
+		playableAvatar = id;
 }
 
 void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
@@ -62,54 +60,50 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 
 
 void AvatarSystem::update(GlobalContext& ctx, float dt) {
-	
-	for (auto& avatar: avatars) {
+	// player以外の制御はしない
+	Avatar& avatar = player();
 
-		if (avatar.id != playableAvatar) continue; // player以外の制御はしない
+	traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
+	// avatar update
+	avatar.update(ctx,dt);
+	traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
-		traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
-		// avatar update
-		avatar.update(ctx,dt);
-		traceSolverLocalRotations(avatar, "afterAvatarUpdate");
+	avatar.globalMtx.resize(avatar.model.nodes.size());
+	avatar.trackingMtx.resize(avatar.model.nodes.size());
 
-		avatar.globalMtx.resize(avatar.model.nodes.size());
-		avatar.trackingMtx.resize(avatar.model.nodes.size());
+	Transform entityTransform;
+	entityTransform.pos = avatar.pos;
+	entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
+	entityTransform.scale = avatar.scale;
+	Mtx entityMtx = Mtx::fromTRS(entityTransform);
 
-		Transform entityTransform;
-		entityTransform.pos = avatar.pos;
-		entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
-		entityTransform.scale = avatar.scale;
-		Mtx entityMtx = Mtx::fromTRS(entityTransform);
+	// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
+	// スケールは entityTransform と同じにする。
+	// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
+	Transform trackingEntityTransform;
+	trackingEntityTransform.scale = entityTransform.scale;
+	Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
 
-		// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
-		// スケールは entityTransform と同じにする。
-		// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
-		Transform trackingEntityTransform;
-		trackingEntityTransform.scale = entityTransform.scale;
-		Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
+	std::vector<bool> calculated;
+	calculated.resize(avatar.model.nodes.size(), false);
 
-		std::vector<bool> calculated;
-		calculated.resize(avatar.model.nodes.size(), false);
-
-		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
-		}
-
-		std::vector<bool> trackingCalculated;
-		trackingCalculated.resize(avatar.model.nodes.size(), false);
-
-		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
-		}
-
-		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
-
+	for (int i = 0; i < avatar.model.nodes.size(); i++) {
+		calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
 	}
+
+	std::vector<bool> trackingCalculated;
+	trackingCalculated.resize(avatar.model.nodes.size(), false);
+
+	for (int i = 0; i < avatar.model.nodes.size(); i++) {
+		calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
+	}
+
+	if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
 }
 
 
 void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
-	for (auto& avatar: avatars) {
+	for (auto& [id,avatar]: avatars) {
 
 		// 骨構造を持たないavatarは処理しない
 		if (avatar.model.skins.empty()) continue;
@@ -203,5 +197,9 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 }
 
 Avatar& AvatarSystem::player() {
-	return avatars[avatarIndex[playableAvatar]]; // TODO: 仮
+	return get(playableAvatar);
+}
+
+Avatar& AvatarSystem::get(const AvatarId& id) {
+	return avatars.at(id);
 }
