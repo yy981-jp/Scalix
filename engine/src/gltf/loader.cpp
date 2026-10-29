@@ -96,7 +96,8 @@ void copyAccessorElement(uint8_t* destination, const uint8_t* source,
 
 const tinygltf::BufferView& checkedBufferView(
 	const tinygltf::Model& model, int viewIndex) {
-	if (viewIndex < 0 || viewIndex >= static_cast<int>(model.bufferViews.size()))
+	if (viewIndex < 0 ||
+		static_cast<size_t>(viewIndex) >= model.bufferViews.size())
 		throw std::runtime_error("invalid accessor bufferView index");
 
 	const auto& view = model.bufferViews[static_cast<size_t>(viewIndex)];
@@ -671,11 +672,10 @@ void GltfLoader::buildPalletCompress() {
 			for (auto& vert : mesh.verts) {
 
 				for (int i = 0; i < 4; i++) {
-					if (vert.weights[i] <= 0.0001f) continue;
-
 					const size_t orig = vert.joints[i];
 					if (orig >= remap.size())
 						throw std::runtime_error("invalid joint index");
+					if (vert.weights[i] <= 0.0001f) continue;
 
 					// Compact the original skin joint index into this mesh palette.
 					if (remap[orig] == -1) {
