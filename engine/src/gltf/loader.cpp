@@ -100,7 +100,8 @@ const tinygltf::BufferView& checkedBufferView(
 		throw std::runtime_error("invalid accessor bufferView index");
 
 	const auto& view = model.bufferViews[static_cast<size_t>(viewIndex)];
-	if (view.buffer < 0 || view.buffer >= static_cast<int>(model.buffers.size()))
+	if (view.buffer < 0 ||
+		static_cast<size_t>(view.buffer) >= model.buffers.size())
 		throw std::runtime_error("invalid accessor buffer index");
 
 	const auto& buffer = model.buffers[static_cast<size_t>(view.buffer)];
@@ -143,11 +144,13 @@ uint32_t readUnsignedComponent(const uint8_t* ptr, int componentType) {
 
 AccessorBytes getAccessorBytes(const tinygltf::Model& model, int accessorIndex) {
 	if (accessorIndex < 0 ||
-		accessorIndex >= static_cast<int>(model.accessors.size())) {
+		static_cast<size_t>(accessorIndex) >= model.accessors.size()) {
 		throw std::runtime_error("invalid accessor index");
 	}
 
 	const auto& accessor = model.accessors[static_cast<size_t>(accessorIndex)];
+	if (accessor.bufferView < -1)
+		throw std::runtime_error("invalid accessor bufferView index");
 	const size_t componentBytes = componentSize(accessor.componentType);
 	const size_t elementBytes = packedElementSize(accessor.type, componentBytes);
 	const size_t storedBytes = storedElementSize(accessor.type, componentBytes);
@@ -181,7 +184,8 @@ AccessorBytes getAccessorBytes(const tinygltf::Model& model, int accessorIndex) 
 		const size_t sourceStride = view.byteStride == 0 ? storedBytes : view.byteStride;
 		if (sourceStride < storedBytes ||
 			sourceStride % componentBytes != 0 ||
-			(view.byteStride != 0 && sourceStride % 4u != 0)) {
+			(view.byteStride != 0 &&
+				(sourceStride < 4u || sourceStride > 252u || sourceStride % 4u != 0))) {
 			throw std::runtime_error("invalid accessor byteStride");
 		}
 
@@ -669,14 +673,14 @@ void GltfLoader::buildPalletCompress() {
 				for (int i = 0; i < 4; i++) {
 					if (vert.weights[i] <= 0.0001f) continue;
 
-					int orig = vert.joints[i];
-					if (orig < 0 || orig >= totalBoneCount)
+					const size_t orig = vert.joints[i];
+					if (orig >= remap.size())
 						throw std::runtime_error("invalid joint index");
 
 					// Compact the original skin joint index into this mesh palette.
 					if (remap[orig] == -1) {
 						remap[orig] = newIndex;
-						remapInverse.push_back(orig);
+						remapInverse.push_back(static_cast<int>(orig));
 						newIndex++;
 					}
 					vert.joints[i] = static_cast<uint16_t>(remap[orig]);
