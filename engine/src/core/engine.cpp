@@ -205,12 +205,13 @@ void Engine::gameInit() {
 	// ===== load glTF ====
 	// nodeReg.setAvatarSystemPtr(&avatarSystem);
 	const auto& avaIdNode = cfg.get()["avatar"]["id"];
-	// if (!avaIdNode.is_null()) {
-	avatarSystem.loadData({
-		UUID::fromString(
-			avaIdNode.get<std::string>()
-		)
-	});
+	AvatarId avaId;
+	if (!avaIdNode.is_null()) {
+		avaId = UUID::fromString(avaIdNode.get<std::string>());
+	} else {
+		avaId = UUID{0,0};
+	}
+	avatarSystem.loadData(avaId);
 
 
 	// ===== load Shader =====
