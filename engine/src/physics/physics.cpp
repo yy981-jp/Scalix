@@ -4,6 +4,7 @@
 
 // Physics node type
 enum class PNT {
+	None,
 	hairRoot,
 	skirtRoot,
 };
@@ -16,17 +17,6 @@ struct PNCand {
 
 
 void PhysicsSystem::init(Avatar& avatar) {
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,113)) )); // back d l
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,117)) )); // back d r
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,105)) )); // back c l
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,109)) )); // back c r
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,120)) )); // back e l
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,123)) )); // back e r
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,98)) )); // back a
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,101)) )); // back b
-	// springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatar.id,199)) )); // 
-
-
 	std::unordered_map<NodeHandle, PNT> nodes;
 
 	// root 検出
@@ -36,7 +26,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 		const auto& tokens = tokenizer(name);
 
 
-		PNT type;
+		PNT type = PNT::None;
 		bool entry = false;
 		for (const auto& token: tokens) {
 			if (token == "root") entry = true;
@@ -45,7 +35,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 			// if (token == "skirt") type = PNT::skirtRoot;
 		}
 
-		if (entry) nodes[avatar.model.nodeHandles[node.id]];
+		if (entry && type != PNT::None) nodes[avatar.model.nodeHandles[node.id]];
 	}
 
 

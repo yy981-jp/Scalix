@@ -41,6 +41,7 @@ enum class EngineMode {
 
 class Engine {
 	EngineMode emode;
+	uint64_t frame = 0;
 
 	GlobalContext gctx = {
 		// .keyStat = keyStat,

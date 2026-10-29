@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 	// TODO: CLI11ベースで作る
 	CLI::App app{"Scalix : Copyright (c) 2026 yy981"};
 	auto sub_ui = app.add_subcommand("ui", "rmlui Test mode");
-	auto sub_smokeTest = app.add_subcommand("smokeTest", "smoke test mode");
+	auto sub_smokeTest = app.add_subcommand("smoketest", "smoke test mode");
 
 	CLI11_PARSE(app, argc, argv);
 

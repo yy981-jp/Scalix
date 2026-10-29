@@ -160,6 +160,10 @@ void Engine::tick() {
 
 
 	bgfx::frame();
+
+	frame++;
+	if (emode == EngineMode::smokeTest && frame > 0)
+		running = false;
 }
 
 
