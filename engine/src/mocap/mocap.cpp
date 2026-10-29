@@ -45,8 +45,8 @@ Mocap::Mocap():
 
 void mocapWorker(std::stop_token stoken) {
 	Mocap mocap;
-	while (!stoken.stop_requested()) {
+	do {
 		mocap.tick();
 		sleepc(tu::ml, 16);
-	}
+	} while(!stoken.stop_requested());
 }
