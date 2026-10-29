@@ -5,27 +5,21 @@
 
 #include <stdexcept>
 #include <set>
-#include <cassert>
+#include <array>
+#include <limits>
 #include <cstring>
 
 
 namespace {
 
 
-struct AccessorView {
-	uint8_t* data;
-	size_t stride;
-	size_t count;
-};
-
-
 struct AccessorBytes {
-	const tinygltf::Accessor* accessor = nullptr;
-	const uint8_t* data = nullptr;
+	std::vector<uint8_t> data;
 	size_t stride = 0;
 	size_t count = 0;
 	int componentType = 0;
 	int type = 0;
+	bool normalized = false;
 };
 
 size_t componentSize(int componentType) {
@@ -47,64 +41,252 @@ size_t componentSize(int componentType) {
 size_t componentCount(int type) {
 	switch (type) {
 	case TINYGLTF_TYPE_SCALAR: return 1;
-	case TINYGLTF_TYPE_VEC2:   return 2;
-	case TINYGLTF_TYPE_VEC3:   return 3;
-	case TINYGLTF_TYPE_VEC4:   return 4;
-	case TINYGLTF_TYPE_MAT4:   return 16;
+	case TINYGLTF_TYPE_VEC2: return 2;
+	case TINYGLTF_TYPE_VEC3: return 3;
+	case TINYGLTF_TYPE_VEC4: return 4;
+	case TINYGLTF_TYPE_MAT2: return 4;
+	case TINYGLTF_TYPE_MAT3: return 9;
+	case TINYGLTF_TYPE_MAT4: return 16;
 	default:
 		throw std::runtime_error("unsupported accessor type");
 	}
 }
 
-AccessorBytes getAccessorBytes(const tinygltf::Model& model, int accessorIndex) {
-	if (accessorIndex < 0 || accessorIndex >= static_cast<int>(model.accessors.size()))
-		throw std::runtime_error("invalid accessor index");
+size_t matrixDimension(int type) {
+	switch (type) {
+	case TINYGLTF_TYPE_MAT2: return 2;
+	case TINYGLTF_TYPE_MAT3: return 3;
+	case TINYGLTF_TYPE_MAT4: return 4;
+	default: return 0;
+	}
+}
 
-	const auto& acc = model.accessors[accessorIndex];
-	if (acc.bufferView < 0 || acc.bufferView >= static_cast<int>(model.bufferViews.size()))
-		throw std::runtime_error("invalid accessor bufferView");
+size_t packedElementSize(int type, size_t componentBytes) {
+	return componentCount(type) * componentBytes;
+}
 
-	const auto& view = model.bufferViews[acc.bufferView];
+size_t storedElementSize(int type, size_t componentBytes) {
+	const size_t dimension = matrixDimension(type);
+	if (dimension == 0)
+		return packedElementSize(type, componentBytes);
+
+	const size_t columnBytes = dimension * componentBytes;
+	const size_t alignedColumnBytes = (columnBytes + 3u) & ~size_t(3u);
+	return dimension * alignedColumnBytes;
+}
+
+void copyAccessorElement(uint8_t* destination, const uint8_t* source,
+	int type, size_t componentBytes) {
+	const size_t dimension = matrixDimension(type);
+	if (dimension == 0) {
+		std::memcpy(destination, source, packedElementSize(type, componentBytes));
+		return;
+	}
+
+	const size_t columnBytes = dimension * componentBytes;
+	const size_t alignedColumnBytes = (columnBytes + 3u) & ~size_t(3u);
+	for (size_t column = 0; column < dimension; ++column) {
+		std::memcpy(
+			destination + column * columnBytes,
+			source + column * alignedColumnBytes,
+			columnBytes
+		);
+	}
+}
+
+const tinygltf::BufferView& checkedBufferView(
+	const tinygltf::Model& model, int viewIndex) {
+	if (viewIndex < 0 || viewIndex >= static_cast<int>(model.bufferViews.size()))
+		throw std::runtime_error("invalid accessor bufferView index");
+
+	const auto& view = model.bufferViews[static_cast<size_t>(viewIndex)];
 	if (view.buffer < 0 || view.buffer >= static_cast<int>(model.buffers.size()))
-		throw std::runtime_error("invalid accessor buffer");
+		throw std::runtime_error("invalid accessor buffer index");
 
-	const auto& buf = model.buffers[view.buffer];
+	const auto& buffer = model.buffers[static_cast<size_t>(view.buffer)];
+	if (view.byteOffset > buffer.data.size() ||
+		view.byteLength > buffer.data.size() - view.byteOffset) {
+		throw std::runtime_error("bufferView exceeds buffer bounds");
+	}
+
+	return view;
+}
+
+const uint8_t* bufferViewRange(
+	const tinygltf::Model& model, int viewIndex, size_t offset, size_t length) {
+	const auto& view = checkedBufferView(model, viewIndex);
+	if (offset > view.byteLength || length > view.byteLength - offset)
+		throw std::runtime_error("accessor data exceeds bufferView bounds");
+
+	const auto& buffer = model.buffers[static_cast<size_t>(view.buffer)];
+	return buffer.data.data() + view.byteOffset + offset;
+}
+
+uint32_t readUnsignedComponent(const uint8_t* ptr, int componentType) {
+	switch (componentType) {
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+		return ptr[0];
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
+		uint16_t value{};
+		std::memcpy(&value, ptr, sizeof(value));
+		return value;
+	}
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
+		uint32_t value{};
+		std::memcpy(&value, ptr, sizeof(value));
+		return value;
+	}
+	default:
+		throw std::runtime_error("unsupported unsigned accessor component type");
+	}
+}
+
+AccessorBytes getAccessorBytes(const tinygltf::Model& model, int accessorIndex) {
+	if (accessorIndex < 0 ||
+		accessorIndex >= static_cast<int>(model.accessors.size())) {
+		throw std::runtime_error("invalid accessor index");
+	}
+
+	const auto& accessor = model.accessors[static_cast<size_t>(accessorIndex)];
+	const size_t componentBytes = componentSize(accessor.componentType);
+	const size_t elementBytes = packedElementSize(accessor.type, componentBytes);
+	const size_t storedBytes = storedElementSize(accessor.type, componentBytes);
+
+	if (accessor.count == 0)
+		throw std::runtime_error("accessor count must be greater than zero");
+	if (elementBytes == 0 ||
+		accessor.count > std::numeric_limits<size_t>::max() / elementBytes) {
+		throw std::runtime_error("accessor size overflow");
+	}
 
 	AccessorBytes out;
-	out.accessor = &acc;
-	out.data = buf.data.data() + view.byteOffset + acc.byteOffset;
-	out.stride = acc.ByteStride(view);
-	if (out.stride == 0)
-		out.stride = componentSize(acc.componentType) * componentCount(acc.type);
-	out.count = acc.count;
-	out.componentType = acc.componentType;
-	out.type = acc.type;
+	out.stride = elementBytes;
+	out.count = accessor.count;
+	out.componentType = accessor.componentType;
+	out.type = accessor.type;
+	out.normalized = accessor.normalized;
+	out.data.resize(accessor.count * elementBytes, 0);
+
+	if (accessor.bufferView >= 0) {
+		const auto& view = checkedBufferView(model, accessor.bufferView);
+		if (accessor.byteOffset > view.byteLength ||
+			storedBytes > view.byteLength - accessor.byteOffset) {
+			throw std::runtime_error("accessor exceeds bufferView bounds");
+		}
+		if (accessor.byteOffset % componentBytes != 0 ||
+			(view.byteOffset + accessor.byteOffset) % componentBytes != 0) {
+			throw std::runtime_error("misaligned accessor byteOffset");
+		}
+
+		const size_t sourceStride = view.byteStride == 0 ? storedBytes : view.byteStride;
+		if (sourceStride < storedBytes ||
+			sourceStride % componentBytes != 0 ||
+			(view.byteStride != 0 && sourceStride % 4u != 0)) {
+			throw std::runtime_error("invalid accessor byteStride");
+		}
+
+		const size_t available = view.byteLength - accessor.byteOffset;
+		if (accessor.count - 1 > (available - storedBytes) / sourceStride)
+			throw std::runtime_error("accessor elements exceed bufferView bounds");
+
+		const uint8_t* source = bufferViewRange(
+			model, accessor.bufferView, accessor.byteOffset,
+			(accessor.count - 1) * sourceStride + storedBytes
+		);
+		for (size_t i = 0; i < accessor.count; ++i) {
+			copyAccessorElement(
+				out.data.data() + i * elementBytes,
+				source + i * sourceStride,
+				accessor.type, componentBytes
+			);
+		}
+	} else if (accessor.byteOffset != 0) {
+		throw std::runtime_error("accessor without bufferView must have byteOffset zero");
+	}
+
+	// Sparse accessors replace selected elements in the base data. When no
+	// bufferView exists, the base data above remains zero-initialized.
+	if (accessor.sparse.isSparse) {
+		const auto& sparse = accessor.sparse;
+		if (sparse.count <= 0 ||
+			static_cast<size_t>(sparse.count) > accessor.count) {
+			throw std::runtime_error("invalid sparse accessor count");
+		}
+
+		const auto& indicesView = checkedBufferView(model, sparse.indices.bufferView);
+		const auto& valuesView = checkedBufferView(model, sparse.values.bufferView);
+		if (indicesView.byteStride != 0 || valuesView.byteStride != 0)
+			throw std::runtime_error("sparse accessor bufferViews must not be strided");
+
+		const size_t sparseCount = static_cast<size_t>(sparse.count);
+		const size_t sparseIndexBytes = componentSize(sparse.indices.componentType);
+		if (sparse.indices.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE &&
+			sparse.indices.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT &&
+			sparse.indices.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+			throw std::runtime_error("invalid sparse accessor index component type");
+		}
+		if (sparseCount > std::numeric_limits<size_t>::max() / sparseIndexBytes ||
+			sparseCount > std::numeric_limits<size_t>::max() / storedBytes) {
+			throw std::runtime_error("sparse accessor size overflow");
+		}
+
+		const uint8_t* sparseIndices = bufferViewRange(
+			model, sparse.indices.bufferView, sparse.indices.byteOffset,
+			sparseCount * sparseIndexBytes
+		);
+		const uint8_t* sparseValues = bufferViewRange(
+			model, sparse.values.bufferView, sparse.values.byteOffset,
+			sparseCount * storedBytes
+		);
+		if ((indicesView.byteOffset + sparse.indices.byteOffset) % sparseIndexBytes != 0 ||
+			(valuesView.byteOffset + sparse.values.byteOffset) % componentBytes != 0) {
+			throw std::runtime_error("misaligned sparse accessor data");
+		}
+
+		uint32_t previousIndex = 0;
+		for (size_t i = 0; i < sparseCount; ++i) {
+			const uint32_t index = readUnsignedComponent(
+				sparseIndices + i * sparseIndexBytes,
+				sparse.indices.componentType
+			);
+			if (index >= accessor.count || (i > 0 && index <= previousIndex))
+				throw std::runtime_error("invalid sparse accessor index");
+			previousIndex = index;
+
+			copyAccessorElement(
+				out.data.data() + static_cast<size_t>(index) * elementBytes,
+				sparseValues + i * storedBytes,
+				accessor.type, componentBytes
+			);
+		}
+	}
+
 	return out;
 }
 
 const uint8_t* accessorElement(const AccessorBytes& view, size_t index) {
-	return view.data + view.stride * index;
+	if (index >= view.count)
+		throw std::runtime_error("accessor element index out of range");
+	return view.data.data() + view.stride * index;
 }
 
-const float* accessorFloatElement(const AccessorBytes& view, size_t index) {
+std::array<float, 16> accessorFloatElement(const AccessorBytes& view, size_t index) {
 	if (view.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT)
 		throw std::runtime_error("expected float accessor");
-	return reinterpret_cast<const float*>(accessorElement(view, index));
+	const size_t count = componentCount(view.type);
+	if (count > 16 || view.stride != count * sizeof(float))
+		throw std::runtime_error("invalid float accessor element size");
+
+	std::array<float, 16> result{};
+	std::memcpy(result.data(), accessorElement(view, index), count * sizeof(float));
+	return result;
 }
 
-uint16_t readIndex(const AccessorBytes& view, size_t index) {
-	const uint8_t* ptr = accessorElement(view, index);
+uint32_t readIndex(const AccessorBytes& view, size_t index) {
+	if (view.type != TINYGLTF_TYPE_SCALAR || view.normalized)
+		throw std::runtime_error("indices accessor must be a non-normalized SCALAR");
 
-	switch (view.componentType) {
-	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-		throw std::runtime_error("8bit index is unsupported now");
-	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-		return *reinterpret_cast<const uint16_t*>(ptr);
-	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-		throw std::runtime_error("32bit index is unsupported now");
-	default:
-		throw std::runtime_error("unsupported index type");
-	}
+	return readUnsignedComponent(accessorElement(view, index), view.componentType);
 }
 
 void readJoints(Vertex& vert, const uint8_t* ptr, int componentType) {
@@ -113,11 +295,13 @@ void readJoints(Vertex& vert, const uint8_t* ptr, int componentType) {
 		for (int k = 0; k < 4; k++)
 			vert.joints[k] = ptr[k];
 		break;
-	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
-		const uint16_t* joints = reinterpret_cast<const uint16_t*>(ptr);
-		for (int k = 0; k < 4; k++)
-			vert.joints[k] = joints[k];
-	} break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+		for (int k = 0; k < 4; k++) {
+			uint16_t value{};
+			std::memcpy(&value, ptr + k * sizeof(value), sizeof(value));
+			vert.joints[k] = value;
+		}
+		break;
 	default:
 		throw std::runtime_error("unsupported joint type");
 	}
@@ -125,20 +309,21 @@ void readJoints(Vertex& vert, const uint8_t* ptr, int componentType) {
 
 void readWeights(Vertex& vert, const uint8_t* ptr, int componentType) {
 	switch (componentType) {
-	case TINYGLTF_COMPONENT_TYPE_FLOAT: {
-		const float* weights = reinterpret_cast<const float*>(ptr);
+	case TINYGLTF_COMPONENT_TYPE_FLOAT:
 		for (int k = 0; k < 4; k++)
-			vert.weights[k] = weights[k];
-	} break;
+			std::memcpy(&vert.weights[k], ptr + k * sizeof(float), sizeof(float));
+		break;
 	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
 		for (int k = 0; k < 4; k++)
 			vert.weights[k] = ptr[k] / 255.0f;
 		break;
-	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
-		const uint16_t* weights = reinterpret_cast<const uint16_t*>(ptr);
-		for (int k = 0; k < 4; k++)
-			vert.weights[k] = weights[k] / 65535.0f;
-	} break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+		for (int k = 0; k < 4; k++) {
+			uint16_t value{};
+			std::memcpy(&value, ptr + k * sizeof(value), sizeof(value));
+			vert.weights[k] = value / 65535.0f;
+		}
+		break;
 	default:
 		throw std::runtime_error("unsupported weight type");
 	}
@@ -148,69 +333,127 @@ void readWeights(Vertex& vert, const uint8_t* ptr, int componentType) {
 
 
 void GltfLoader::parseMesh(NodeId nodeId) {
-	const auto& tn = model.nodes[nodeId];
-	const auto& tnmesh = model.meshes[tn.mesh];
+	const size_t nodeIndex = static_cast<uint32_t>(nodeId);
+	if (nodeIndex >= model.nodes.size())
+		throw std::runtime_error("invalid node index while parsing mesh");
+
+	const auto& tn = model.nodes[nodeIndex];
+	if (tn.mesh < 0 || tn.mesh >= static_cast<int>(model.meshes.size()))
+		throw std::runtime_error("invalid mesh index on node");
+
+	const auto& tnmesh = model.meshes[static_cast<size_t>(tn.mesh)];
+	if (tnmesh.primitives.empty())
+		throw std::runtime_error("mesh has no primitives");
 
 	for (const auto& prim : tnmesh.primitives) {
-		Mesh mesh;
-
-		// TRIANGLESのみ対応
 		if (prim.mode != TINYGLTF_MODE_TRIANGLES)
 			throw std::runtime_error("only TRIANGLES supported");
 
-		auto& attrs = prim.attributes;
-
-		std::vector<Vertex> verts;
-
-		// ===== POSITION =====
-		if (!attrs.count("POSITION"))
-			throw std::runtime_error("no POSITION");
+		const auto& attrs = prim.attributes;
+		if (!attrs.contains("POSITION"))
+			throw std::runtime_error("primitive has no POSITION attribute");
 
 		const AccessorBytes pos = getAccessorBytes(model, attrs.at("POSITION"));
+		if (pos.type != TINYGLTF_TYPE_VEC3 ||
+			pos.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT ||
+			pos.normalized) {
+			throw std::runtime_error("POSITION must be a non-normalized FLOAT VEC3");
+		}
 
+		constexpr size_t maxU16VertexCount =
+			static_cast<size_t>(std::numeric_limits<uint16_t>::max()) + 1u;
+		if (pos.count > maxU16VertexCount)
+			throw std::runtime_error("mesh exceeds 16-bit index capacity");
 
-
-		// ===== Normal/UV クリア =====
 		AccessorBytes nor{};
 		AccessorBytes uv{};
-		bool hasNormal = false;
-		bool hasUv = false;
+		const bool hasNormal = attrs.contains("NORMAL");
+		const bool hasUv = attrs.contains("TEXCOORD_0");
 
-		// ===== NORMAL（任意）=====
-		if (attrs.contains("NORMAL")) {
+		if (hasNormal) {
 			nor = getAccessorBytes(model, attrs.at("NORMAL"));
-
-
-			hasNormal = true;
+			if (nor.type != TINYGLTF_TYPE_VEC3 ||
+				nor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT ||
+				nor.normalized || nor.count != pos.count) {
+				throw std::runtime_error("NORMAL must be a matching FLOAT VEC3 accessor");
+			}
 		}
 
-		// ===== UV（任意）=====
-		if (attrs.contains("TEXCOORD_0")) {
+		if (hasUv) {
 			uv = getAccessorBytes(model, attrs.at("TEXCOORD_0"));
-
-
-			hasUv = true;
+			if (uv.type != TINYGLTF_TYPE_VEC2 ||
+				uv.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT ||
+				uv.normalized || uv.count != pos.count) {
+				throw std::runtime_error("TEXCOORD_0 must be a matching FLOAT VEC2 accessor");
+			}
 		}
 
-		// ===== index =====
-		std::vector<uint16_t> idx;
+		const bool hasJoints = attrs.contains("JOINTS_0");
+		const bool hasWeights = attrs.contains("WEIGHTS_0");
+		if (hasJoints != hasWeights)
+			throw std::runtime_error("JOINTS_0 and WEIGHTS_0 must be provided together");
 
+		AccessorBytes jointAcc{};
+		AccessorBytes weightAcc{};
+		if (hasJoints) {
+			jointAcc = getAccessorBytes(model, attrs.at("JOINTS_0"));
+			if (jointAcc.type != TINYGLTF_TYPE_VEC4 ||
+				(jointAcc.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE &&
+				 jointAcc.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) ||
+				jointAcc.normalized || jointAcc.count != pos.count) {
+				throw std::runtime_error("JOINTS_0 must be a matching non-normalized UBYTE/USHORT VEC4 accessor");
+			}
+
+			weightAcc = getAccessorBytes(model, attrs.at("WEIGHTS_0"));
+			const bool floatWeights =
+				weightAcc.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT && !weightAcc.normalized;
+			const bool normalizedIntegerWeights =
+				(weightAcc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE ||
+				 weightAcc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) &&
+				weightAcc.normalized;
+			if (weightAcc.type != TINYGLTF_TYPE_VEC4 ||
+				(!floatWeights && !normalizedIntegerWeights) ||
+				weightAcc.count != pos.count) {
+				throw std::runtime_error("WEIGHTS_0 must be a matching FLOAT or normalized UBYTE/USHORT VEC4 accessor");
+			}
+		}
+
+		std::vector<uint16_t> idx;
 		if (prim.indices >= 0) {
-			const auto& indexAcc = getAccessorBytes(model, prim.indices);
-			for (size_t i = 0; i < indexAcc.count; i++) {
-				idx.push_back(readIndex(indexAcc, i));
+			const AccessorBytes indexAcc = getAccessorBytes(model, prim.indices);
+			if (indexAcc.type != TINYGLTF_TYPE_SCALAR || indexAcc.normalized ||
+				(indexAcc.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE &&
+				 indexAcc.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT &&
+				 indexAcc.componentType != TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)) {
+				throw std::runtime_error("indices must use a non-normalized unsigned SCALAR accessor");
+			}
+			if (indexAcc.count % 3 != 0)
+				throw std::runtime_error("TRIANGLES index count must be divisible by three");
+
+			idx.reserve(indexAcc.count);
+			for (size_t i = 0; i < indexAcc.count; ++i) {
+				const uint32_t value = readIndex(indexAcc, i);
+				if (value > std::numeric_limits<uint16_t>::max())
+					throw std::runtime_error("index exceeds the 16-bit mesh index limit");
+				if (value >= pos.count)
+					throw std::runtime_error("mesh index references a vertex out of range");
+				idx.push_back(static_cast<uint16_t>(value));
 			}
 		} else {
-			// indexなし → 連番
-			for (uint16_t i = 0; i < static_cast<uint16_t>(pos.count); i++)
-				idx.push_back(i);
+			if (prim.indices != -1)
+				throw std::runtime_error("invalid primitive indices value");
+			if (pos.count % 3 != 0)
+				throw std::runtime_error("non-indexed TRIANGLES vertex count must be divisible by three");
+
+			idx.reserve(pos.count);
+			for (size_t i = 0; i < pos.count; ++i)
+				idx.push_back(static_cast<uint16_t>(i));
 		}
 
-		// ===== 頂点生成 =====
+		std::vector<Vertex> verts;
 		verts.reserve(pos.count);
-
-		for (size_t i = 0; i < pos.count; i++) {
-			const float* p = accessorFloatElement(pos, i);
+		for (size_t i = 0; i < pos.count; ++i) {
+			const auto p = accessorFloatElement(pos, i);
 
 			Vertex vert{};
 			vert.x = p[0];
@@ -218,14 +461,14 @@ void GltfLoader::parseMesh(NodeId nodeId) {
 			vert.z = p[2];
 
 			if (hasNormal) {
-				const float* n = accessorFloatElement(nor, i);
+				const auto n = accessorFloatElement(nor, i);
 				vert.nx = n[0];
 				vert.ny = n[1];
 				vert.nz = n[2];
 			}
 
 			if (hasUv) {
-				const float* u = accessorFloatElement(uv, i);
+				const auto u = accessorFloatElement(uv, i);
 				vert.u = u[0];
 				vert.v = u[1];
 			}
@@ -233,152 +476,173 @@ void GltfLoader::parseMesh(NodeId nodeId) {
 			verts.push_back(vert);
 		}
 
-		if (verts.empty())
-			throw std::runtime_error("vertex empty");
-
-		// primitiveのマテリアルをmeshに設定
-		if (prim.material >= 0) {
-			mesh.materialIndex = prim.material;
-		}
-
-
-		// ===== JOINTS =====
-		if (attrs.contains("JOINTS_0")) {
-			const auto& jointAcc = getAccessorBytes(model, attrs.at("JOINTS_0"));
-			for (size_t i = 0; i < jointAcc.count; i++) {
+		if (hasJoints) {
+			for (size_t i = 0; i < jointAcc.count; ++i)
 				readJoints(verts[i], accessorElement(jointAcc, i), jointAcc.componentType);
-			}
-		}
-
-		// ===== WEIGHTS =====
-		if (attrs.contains("WEIGHTS_0")) {
-			const auto& weightAcc = getAccessorBytes(model, attrs.at("WEIGHTS_0"));
-			for (size_t i = 0; i < weightAcc.count; i++) {
+			for (size_t i = 0; i < weightAcc.count; ++i)
 				readWeights(verts[i], accessorElement(weightAcc, i), weightAcc.componentType);
-			}
 		}
 
-		mesh.verts = verts;
-		mesh.indices = idx;
+		Mesh mesh;
+		if (prim.material >= 0) {
+			if (prim.material >= static_cast<int>(model.materials.size()))
+				throw std::runtime_error("invalid primitive material index");
+			mesh.materialIndex = prim.material;
+		} else if (prim.material != -1) {
+			throw std::runtime_error("invalid primitive material value");
+		}
 
-		// Mesh全体格納
-		scalixModel.meshes.push_back(mesh);
-
+		mesh.verts = std::move(verts);
+		mesh.indices = std::move(idx);
+		scalixModel.meshes.push_back(std::move(mesh));
 	}
 }
 
 
 void GltfLoader::parse() {
-	int nodesSize = model.nodes.size();
+	if (model.nodes.size() > static_cast<size_t>(std::numeric_limits<int>::max()))
+		throw std::runtime_error("too many nodes");
+
+	const int nodesSize = static_cast<int>(model.nodes.size());
 	scalixModel.nodes.resize(nodesSize);
 	scalixModel.nodeHandles.resize(nodesSize);
 	lnodes.resize(nodesSize);
+	for (auto& lnode : lnodes)
+		lnode.parent = NodeId::invalid();
+
 	for (int i = 0; i < nodesSize; i++) {
-		// ===== NODE =====
-		const auto& tn = model.nodes[i];
-		Node& node = scalixModel.nodes[i];
-		LoadingNode& lnode = lnodes[i];
+		const auto& tn = model.nodes[static_cast<size_t>(i)];
+		Node& node = scalixModel.nodes[static_cast<size_t>(i)];
+		LoadingNode& lnode = lnodes[static_cast<size_t>(i)];
+
+		if (tn.skin < -1 ||
+			(tn.skin >= 0 && tn.skin >= static_cast<int>(model.skins.size()))) {
+			throw std::runtime_error("invalid node skin index");
+		}
 		node.skinIndex = tn.skin;
-		node.meshStartIndex = scalixModel.meshes.size();  // 現在のメッシュ数を開始インデックスとして記録
+		node.meshStartIndex = scalixModel.meshes.size();
 
-		// translation
 		if (!tn.translation.empty()) {
-			node.trs.pos.x = (float)tn.translation[0];
-			node.trs.pos.y = (float)tn.translation[1];
-			node.trs.pos.z = (float)tn.translation[2];
+			if (tn.translation.size() != 3)
+				throw std::runtime_error("node translation must have three components");
+			node.trs.pos.x = static_cast<float>(tn.translation[0]);
+			node.trs.pos.y = static_cast<float>(tn.translation[1]);
+			node.trs.pos.z = static_cast<float>(tn.translation[2]);
 		}
 
-		// rotation
 		if (!tn.rotation.empty()) {
+			if (tn.rotation.size() != 4)
+				throw std::runtime_error("node rotation must have four components");
 			node.trs.rot = {
-				(float)tn.rotation[0],
-				(float)tn.rotation[1],
-				(float)tn.rotation[2],
-				(float)tn.rotation[3]
+				static_cast<float>(tn.rotation[0]),
+				static_cast<float>(tn.rotation[1]),
+				static_cast<float>(tn.rotation[2]),
+				static_cast<float>(tn.rotation[3])
 			};
 		}
 
-		// scale
 		if (!tn.scale.empty()) {
+			if (tn.scale.size() != 3)
+				throw std::runtime_error("node scale must have three components");
 			node.trs.scale = {
-				(float)tn.scale[0],
-				(float)tn.scale[1],
-				(float)tn.scale[2]
+				static_cast<float>(tn.scale[0]),
+				static_cast<float>(tn.scale[1]),
+				static_cast<float>(tn.scale[2])
 			};
 		}
 
-		// meshが存在するnodeに対してのみ実行
-		if (tn.mesh >= 0) parseMesh(i);
+		if (tn.mesh >= 0) {
+			if (tn.mesh >= static_cast<int>(model.meshes.size()))
+				throw std::runtime_error("invalid node mesh index");
+			parseMesh(static_cast<NodeId>(i));
+		} else if (tn.mesh != -1) {
+			throw std::runtime_error("invalid node mesh value");
+		}
 
-		// ノードのメッシュ数を設定
 		node.meshCount = scalixModel.meshes.size() - node.meshStartIndex;
 
-		// node parent children 登録
-		lnode.parent = NodeId::invalid(); // 初期値
-		
-		int children_size = tn.children.size();
-		lnode.children.resize(children_size);
-		for (int j = 0; j < children_size; j++) {
-			const auto& child = tn.children[j];
-
-			if (child < 0 || child >= nodesSize) {
-				printf("invalid child index: %d\n", child);
-				continue;
-			}
-
-			if (lnodes[child].parent != NodeId::invalid()) {
-				printf("multiple parent: %d\n", child);
-			}
-
-			lnodes[child].parent = i;
-
-			lnode.children[j] = tn.children[j];
-
-		}
-		lnode.id = i;
+		lnode.children.clear();
+		lnode.children.reserve(tn.children.size());
+		lnode.id = static_cast<NodeId>(i);
 		node.name = strsv().entry(tn.name);
-		
+
+		for (const int child : tn.children) {
+			if (child < 0 || child >= nodesSize)
+				throw std::runtime_error("invalid child node index");
+			if (child == i)
+				throw std::runtime_error("node cannot be its own child");
+			if (lnodes[static_cast<size_t>(child)].parent.isValid())
+				throw std::runtime_error("node has multiple parents");
+
+			lnodes[static_cast<size_t>(child)].parent = static_cast<NodeId>(i);
+			lnode.children.push_back(static_cast<NodeId>(child));
+		}
 	}
 
-	// load skin (bone)
+	// Reject hierarchy cycles before node handles are resolved or transforms are evaluated.
+	std::vector<uint8_t> visitState(nodesSize, 0);
+	for (size_t start = 0; start < lnodes.size(); ++start) {
+		std::vector<size_t> chain;
+		NodeId current = static_cast<NodeId>(start);
+		while (current.isValid()) {
+			const size_t index = static_cast<uint32_t>(current);
+			if (index >= lnodes.size())
+				throw std::runtime_error("invalid parent node index");
+			if (visitState[index] == 1)
+				throw std::runtime_error("cycle detected in node hierarchy");
+			if (visitState[index] == 2)
+				break;
+
+			visitState[index] = 1;
+			chain.push_back(index);
+			current = lnodes[index].parent;
+		}
+		for (const size_t index : chain)
+			visitState[index] = 2;
+	}
+
 	for (const auto& model_skin : model.skins) {
 		Skin skin;
-		// joint (=bone)
-		for (int joint: model_skin.joints) {
-			skin.joints.push_back(joint);
+		skin.joints.reserve(model_skin.joints.size());
+		for (const int joint : model_skin.joints) {
+			if (joint < 0 || joint >= nodesSize)
+				throw std::runtime_error("skin joint references a node out of range");
+			skin.joints.push_back(static_cast<NodeId>(joint));
 		}
-		// skin
+
 		if (model_skin.inverseBindMatrices >= 0) {
-			// glTFからskin::invBindを読み込み
-			const auto& invAcc = getAccessorBytes(model, model_skin.inverseBindMatrices);
-			
+			const AccessorBytes invAcc = getAccessorBytes(model, model_skin.inverseBindMatrices);
+			if (invAcc.type != TINYGLTF_TYPE_MAT4 ||
+				invAcc.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT ||
+				invAcc.normalized || invAcc.count != skin.joints.size()) {
+				throw std::runtime_error("inverseBindMatrices must be a matching FLOAT MAT4 accessor");
+			}
+
 			skin.invBind.resize(invAcc.count);
-			for (size_t i = 0; i < invAcc.count; i++) {
-				const float* src = accessorFloatElement(invAcc, i);
-				memcpy(skin.invBind[i].data(), src, sizeof(float) * 16);
+			for (size_t i = 0; i < invAcc.count; ++i) {
+				const auto src = accessorFloatElement(invAcc, i);
+				std::memcpy(skin.invBind[i].data(), src.data(), sizeof(float) * 16);
 			}
 		} else {
-			// glTFにデータが無い場合はidentityで初期化
+			if (model_skin.inverseBindMatrices != -1)
+				throw std::runtime_error("invalid inverseBindMatrices accessor index");
 			skin.invBind.resize(skin.joints.size());
-
-			for (auto& m : skin.invBind) {
-				bx::mtxIdentity(m.data());
-			}
+			for (auto& matrix : skin.invBind)
+				bx::mtxIdentity(matrix.data());
 		}
 
+		const int skinIndex = static_cast<int>(scalixModel.skins.size());
 		for (size_t jointIndex = 0; jointIndex < skin.joints.size(); ++jointIndex) {
-			int nodeIndex = skin.joints[jointIndex];
-			if (nodeIndex >= 0 && nodeIndex < nodesSize) {
-				auto& node = scalixModel.nodes[nodeIndex];
-				node.skinIndex = static_cast<int>(scalixModel.skins.size());
-				node.jointIndex = static_cast<int>(jointIndex);
-			}
+			const size_t nodeIndex = static_cast<uint32_t>(skin.joints[jointIndex]);
+			auto& node = scalixModel.nodes[nodeIndex];
+			node.skinIndex = skinIndex;
+			node.jointIndex = static_cast<int>(jointIndex);
 		}
-		
-		scalixModel.skins.push_back(skin);
 
+		scalixModel.skins.push_back(std::move(skin));
 	}
 }
+
 
 void GltfLoader::buildPalletCompress() {
 	// ===== pallet圧縮 =====
@@ -453,11 +717,9 @@ void GltfLoader::load() {
 	if (model.meshes.empty())
 		throw std::runtime_error("no mesh");
 
-	const auto& mesh = model.meshes[0];
-	if (mesh.primitives.empty())
-		throw std::runtime_error("no primitive");
-
 	parse();
+	if (scalixModel.meshes.empty())
+		throw std::runtime_error("no mesh attached to any node");
 
 	// ===== テクスチャ読み込み =====
 	// マテリアル → イメージのマップを作成
