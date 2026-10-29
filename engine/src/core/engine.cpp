@@ -168,7 +168,7 @@ void Engine::update(float dt) {
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
 		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
 	);
-	springBoneSystem.update(dt);
+	physicsSystem.tick(dt);
 
 	PoseFrame frame;
 	if (receiver.tick(frame)) {
@@ -241,16 +241,7 @@ void Engine::gameInit() {
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
 
-	
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
+	physicsSystem.init(avatarSystem.player());
 
 	if (cfg.get()["mocap"].get<bool>())
 		mocapThr = std::jthread(mocapWorker);
