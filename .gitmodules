@@ -1,46 +1,47 @@
 [submodule "external/bgfx"]
 	path = external/bgfx
-	url = git@github.com:bkaradzic/bgfx.git
+	url = https://github.com/bkaradzic/bgfx.git
+
 [submodule "external/bx"]
 	path = external/bx
-	url = git@github.com:bkaradzic/bx.git
+	url = https://github.com/bkaradzic/bx.git
 [submodule "external/bimg"]
 	path = external/bimg
-	url = git@github.com:bkaradzic/bimg.git
+	url = https://github.com/bkaradzic/bimg.git
 [submodule "external/bgfx.cmake"]
 	path = external/bgfx.cmake
-	url = git@github.com:bkaradzic/bgfx.cmake.git
+	url = https://github.com/bkaradzic/bgfx.cmake.git
 [submodule "external/tinygltf"]
 	path = external/tinygltf
-	url = git@github.com:yy981-jp/tinygltf.git
+	url = https://github.com/yy981-jp/tinygltf.git
 	branch = y9_dev
 [submodule "external/yaml-cpp"]
 	path = external/yaml-cpp
-	url = git@github.com:jbeder/yaml-cpp.git
+	url = https://github.com/jbeder/yaml-cpp.git
 [submodule "external/nlohmann"]
 	path = external/nlohmann
-	url = git@github.com:nlohmann/json.git
+	url = https://github.com/nlohmann/json.git
 [submodule "external/dear-imgui"]
 	path = external/dear-imgui
-	url = git@github.com:ocornut/imgui.git
+	url = https://github.com/ocornut/imgui.git
 [submodule "external/y9inc"]
 	path = external/y9inc
-	url = git@github.com:yy981-jp/tools.git
+	url = https://github.com/yy981-jp/tools.git
 [submodule "external/asio"]
 	path = external/asio
-	url = git@github.com:chriskohlhoff/asio.git
+	url = https://github.com/chriskohlhoff/asio.git
 [submodule "assets"]
-	path = resources/assets
-	url = git@github.com:yy981-jp/Scalix-Assets.git
+	path = assets
+	url = https://github.com/yy981-jp/Scalix-Assets.git
 [submodule "external/SDL"]
 	path = external/SDL
-	url = git@github.com:libsdl-org/SDL.git
+	url = https://github.com/libsdl-org/SDL.git
 [submodule "external/SDL-image"]
 	path = external/SDL-image
-	url = git@github.com:libsdl-org/SDL_image.git
+	url = https://github.com/libsdl-org/SDL_image.git
 [submodule "sxmp/external/mediapipe"]
 	path = sxmp/external/mediapipe
-	url = git@github.com:yy981-jp/mediapipe.git
+	url = https://github.com/yy981-jp/mediapipe.git
 [submodule "external/opencv"]
 	path = external/opencv
 	url = https://github.com/opencv/opencv.git
