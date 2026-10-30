@@ -10,7 +10,7 @@ runs:
       shell: bash
       run: |
         # Hash pinned external submodule commits, independent of initialization
-        # state in other submodule paths such as resources/assets.
+        # state in other submodule paths such as assets.
         hash=$(
           git ls-tree HEAD:external |
             awk '$1 == "160000" { print $3, $4 }' |

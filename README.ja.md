@@ -35,7 +35,7 @@ ScalixはUnityやVRChatそのものを再実装するプロジェクトではあ
 | `sxmp/` | MediaPipeを利用したモーションキャプチャバックエンド |
 | `importer/` | Unityの`.anim`ファイルを扱う実験的なインポーター（`sxim`） |
 | `resources/config/` | デフォルト設定 |
-| `resources/assets/` | プロジェクトのアセット用Gitサブモジュール |
+| `assets/` | プロジェクトのアセット用Gitサブモジュール |
 | `external/` | 外部ライブラリのソースとビルド環境 |
 | `dev/` | 開発用ツール |
 
