@@ -10,6 +10,7 @@
 #include <util/path.h>
 #include <core/config.h>
 #include <physics/util.h>
+#include <def/fs.h>
 
 
 Engine::Engine(EngineMode emode): emode(emode) {
@@ -162,7 +163,7 @@ void Engine::tick() {
 	bgfx::frame();
 
 	frame++;
-	if (emode == EngineMode::smokeTest && frame > 0)
+	if (emode == EngineMode::smokeTest && frame >= 100) // 数値は適当
 		running = false;
 }
 
@@ -213,6 +214,14 @@ void Engine::gameInit() {
 	if (!avaIdNode.is_null()) {
 		avaId = UUID::fromString(avaIdNode.get<std::string>());
 	} else {
+		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.glb";
+		if (!fs::exists(dest)) {
+			const auto& orig = syspath.resource / "avatars" / "init.glb";
+			const auto& dest_parent = dest.parent_path();
+			if (!fs::exists(dest_parent))
+				fs::create_directories(dest_parent);
+			fs::copy(orig,dest);
+		}
 		avaId = UUID{0,0};
 	}
 	avatarSystem.loadData(avaId);
