@@ -20,7 +20,7 @@
 
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
-#include <physics/springBone.h>
+#include <physics/physics.h>
 #include <mocap/recv.h>
 #include <mocap/poseSolver.h>
 
@@ -41,6 +41,7 @@ enum class EngineMode {
 
 class Engine {
 	EngineMode emode;
+	uint64_t frame = 0;
 
 	GlobalContext gctx = {
 		// .keyStat = keyStat,
@@ -66,8 +67,7 @@ class Engine {
 	bgfx::UniformHandle u_bones;
 	int usingUni;
 	AvatarSystem avatarSystem;
-
-	SpringBoneSystem springBoneSystem;
+	PhysicsSystem physicsSystem;
 
 	Camera cam0;
 	CameraType camId;

@@ -10,6 +10,7 @@
 #include <util/path.h>
 #include <core/config.h>
 #include <physics/util.h>
+#include <def/fs.h>
 
 
 Engine::Engine(EngineMode emode): emode(emode) {
@@ -160,6 +161,10 @@ void Engine::tick() {
 
 
 	bgfx::frame();
+
+	frame++;
+	if (emode == EngineMode::smokeTest && frame >= 100) // 数値は適当
+		running = false;
 }
 
 
@@ -168,7 +173,7 @@ void Engine::update(float dt) {
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
 		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
 	);
-	springBoneSystem.update(dt);
+	physicsSystem.tick(dt);
 
 	PoseFrame frame;
 	if (receiver.tick(frame)) {
@@ -205,12 +210,21 @@ void Engine::gameInit() {
 	// ===== load glTF ====
 	// nodeReg.setAvatarSystemPtr(&avatarSystem);
 	const auto& avaIdNode = cfg.get()["avatar"]["id"];
-	// if (!avaIdNode.is_null()) {
-	avatarSystem.loadData({
-		UUID::fromString(
-			avaIdNode.get<std::string>()
-		)
-	});
+	AvatarId avaId;
+	if (!avaIdNode.is_null()) {
+		avaId = UUID::fromString(avaIdNode.get<std::string>());
+	} else {
+		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.glb";
+		if (!fs::exists(dest)) {
+			const auto& orig = syspath.resource / "avatars" / "init.glb";
+			const auto& dest_parent = dest.parent_path();
+			if (!fs::exists(dest_parent))
+				fs::create_directories(dest_parent);
+			fs::copy(orig,dest);
+		}
+		avaId = UUID{0,0};
+	}
+	avatarSystem.loadData(avaId);
 
 
 	// ===== load Shader =====
@@ -240,16 +254,7 @@ void Engine::gameInit() {
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
 
-	
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
+	physicsSystem.init(avatarSystem.player());
 
 	if (cfg.get()["mocap"].get<bool>())
 		mocapThr = std::jthread(mocapWorker);

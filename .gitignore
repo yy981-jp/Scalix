@@ -18,7 +18,9 @@ __pycache__/
 
 !/tracker/records/*.bin
 
-/resources/tracker/
+/resources/
+!/resources/config/
+!/resources/ui/
 
 /repomix-output*
 
