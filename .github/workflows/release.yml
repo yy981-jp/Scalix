@@ -20,6 +20,7 @@ jobs:
   verify:
     needs: build
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -27,17 +28,131 @@ jobs:
           - windows-latest
           - ubuntu-24.04
           - macos-latest
-    
+
     steps:
-      - name: Download package artifacts
+      - name: Download package artifact
         uses: actions/download-artifact@v4
         with:
           name: dist-${{ runner.os }}-${{ runner.arch }}
-          path: build/dist/
-      
-      
+          path: dist
 
+      - name: Smoke-test Windows ZIP package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archives = @(Get-ChildItem -LiteralPath dist -Filter '*.zip' -File)
+          if ($archives.Count -ne 1) {
+            throw "Expected exactly one Windows ZIP package, found $($archives.Count)"
+          }
 
+          $extractDir = Join-Path $env:RUNNER_TEMP 'scalix-zip-smoke'
+          if (Test-Path -LiteralPath $extractDir) {
+            Remove-Item -LiteralPath $extractDir -Recurse -Force
+          }
+          Expand-Archive -LiteralPath $archives[0].FullName -DestinationPath $extractDir
+
+          $executable = Join-Path $extractDir 'bin\sl.exe'
+          if (!(Test-Path -LiteralPath $executable -PathType Leaf)) {
+            throw "ZIP package is missing bin\sl.exe"
+          }
+
+          & $executable smoketest
+          if ($LASTEXITCODE -ne 0) {
+            throw "ZIP package smoke test failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Smoke-test Windows NSIS installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath dist -Filter '*.exe' -File)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one NSIS installer, found $($installers.Count)"
+          }
+
+          $installDir = Join-Path $env:RUNNER_TEMP 'scalix-nsis-smoke'
+          if (Test-Path -LiteralPath $installDir) {
+            Remove-Item -LiteralPath $installDir -Recurse -Force
+          }
+
+          # NSIS requires /D= to be the final argument and not quoted.
+          $install = Start-Process -FilePath $installers[0].FullName -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "NSIS installation failed with exit code $($install.ExitCode)"
+          }
+
+          $executable = Join-Path $installDir 'bin\sl.exe'
+          if (!(Test-Path -LiteralPath $executable -PathType Leaf)) {
+            throw "NSIS installation is missing bin\sl.exe"
+          }
+
+          & $executable smoketest
+          if ($LASTEXITCODE -ne 0) {
+            throw "NSIS-installed executable smoke test failed with exit code $LASTEXITCODE"
+          }
+
+          $uninstaller = Join-Path $installDir 'Uninstall.exe'
+          if (!(Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
+            throw "NSIS installation is missing Uninstall.exe"
+          }
+
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @('/S', "_?=$installDir") -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "NSIS uninstallation failed with exit code $($uninstall.ExitCode)"
+          }
+
+      - name: Smoke-test Linux TGZ package
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          package="$(find dist -maxdepth 1 -type f \\( -name '*.tar.gz' -o -name '*.tgz' \\) -print -quit)"
+          if [[ -z "$package" ]]; then
+            echo "::error::Linux TGZ package not found"
+            exit 1
+          fi
+
+          extract_dir="$RUNNER_TEMP/scalix-tgz-smoke"
+          mkdir -p "$extract_dir"
+          tar -xzf "$package" -C "$extract_dir"
+
+          executable="$extract_dir/bin/sl"
+          if [[ ! -x "$executable" ]]; then
+            echo "::error::TGZ package is missing executable bin/sl"
+            exit 1
+          fi
+
+          xvfb-run -a env SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 "$executable" smoketest
+
+      - name: Smoke-test macOS DMG package
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          package="$(find dist -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          if [[ -z "$package" ]]; then
+            echo "::error::macOS DMG package not found"
+            exit 1
+          fi
+
+          mountpoint="$RUNNER_TEMP/scalix-dmg-smoke"
+          mkdir -p "$mountpoint"
+          hdiutil attach -readonly -nobrowse -mountpoint "$mountpoint" "$package"
+
+          cleanup() {
+            hdiutil detach "$mountpoint" -force >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          executable="$mountpoint/Scalix.app/Contents/MacOS/Scalix"
+          if [[ ! -x "$executable" ]]; then
+            echo "::error::DMG package is missing Scalix.app/Contents/MacOS/Scalix"
+            exit 1
+          fi
+
+          "$executable" smoketest
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
