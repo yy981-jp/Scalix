@@ -235,6 +235,112 @@ function(scalix_resolve_runtime_dependencies)
 			FOLLOW_SYMLINK_CHAIN
 			FILES ${_resolved_dependencies}
 		)
+
+		if(ARG_PLATFORM STREQUAL "linux+elf")
+			# The runtime libraries are installed next to the executable.
+			# Rewrite any build-tree RUNPATHs and add a local search path to
+			# every real ELF shared library (not its symlink aliases).
+			find_program(_patchelf NAMES patchelf REQUIRED)
+			set(_linux_runtime_files "${ARG_EXECUTABLE}")
+			file(GLOB _linux_runtime_libraries
+				LIST_DIRECTORIES false
+				"${ARG_DESTINATION}/*.so*"
+			)
+			foreach(_runtime_file IN LISTS _linux_runtime_libraries)
+				if(NOT IS_SYMLINK "${_runtime_file}")
+					list(APPEND _linux_runtime_files "${_runtime_file}")
+				endif()
+			endforeach()
+			list(REMOVE_DUPLICATES _linux_runtime_files)
+
+			foreach(_runtime_file IN LISTS _linux_runtime_files)
+				execute_process(
+					COMMAND "${_patchelf}" --set-rpath "$ORIGIN" "${_runtime_file}"
+					RESULT_VARIABLE _patchelf_result
+					OUTPUT_VARIABLE _patchelf_stdout
+					ERROR_VARIABLE _patchelf_stderr
+				)
+				if(NOT _patchelf_result EQUAL 0)
+					message(FATAL_ERROR
+						"Could not set relocatable ELF RUNPATH on ${_runtime_file}: "
+						"${_patchelf_stdout}${_patchelf_stderr}"
+					)
+				endif()
+			endforeach()
+		elseif(ARG_PLATFORM STREQUAL "macos+macho")
+			# CMake copies Mach-O dependencies but does not rewrite absolute
+			# Homebrew install names. Make the app bundle self-contained:
+			# - the executable uses its @rpath entry for Frameworks;
+			# - dylibs use @loader_path because all bundled dylibs share a dir.
+			find_program(_otool NAMES otool REQUIRED)
+			find_program(_install_name_tool NAMES install_name_tool REQUIRED)
+
+			set(_macos_runtime_files "${ARG_EXECUTABLE}")
+			foreach(_dependency IN LISTS _resolved_dependencies)
+				get_filename_component(_dependency_name "${_dependency}" NAME)
+				set(_installed_dependency "${ARG_DESTINATION}/${_dependency_name}")
+				if(EXISTS "${_installed_dependency}" AND NOT IS_DIRECTORY "${_installed_dependency}")
+					list(APPEND _macos_runtime_files "${_installed_dependency}")
+				endif()
+			endforeach()
+			list(REMOVE_DUPLICATES _macos_runtime_files)
+
+			foreach(_binary IN LISTS _macos_runtime_files)
+				execute_process(
+					COMMAND "${_otool}" -L "${_binary}"
+					RESULT_VARIABLE _otool_result
+					OUTPUT_VARIABLE _otool_output
+					ERROR_VARIABLE _otool_stderr
+				)
+				if(NOT _otool_result EQUAL 0)
+					message(FATAL_ERROR "Could not inspect Mach-O dependencies for ${_binary}: ${_otool_stderr}")
+				endif()
+
+				string(REPLACE "\\r\\n" "\\n" _otool_output "${_otool_output}")
+				string(REPLACE "\\n" ";" _otool_lines "${_otool_output}")
+				foreach(_line IN LISTS _otool_lines)
+					string(STRIP "${_line}" _line)
+					if(NOT _line MATCHES "^(.+) \\(compatibility version")
+						continue()
+					endif()
+
+					set(_load_name "${CMAKE_MATCH_1}")
+					if(NOT IS_ABSOLUTE "${_load_name}")
+						continue()
+					endif()
+					if(_load_name MATCHES "^/usr/lib/" OR _load_name MATCHES "^/System/Library/")
+						continue()
+					endif()
+
+					get_filename_component(_load_basename "${_load_name}" NAME)
+					set(_bundled_library "${ARG_DESTINATION}/${_load_basename}")
+					if(NOT EXISTS "${_bundled_library}")
+						continue()
+					endif()
+
+					if("${_binary}" STREQUAL "${ARG_EXECUTABLE}")
+						set(_new_load_name "@rpath/${_load_basename}")
+					else()
+						set(_new_load_name "@loader_path/${_load_basename}")
+					endif()
+
+					if(NOT "${_load_name}" STREQUAL "${_new_load_name}")
+						execute_process(
+							COMMAND "${_install_name_tool}" -change "${_load_name}" "${_new_load_name}" "${_binary}"
+							RESULT_VARIABLE _install_name_result
+							OUTPUT_VARIABLE _install_name_stdout
+							ERROR_VARIABLE _install_name_stderr
+						)
+						if(NOT _install_name_result EQUAL 0)
+							message(FATAL_ERROR
+								"Could not relocate Mach-O dependency ${_load_name} in ${_binary}: "
+								"${_install_name_stdout}${_install_name_stderr}"
+							)
+						endif()
+					endif()
+				endforeach()
+			endforeach()
+		endif()
 	else()
 		file(MAKE_DIRECTORY "${ARG_DESTINATION}")
 		foreach(_dependency IN LISTS _resolved_dependencies)
