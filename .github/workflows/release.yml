@@ -107,7 +107,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          package="$(find dist -maxdepth 1 -type f \\( -name '*.tar.gz' -o -name '*.tgz' \\) -print -quit)"
+          package="$(find dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          if [[ -z "$package" ]]; then
+            package="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          fi
           if [[ -z "$package" ]]; then
             echo "::error::Linux TGZ package not found"
             exit 1
