@@ -1,11 +1,11 @@
 name: Release
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - 'v*'
     branches:
+      - develop
       - ci/github-actions
 
 permissions:

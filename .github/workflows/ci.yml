@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches-ignore:
+      - develop
       - ci/github-actions
 
 permissions:
@@ -11,5 +12,3 @@ permissions:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
-    with:
-      package: true
