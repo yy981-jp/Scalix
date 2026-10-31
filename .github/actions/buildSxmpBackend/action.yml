@@ -159,9 +159,14 @@ runs:
       env:
         USE_BAZEL_VERSION: 7.4.1
       run: |
-        LINK_GC_ARGS=()
+        LINK_ARGS=(
+          --copt=-fvisibility=hidden
+        )
         if [[ "$RUNNER_OS" == "Linux" ]]; then
-          LINK_GC_ARGS+=(--linkopt=-Wl,--gc-sections)
+          LINK_ARGS+=(
+            --linkopt=-Wl,--gc-sections
+            --linkopt=-Wl,--exclude-libs,ALL
+          )
         fi
 
         bazel build \
@@ -170,7 +175,7 @@ runs:
           --copt=-fomit-frame-pointer \
           --copt=-ffunction-sections \
           --copt=-fdata-sections \
-          "${LINK_GC_ARGS[@]}" \
+          "${LINK_ARGS[@]}" \
           --define MEDIAPIPE_DISABLE_GPU=1 \
           --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
           --reuse_sandbox_directories \
@@ -207,6 +212,33 @@ runs:
           find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
           exit 1
         fi
+
+        # Protobuf and Abseil are private implementation details of the backend.
+        # They must not leak into the process-wide symbol namespace or be
+        # supplied by the Engine's separately linked Protobuf runtime.
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          exported_symbols="$(nm -D --defined-only "$runtime_library")"
+          unresolved_symbols="$(nm -D --undefined-only "$runtime_library")"
+        else
+          exported_symbols="$(nm -gU "$runtime_library")"
+          unresolved_symbols="$(nm -u "$runtime_library")"
+        fi
+
+        if ! grep -q 'SXMocapBackend' <<<"$exported_symbols"; then
+          echo "::error::SXMocapBackend public API symbols are not exported."
+          exit 1
+        fi
+        if grep -Eq 'google.*protobuf|absl' <<<"$exported_symbols"; then
+          echo "::error::Private Protobuf/Abseil symbols are still exported by libsxmp_be."
+          grep -E 'google.*protobuf|absl' <<<"$exported_symbols" | head -n 20
+          exit 1
+        fi
+        if grep -Eq 'google.*protobuf|absl' <<<"$unresolved_symbols"; then
+          echo "::error::libsxmp_be still depends on process-global Protobuf/Abseil symbols."
+          grep -E 'google.*protobuf|absl' <<<"$unresolved_symbols" | head -n 20
+          exit 1
+        fi
+        echo "Verified: SXMocapBackend API exported; Protobuf/Abseil symbols remain private."
 
         if [[ "$RUNNER_OS" == "macOS" ]]; then
           # Stage a copy instead of modifying Bazel's output/cache artifact.
