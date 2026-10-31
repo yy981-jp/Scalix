@@ -57,6 +57,16 @@ runs:
       run: |
         python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
 
+    - name: Generate logo WebP (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: python tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
+
+    - name: Generate logo WebP (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: python3 tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
+
     - name: Set assets (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
