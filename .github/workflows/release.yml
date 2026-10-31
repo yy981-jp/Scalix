@@ -51,10 +51,13 @@ jobs:
           }
           Expand-Archive -LiteralPath $archives[0].FullName -DestinationPath $extractDir
 
-          $executable = Join-Path $extractDir 'bin\sl.exe'
-          if (!(Test-Path -LiteralPath $executable -PathType Leaf)) {
-            throw "ZIP package is missing bin\sl.exe"
+          # CPack ZIP archives contain a versioned top-level directory.
+          $executables = @(Get-ChildItem -LiteralPath $extractDir -Filter 'sl.exe' -File -Recurse |
+            Where-Object { $_.Directory.Name -ieq 'bin' })
+          if ($executables.Count -ne 1) {
+            throw "Expected exactly one bin\sl.exe in the ZIP package, found $($executables.Count)"
           }
+          $executable = $executables[0].FullName
 
           & $executable smoketest
           if ($LASTEXITCODE -ne 0) {
@@ -117,12 +120,14 @@ jobs:
           fi
 
           extract_dir="$RUNNER_TEMP/scalix-tgz-smoke"
+          rm -rf "$extract_dir"
           mkdir -p "$extract_dir"
           tar -xzf "$package" -C "$extract_dir"
 
-          executable="$extract_dir/bin/sl"
-          if [[ ! -x "$executable" ]]; then
-            echo "::error::TGZ package is missing executable bin/sl"
+          # CPack TGZ archives contain a versioned top-level directory.
+          executable="$(find "$extract_dir" -type f -path '*/bin/sl' -print -quit)"
+          if [[ -z "$executable" || ! -x "$executable" ]]; then
+            echo "::error::TGZ package is missing executable */bin/sl"
             exit 1
           fi
 
