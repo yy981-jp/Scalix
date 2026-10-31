@@ -42,6 +42,19 @@ enum class EngineMode {
 
 
 class Engine {
+	struct SDLRuntime {
+		SDL_Window* window = nullptr;
+		bool initialized = false;
+
+		~SDLRuntime() {
+			if (window)
+				SDL_DestroyWindow(window);
+			if (initialized)
+				SDL_Quit();
+		}
+	};
+
+	SDLRuntime sdlRuntime;
 	EngineMode emode;
 	uint64_t frame = 0;
 
