@@ -14,7 +14,9 @@
 
 
 Engine::Engine(EngineMode emode): emode(emode) {
-	SDL_Init(SDL_INIT_VIDEO);
+	if (!SDL_Init(SDL_INIT_VIDEO))
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.initialized = true;
 
 	// ===== window 作成 (SDL) =====
 	window = SDL_CreateWindow(
@@ -22,6 +24,9 @@ Engine::Engine(EngineMode emode): emode(emode) {
 		T_WIDTH, T_HEIGHT,
 		0
 	);
+	if (!window)
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.window = window;
 	SDL_SetWindowFullscreen(window, true);
 
 	// path system
@@ -92,11 +97,7 @@ Engine::Engine(EngineMode emode): emode(emode) {
 
 }
 
-Engine::~Engine() {
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-	// IMG_Quit();
-}
+Engine::~Engine() = default;
 
 void Engine::tick() {
 	SDL_Event event;
