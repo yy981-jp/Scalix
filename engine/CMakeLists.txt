@@ -21,14 +21,6 @@ endif()
 # Generated platform icons. CI creates these from assets/src/icon.svg before
 # CMake configuration; keep generated binaries out of the source repository.
 set(SCALIX_GENERATED_ASSET_DIR "${CMAKE_SOURCE_DIR}/assets/dist/assets")
-set(SCALIX_RUNTIME_ICON "${SCALIX_GENERATED_ASSET_DIR}/icon.webp")
-if(NOT EXISTS "${SCALIX_RUNTIME_ICON}")
-	message(FATAL_ERROR
-		"Generated SDL icon not found: ${SCALIX_RUNTIME_ICON}. "
-		"Run tools/assetgen/assetgen.py before configuring Scalix."
-	)
-endif()
-
 if(WIN32)
 	set(SCALIX_WINDOWS_ICON "${SCALIX_GENERATED_ASSET_DIR}/icon.ico")
 	if(NOT EXISTS "${SCALIX_WINDOWS_ICON}")

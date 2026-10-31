@@ -41,6 +41,7 @@ runs:
       env:
         CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\mingw64\bin
       run: |
+        $env:PATH = "$env:CAIROCFFI_DLL_DIRECTORIES;$env:PATH"
         python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
 
     - name: Generate icon assets (macOS)

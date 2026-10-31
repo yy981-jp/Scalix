@@ -120,9 +120,9 @@ def verify_build() -> None:
 
     runtime_icon = root / "resources" / "assets" / "icon.webp"
     if not runtime_icon.is_file() or runtime_icon.stat().st_size == 0:
-        fail(f"Build is missing the SDL WebP icon: {runtime_icon}")
+        fail(f"Build is missing the generated WebP asset: {runtime_icon}")
 
-    verified_icons = [f'SDL window icon: "{runtime_icon.relative_to(root).as_posix()}"']
+    verified_icons = [f'Generated WebP asset: "{runtime_icon.relative_to(root).as_posix()}"']
     if system == "macos":
         native_icon = root / "build" / "Scalix.app" / "Contents" / "Resources" / "icon.icns"
         if not native_icon.is_file() or native_icon.stat().st_size == 0:
