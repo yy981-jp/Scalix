@@ -42,7 +42,20 @@ function(scalix_resolve_runtime_dependencies)
 		if(ARG_PLATFORM STREQUAL "windows+pe")
 			set(_pre_exclude "api-ms-.*" "ext-ms-.*")
 		elseif(ARG_PLATFORM STREQUAL "linux+elf")
-			set(_pre_exclude "^linux-vdso\\.so.*" "^ld-linux.*\\.so.*")
+			set(_pre_exclude
+				"^linux-vdso\\.so.*"
+				"^ld-linux.*\\.so.*"
+				"^libc\\.so.*"
+				"^libm\\.so.*"
+				"^libpthread\\.so.*"
+				"^libdl\\.so.*"
+				"^librt\\.so.*"
+				"^libresolv\\.so.*"
+				"^libutil\\.so.*"
+				"^libanl\\.so.*"
+				"^libgcc_s\\.so.*"
+				"^libstdc\\+\\+\\.so.*"
+			)
 		endif()
 	endif()
 
@@ -52,7 +65,10 @@ function(scalix_resolve_runtime_dependencies)
 		elseif(ARG_PLATFORM STREQUAL "macos+macho")
 			set(_post_exclude "^/usr/lib/.*" "^/System/Library/.*")
 		elseif(ARG_PLATFORM STREQUAL "linux+elf")
-			set(_post_exclude "^/lib/.*" "^/lib64/.*" "^/usr/lib/.*")
+			# /usr/lib contains many non-core runtime dependencies (protobuf,
+			# freetype, image codecs, etc.). Exclude only the system library
+			# directories; core runtime SONAMEs are filtered above.
+			set(_post_exclude "^/lib/.*" "^/lib64/.*")
 		endif()
 	endif()
 
