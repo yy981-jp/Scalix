@@ -1,5 +1,11 @@
 set(_scalix_runtime_dependency_module "${CMAKE_CURRENT_LIST_DIR}/runtime_dependencies.cmake")
 include("${_scalix_runtime_dependency_module}")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	# Resolve the packaged executable's adjacent shared libraries relative to
+	# itself instead of relying on the build machine's library paths.
+	set_property(TARGET sl PROPERTY INSTALL_RPATH "$ORIGIN")
+endif()
 get_filename_component(SCALIX_COMPILER_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
 
 set(_scalix_runtime_search_directories
