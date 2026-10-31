@@ -122,7 +122,14 @@ def verify_build() -> None:
     if not runtime_icon.is_file() or runtime_icon.stat().st_size == 0:
         fail(f"Build is missing the generated WebP asset: {runtime_icon}")
 
-    verified_icons = [f'Generated WebP asset: "{runtime_icon.relative_to(root).as_posix()}"']
+    runtime_logo = root / "resources" / "assets" / "logo.webp"
+    if not runtime_logo.is_file() or runtime_logo.stat().st_size == 0:
+        fail(f"Build is missing the loading-screen WebP asset: {runtime_logo}")
+
+    verified_icons = [
+        f'Generated icon WebP: "{runtime_icon.relative_to(root).as_posix()}"',
+        f'Generated loading logo: "{runtime_logo.relative_to(root).as_posix()}"',
+    ]
     if system == "macos":
         native_icon = root / "build" / "Scalix.app" / "Contents" / "Resources" / "icon.icns"
         if not native_icon.is_file() or native_icon.stat().st_size == 0:
@@ -229,6 +236,7 @@ def validate_payload(
     required_files = [
         *(f"{resources_prefix}{relative}" for relative in shader_paths),
         f"{resources_prefix}assets/icon.webp",
+        f"{resources_prefix}assets/logo.webp",
         f"{licenses_prefix}LICENSE",
         f"{licenses_prefix}THIRD_PARTY_NOTICES.md",
     ]
