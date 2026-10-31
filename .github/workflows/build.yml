@@ -54,6 +54,7 @@ jobs:
         working-directory: build
         shell: bash
         run: |
+          cp -r assets/dist/assets resources/assets
           cmake --install . --prefix "$PWD/license-check"
           cmake \
             "-DLICENSE_INSTALL_ROOT=$PWD/license-check" \
