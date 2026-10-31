@@ -22,6 +22,8 @@
 #include <core/nodeRegistry.h>
 #include <physics/physics.h>
 #include <mocap/recv.h>
+
+#include <memory>
 #include <mocap/poseSolver.h>
 
 
@@ -75,7 +77,7 @@ class Engine {
 	Grid grid;
 
 	std::jthread mocapThr;
-	Recv receiver;
+	std::unique_ptr<Recv> receiver;
 	PoseSolver* poseSolver;
 
 	int width, height;
