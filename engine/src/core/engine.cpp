@@ -176,7 +176,7 @@ void Engine::update(float dt) {
 	physicsSystem.tick(dt);
 
 	PoseFrame frame;
-	if (receiver.tick(frame)) {
+	if (receiver && receiver->tick(frame)) {
 		poseSolver->solve(frame);
 	}
 
@@ -256,8 +256,10 @@ void Engine::gameInit() {
 
 	physicsSystem.init(avatarSystem.player());
 
-	if (cfg.get()["mocap"].get<bool>())
+	if (cfg.get()["mocap"].get<bool>()) {
+		receiver = std::make_unique<Recv>();
 		mocapThr = std::jthread(mocapWorker);
+	}
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
