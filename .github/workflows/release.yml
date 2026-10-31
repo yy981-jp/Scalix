@@ -160,7 +160,20 @@ jobs:
             exit 1
           fi
 
-          "$executable" smoketest
+          if "$executable" smoketest; then
+            exit 0
+          else
+            smoke_status=$?
+            echo "::error::macOS smoketest exited with status $smoke_status; collecting a native backtrace."
+            if command -v lldb >/dev/null 2>&1; then
+              lldb --batch -o run -o "thread backtrace all" -- "$executable" smoketest || true
+            elif command -v xcrun >/dev/null 2>&1; then
+              xcrun lldb --batch -o run -o "thread backtrace all" -- "$executable" smoketest || true
+            else
+              echo "::warning::LLDB is unavailable on this runner."
+            fi
+            exit "$smoke_status"
+          fi
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
