@@ -1,6 +1,5 @@
 #pragma once
 #include <stdexcept>
-#include <stdexcept>
 #include <bgfx/bgfx.h>
 
 
