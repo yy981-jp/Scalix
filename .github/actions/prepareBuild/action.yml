@@ -60,10 +60,21 @@ runs:
     - name: Generate logo WebP (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
-      run: python tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
+      env:
+        CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\\mingw64\\bin
+      run: |
+        $env:PATH = "$env:PATH;$env:CAIROCFFI_DLL_DIRECTORIES"
+        python tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
 
-    - name: Generate logo WebP (Unix)
-      if: runner.os != 'Windows'
+    - name: Generate logo WebP (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix cairo)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+        python3 tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
+
+    - name: Generate logo WebP (Linux)
+      if: runner.os == 'Linux'
       shell: bash
       run: python3 tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
 
