@@ -65,10 +65,11 @@ function(scalix_resolve_runtime_dependencies)
 		elseif(ARG_PLATFORM STREQUAL "macos+macho")
 			set(_post_exclude "^/usr/lib/.*" "^/System/Library/.*")
 		elseif(ARG_PLATFORM STREQUAL "linux+elf")
-			# /usr/lib contains many non-core runtime dependencies (protobuf,
-			# freetype, image codecs, etc.). Exclude only the system library
-			# directories; core runtime SONAMEs are filtered above.
-			set(_post_exclude "^/lib/.*" "^/lib64/.*")
+			# Do not exclude Linux dependencies by absolute directory. On usrmerge
+			# systems (including Ubuntu), /lib may resolve to /usr/lib, and CMake
+			# can report /lib/... paths for non-core libraries such as protobuf.
+			# Filtering those paths would silently omit required runtime libraries.
+			# Core system libraries are excluded by SONAME above instead.
 		endif()
 	endif()
 
