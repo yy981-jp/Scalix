@@ -49,6 +49,13 @@ jobs:
           choco install nsis -y
           echo "C:\\Program Files (x86)\\NSIS" >> $GITHUB_PATH
 
+      - name: Install Linux packaging tools
+        if: ${{ inputs.package && runner.os == 'Linux' }}
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes patchelf
+
       - name: Package
         if: ${{ inputs.package }}
         working-directory: build
