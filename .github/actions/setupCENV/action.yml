@@ -1,11 +1,17 @@
 name: Setup C env
 description: setup C env
 
+outputs:
+  msys2-location:
+    description: Absolute path to the MSYS2 installation.
+    value: ${{ steps.setup-msys2.outputs.msys2-location }}
+
 runs:
   using: composite
 
   steps:
     - name: Setup MSYS2
+      id: setup-msys2
       if: runner.os == 'Windows'
       uses: msys2/setup-msys2@v2
       with:
