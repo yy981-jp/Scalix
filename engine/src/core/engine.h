@@ -52,6 +52,7 @@ class Engine {
 	};
 
 	SDL_Window* window;
+	SDL_Surface* windowIcon = nullptr;
 	BGFXMan bgfxMan;
 
 	bool running = true;

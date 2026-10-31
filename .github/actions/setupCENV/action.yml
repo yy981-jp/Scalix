@@ -23,6 +23,7 @@ runs:
           mingw-w64-x86_64-yaml-cpp
           mingw-w64-x86_64-libwebp
           mingw-w64-x86_64-freetype
+          mingw-w64-x86_64-cairo
           perl
 
     - name: Setup Linux
@@ -39,6 +40,7 @@ runs:
           protobuf-compiler-grpc \
           libyaml-cpp-dev \
           libwebp-dev \
+          libcairo2 \
           libx11-dev \
           libxext-dev \
           libxrandr-dev \
@@ -82,4 +84,5 @@ runs:
           protobuf \
           yaml-cpp \
           webp \
-          freetype
+          freetype \
+          cairo

@@ -72,6 +72,23 @@ install(
 	PATTERN ".git" EXCLUDE
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	# Install a freedesktop launcher and hicolor icons so desktop environments
+	# can discover Scalix independently of SDL's per-window icon support.
+	foreach(_size IN ITEMS 48 128 256)
+		install(
+			FILES "${CMAKE_SOURCE_DIR}/assets/dist/assets/icon-${_size}.png"
+			DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${_size}x${_size}/apps"
+			RENAME "scalix.png"
+		)
+	endforeach()
+
+	install(
+		FILES "${CMAKE_SOURCE_DIR}/cmake/scalix.desktop"
+		DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+	)
+endif()
+
 install(CODE "
 	include(\"${_scalix_runtime_dependency_module}\")
 	scalix_resolve_runtime_dependencies(

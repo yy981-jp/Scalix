@@ -118,11 +118,28 @@ def verify_build() -> None:
     if missing_shaders:
         fail("Build did not produce required runtime shaders: " + ", ".join(missing_shaders))
 
+    runtime_icon = root / "resources" / "assets" / "icon.webp"
+    if not runtime_icon.is_file() or runtime_icon.stat().st_size == 0:
+        fail(f"Build is missing the SDL WebP icon: {runtime_icon}")
+
+    verified_icons = [f'SDL window icon: "{runtime_icon.relative_to(root).as_posix()}"']
+    if system == "macos":
+        native_icon = root / "build" / "Scalix.app" / "Contents" / "Resources" / "icon.icns"
+        if not native_icon.is_file() or native_icon.stat().st_size == 0:
+            fail(f"macOS app bundle is missing its ICNS icon: {native_icon}")
+        verified_icons.append(f'App bundle icon: "{native_icon.relative_to(root).as_posix()}"')
+    elif system == "windows":
+        native_icon = root / "assets" / "dist" / "assets" / "icon.ico"
+        if not native_icon.is_file() or native_icon.stat().st_size == 0:
+            fail(f"Windows icon resource input is missing: {native_icon}")
+        verified_icons.append(f'Executable icon resource input: "{native_icon.relative_to(root).as_posix()}"')
+
     append_summary(
         f"Build output verified ({system})",
         [
             f'Executable: "{binary.relative_to(root).as_posix()}" ({binary_size:,} bytes; valid native signature)',
             f"Runtime shaders: {len(SHADERS)}/{len(SHADERS)} present and non-empty",
+            *verified_icons,
         ],
     )
 
@@ -211,9 +228,23 @@ def validate_payload(
     )
     required_files = [
         *(f"{resources_prefix}{relative}" for relative in shader_paths),
+        f"{resources_prefix}assets/icon.webp",
         f"{licenses_prefix}LICENSE",
         f"{licenses_prefix}THIRD_PARTY_NOTICES.md",
     ]
+
+    if system == "windows":
+        required_files.append(f"{resources_prefix}assets/icon.ico")
+    elif system == "macos":
+        required_files.append("Contents/Resources/icon.icns")
+    else:
+        required_files.extend((
+            "share/applications/scalix.desktop",
+            "share/icons/hicolor/48x48/apps/scalix.png",
+            "share/icons/hicolor/128x128/apps/scalix.png",
+            "share/icons/hicolor/256x256/apps/scalix.png",
+        ))
+
     for relative in required_files:
         path = find_entry(entries, relative, system)
         assert path is not None

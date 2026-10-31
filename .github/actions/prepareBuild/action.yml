@@ -17,5 +17,53 @@ runs:
     - name: Setup env
       uses: ./.github/actions/setupCENV
 
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: pip
+        cache-dependency-path: tools/assetgen/requirements.txt
+
+    - name: Install AssetGen dependencies
+      if: runner.os != 'Windows'
+      shell: bash
+      run: python -m pip install --disable-pip-version-check -r tools/assetgen/requirements.txt
+
+    - name: Install AssetGen dependencies (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: python -m pip install --disable-pip-version-check -r tools/assetgen/requirements.txt
+
+    - name: Generate icon assets (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        CAIROCFFI_DLL_DIRECTORIES: C:\msys64\mingw64\bin
+      run: |
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
+
+    - name: Generate icon assets (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix cairo)/lib:\${DYLD_FALLBACK_LIBRARY_PATH:-}"
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
+
+    - name: Generate icon assets (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
+
+    - name: Set assets (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: python ci/set_assets.py
+
+    - name: Set assets (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: python3 ci/set_assets.py
+
     - name: Build external
       uses: ./.github/actions/buildExternal
