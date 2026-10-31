@@ -46,7 +46,7 @@ runs:
       if: runner.os == 'macOS'
       shell: bash
       run: |
-        export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix cairo)/lib:\${DYLD_FALLBACK_LIBRARY_PATH:-}"
+        export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix cairo)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
         python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
 
     - name: Generate icon assets (Linux)
