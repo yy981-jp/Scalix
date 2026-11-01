@@ -88,6 +88,12 @@ foreach(_library IN LISTS _runtime_libraries)
 	file(RENAME "${_library}" "${_library_destination}")
 endforeach()
 
+# dpkg-shlibdeps needs an explicit search directory for private libraries that
+# were moved away from the executable's original staging directory.
+# CPACK_PRE_BUILD_SCRIPTS runs in CPack's current makefile scope, so this value
+# is available when the DEB generator computes automatic dependencies.
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS "${_runtime_library_directory}")
+
 # Preserve the project license while also providing the Debian copyright file.
 file(COPY "${_licenses_directory}/" DESTINATION "${_documentation_directory}")
 if(EXISTS "${_documentation_directory}/LICENSE" AND NOT EXISTS "${_documentation_directory}/copyright")
@@ -111,10 +117,14 @@ endif()
 if(NOT EXISTS "${_runtime_library_directory}/libsxmp_be.so")
 	message(FATAL_ERROR "Debian staging is missing lib/scalix/libsxmp_be.so")
 endif()
+if(NOT IS_DIRECTORY "${_runtime_library_directory}")
+	message(FATAL_ERROR "Debian staging is missing lib/scalix runtime directory")
+endif()
 if(NOT EXISTS "${_install_prefix}/share/scalix/resources/runtime")
 	message(FATAL_ERROR "Debian staging is missing share/scalix/resources/runtime")
 endif()
 message(STATUS
 	"Prepared Debian/FHS layout under ${_install_prefix}; "
-	"moved ${_runtime_libraries} runtime libraries into ${_runtime_library_directory}"
+	"moved ${_runtime_libraries} runtime libraries into ${_runtime_library_directory}; "
+	"dpkg-shlibdeps private search path: ${CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS}"
 )
