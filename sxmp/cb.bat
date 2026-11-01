@@ -22,9 +22,24 @@ if defined BAZEL_REPOSITORY_CACHE echo Using Bazel repository cache: %BAZEL_REPO
 
 pushd external\mediapipe || exit /b 1
 
+rem The custom MSYS2 toolchain needs the real output base to allowlist the
+rem absolute path Bazel emits for the gemmlowp external repository.
+set "BAZEL_TOOLCHAIN_OUTPUT_BASE=%BAZEL_OUTPUT_BASE%"
+if not defined BAZEL_TOOLCHAIN_OUTPUT_BASE (
+	for /f "delims=" %%i in ('"%BAZEL_COMMAND%" %BAZEL_STARTUP_ARGS% info output_base') do set "BAZEL_TOOLCHAIN_OUTPUT_BASE=%%i"
+)
+if not defined BAZEL_TOOLCHAIN_OUTPUT_BASE (
+	echo Failed to determine Bazel output base.
+	popd
+	exit /b 1
+)
+set "BAZEL_TOOLCHAIN_OUTPUT_BASE=%BAZEL_TOOLCHAIN_OUTPUT_BASE:\=/%"
+echo Using Bazel toolchain output base: %BAZEL_TOOLCHAIN_OUTPUT_BASE%
+
 "%BAZEL_COMMAND%" %BAZEL_STARTUP_ARGS% build ^
 	--announce_rc ^
 	%BAZEL_BUILD_ARGS% ^
+	"--define=SCALIX_BAZEL_OUTPUT_BASE=%BAZEL_TOOLCHAIN_OUTPUT_BASE%" ^
 	-c opt ^
 	--copt=-O3 ^
 	--copt=-fomit-frame-pointer ^
@@ -41,8 +56,6 @@ pushd external\mediapipe || exit /b 1
 	--copt=-D_WIN32_WINNT=0x0601 ^
 	--host_copt=-D_WIN32_WINNT=0x0601 ^
 	--copt=-no-canonical-prefixes ^
-	--copt=-isystem ^
-	--copt=external ^
 	--copt=-fno-canonical-system-headers ^
 	--verbose_failures ^
 	--reuse_sandbox_directories ^
