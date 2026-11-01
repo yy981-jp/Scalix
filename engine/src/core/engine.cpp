@@ -14,7 +14,9 @@
 
 
 Engine::Engine(EngineMode emode): emode(emode) {
-	SDL_Init(SDL_INIT_VIDEO);
+	if (!SDL_Init(SDL_INIT_VIDEO))
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.initialized = true;
 
 	// ===== window 作成 (SDL) =====
 	window = SDL_CreateWindow(
@@ -22,6 +24,9 @@ Engine::Engine(EngineMode emode): emode(emode) {
 		T_WIDTH, T_HEIGHT,
 		0
 	);
+	if (!window)
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.window = window;
 	SDL_SetWindowFullscreen(window, true);
 
 	// path system
@@ -92,11 +97,7 @@ Engine::Engine(EngineMode emode): emode(emode) {
 
 }
 
-Engine::~Engine() {
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-	// IMG_Quit();
-}
+Engine::~Engine() = default;
 
 void Engine::tick() {
 	SDL_Event event;
@@ -176,7 +177,7 @@ void Engine::update(float dt) {
 	physicsSystem.tick(dt);
 
 	PoseFrame frame;
-	if (receiver.tick(frame)) {
+	if (receiver && receiver->tick(frame)) {
 		poseSolver->solve(frame);
 	}
 
@@ -228,13 +229,14 @@ void Engine::gameInit() {
 
 
 	// ===== load Shader =====
+	const auto shaderDirectory = getRuntimeShaderDirectory(syspath.resource);
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(
-		(syspath.resource / "runtime/vs_tex.bin").string(),
-		(syspath.resource / "runtime/fs_tex.bin").string()
+		(shaderDirectory / "vs_tex.bin").string(),
+		(shaderDirectory / "fs_tex.bin").string()
 	);
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram(
-		(syspath.resource / "runtime/vs_grid.bin").string(),
-		(syspath.resource / "runtime/fs_grid.bin").string()
+		(shaderDirectory / "vs_grid.bin").string(),
+		(shaderDirectory / "fs_grid.bin").string()
 	);
 	
 	debug.init();
@@ -256,8 +258,10 @@ void Engine::gameInit() {
 
 	physicsSystem.init(avatarSystem.player());
 
-	if (cfg.get()["mocap"].get<bool>())
+	if (cfg.get()["mocap"].get<bool>()) {
+		receiver = std::make_unique<Recv>();
 		mocapThr = std::jthread(mocapWorker);
+	}
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {

@@ -18,11 +18,31 @@ else()
 endif()
 
 
-# Windows icon
+# Generated platform icons. CI creates these from assets/src/icon.svg before
+# CMake configuration; keep generated binaries out of the source repository.
+set(SCALIX_GENERATED_ASSET_DIR "${CMAKE_SOURCE_DIR}/assets/dist/assets")
 if(WIN32)
-	list(APPEND SOURCES
-		${CMAKE_SOURCE_DIR}/cmake/icon.rc
+	set(SCALIX_WINDOWS_ICON "${SCALIX_GENERATED_ASSET_DIR}/icon.ico")
+	if(NOT EXISTS "${SCALIX_WINDOWS_ICON}")
+		message(FATAL_ERROR "Generated Windows icon not found: ${SCALIX_WINDOWS_ICON}")
+	endif()
+
+	configure_file(
+		"${CMAKE_SOURCE_DIR}/cmake/icon.rc"
+		"${CMAKE_CURRENT_BINARY_DIR}/icon.rc"
+		@ONLY
 	)
+	list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/icon.rc")
+elseif(APPLE)
+	set(SCALIX_MACOS_ICON "${SCALIX_GENERATED_ASSET_DIR}/icon.icns")
+	if(NOT EXISTS "${SCALIX_MACOS_ICON}")
+		message(FATAL_ERROR "Generated macOS icon not found: ${SCALIX_MACOS_ICON}")
+	endif()
+
+	set_source_files_properties("${SCALIX_MACOS_ICON}" PROPERTIES
+		MACOSX_PACKAGE_LOCATION "Resources"
+	)
+	list(APPEND SOURCES "${SCALIX_MACOS_ICON}")
 endif()
 
 
@@ -48,6 +68,7 @@ if(APPLE)
 		MACOSX_BUNDLE_GUI_IDENTIFIER "jp.yy981.scalix"
 		MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
 		MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+		MACOSX_BUNDLE_ICON_FILE "icon.icns"
 		INSTALL_RPATH "@executable_path/../Frameworks"
 	)
 endif()

@@ -22,6 +22,8 @@
 #include <core/nodeRegistry.h>
 #include <physics/physics.h>
 #include <mocap/recv.h>
+
+#include <memory>
 #include <mocap/poseSolver.h>
 
 
@@ -40,6 +42,19 @@ enum class EngineMode {
 
 
 class Engine {
+	struct SDLRuntime {
+		SDL_Window* window = nullptr;
+		bool initialized = false;
+
+		~SDLRuntime() {
+			if (window)
+				SDL_DestroyWindow(window);
+			if (initialized)
+				SDL_Quit();
+		}
+	};
+
+	SDLRuntime sdlRuntime;
 	EngineMode emode;
 	uint64_t frame = 0;
 
@@ -75,7 +90,7 @@ class Engine {
 	Grid grid;
 
 	std::jthread mocapThr;
-	Recv receiver;
+	std::unique_ptr<Recv> receiver;
 	PoseSolver* poseSolver;
 
 	int width, height;

@@ -1,11 +1,17 @@
 name: Setup C env
 description: setup C env
 
+outputs:
+  msys2-location:
+    description: Absolute path to the MSYS2 installation.
+    value: ${{ steps.setup-msys2.outputs.msys2-location }}
+
 runs:
   using: composite
 
   steps:
     - name: Setup MSYS2
+      id: setup-msys2
       if: runner.os == 'Windows'
       uses: msys2/setup-msys2@v2
       with:
@@ -23,6 +29,7 @@ runs:
           mingw-w64-ucrt-x86_64-yaml-cpp
           mingw-w64-ucrt-x86_64-libwebp
           mingw-w64-ucrt-x86_64-freetype
+          mingw-w64-ucrt-x86_64-cairo
           perl
 
     - name: Setup Linux
@@ -39,6 +46,7 @@ runs:
           protobuf-compiler-grpc \
           libyaml-cpp-dev \
           libwebp-dev \
+          libcairo2 \
           libx11-dev \
           libxext-dev \
           libxrandr-dev \
@@ -82,4 +90,5 @@ runs:
           protobuf \
           yaml-cpp \
           webp \
-          freetype
+          freetype \
+          cairo

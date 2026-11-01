@@ -1,5 +1,8 @@
 #include <gfx/shader.h>
 
+#include <stdexcept>
+#include <string>
+
 
 bgfx::ShaderHandle loadShader(const std::string& path) {
 	if (!fs::exists(path)) throw std::runtime_error(std::string{"Shader not found: "} + path);
@@ -23,4 +26,24 @@ bgfx::ProgramHandle loadProgram(const std::string& vs, const std::string& fs) {
 	auto vsh = loadShader(vs);
 	auto fsh = loadShader(fs);
 	return bgfx::createProgram(vsh, fsh, true);
+}
+
+fs::path getRuntimeShaderDirectory(const fs::path& resourceDirectory) {
+	const fs::path runtimeDirectory = resourceDirectory / "runtime";
+
+#if defined(__linux__)
+	switch (bgfx::getRendererType()) {
+	case bgfx::RendererType::OpenGL:
+		return runtimeDirectory / "opengl";
+	case bgfx::RendererType::Vulkan:
+		return runtimeDirectory / "vulkan";
+	default:
+		throw std::runtime_error(
+			"No runtime shader variant is available for the selected Linux bgfx renderer ("
+			+ std::to_string(static_cast<int>(bgfx::getRendererType())) + ")."
+		);
+	}
+#else
+	return runtimeDirectory;
+#endif
 }

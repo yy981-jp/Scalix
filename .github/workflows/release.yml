@@ -1,11 +1,11 @@
 name: Release
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - 'v*'
     branches:
+      - develop
       - ci/github-actions
 
 permissions:
@@ -17,9 +17,174 @@ jobs:
     with:
       package: true
 
+  verify:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-24.04
+          - macos-latest
+
+    steps:
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ runner.os }}-${{ runner.arch }}
+          path: dist
+
+      - name: Smoke-test Windows ZIP package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archives = @(Get-ChildItem -LiteralPath dist -Filter '*.zip' -File)
+          if ($archives.Count -ne 1) {
+            throw "Expected exactly one Windows ZIP package, found $($archives.Count)"
+          }
+
+          $extractDir = Join-Path $env:RUNNER_TEMP 'scalix-zip-smoke'
+          if (Test-Path -LiteralPath $extractDir) {
+            Remove-Item -LiteralPath $extractDir -Recurse -Force
+          }
+          Expand-Archive -LiteralPath $archives[0].FullName -DestinationPath $extractDir
+
+          # CPack ZIP archives contain a versioned top-level directory.
+          $executables = @(Get-ChildItem -LiteralPath $extractDir -Filter 'sl.exe' -File -Recurse |
+            Where-Object { $_.Directory.Name -ieq 'bin' })
+          if ($executables.Count -ne 1) {
+            throw "Expected exactly one bin\sl.exe in the ZIP package, found $($executables.Count)"
+          }
+          $executable = $executables[0].FullName
+
+          & $executable smoketest
+          if ($LASTEXITCODE -ne 0) {
+            throw "ZIP package smoke test failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Smoke-test Windows NSIS installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath dist -Filter '*.exe' -File)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one NSIS installer, found $($installers.Count)"
+          }
+
+          $installDir = Join-Path $env:RUNNER_TEMP 'scalix-nsis-smoke'
+          if (Test-Path -LiteralPath $installDir) {
+            Remove-Item -LiteralPath $installDir -Recurse -Force
+          }
+
+          # NSIS requires /D= to be the final argument and not quoted.
+          $install = Start-Process -FilePath $installers[0].FullName -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "NSIS installation failed with exit code $($install.ExitCode)"
+          }
+
+          $executable = Join-Path $installDir 'bin\sl.exe'
+          if (!(Test-Path -LiteralPath $executable -PathType Leaf)) {
+            throw "NSIS installation is missing bin\sl.exe"
+          }
+
+          & $executable smoketest
+          if ($LASTEXITCODE -ne 0) {
+            throw "NSIS-installed executable smoke test failed with exit code $LASTEXITCODE"
+          }
+
+          $uninstaller = Join-Path $installDir 'Uninstall.exe'
+          if (!(Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
+            throw "NSIS installation is missing Uninstall.exe"
+          }
+
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @('/S', "_?=$installDir") -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "NSIS uninstallation failed with exit code $($uninstall.ExitCode)"
+          }
+
+      - name: Install Linux smoke-test graphics runtime
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libegl1
+
+      - name: Smoke-test Linux TGZ package
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          package="$(find dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          if [[ -z "$package" ]]; then
+            package="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          fi
+          if [[ -z "$package" ]]; then
+            echo "::error::Linux TGZ package not found"
+            exit 1
+          fi
+
+          extract_dir="$RUNNER_TEMP/scalix-tgz-smoke"
+          rm -rf "$extract_dir"
+          mkdir -p "$extract_dir"
+          tar -xzf "$package" -C "$extract_dir"
+
+          # CPack TGZ archives contain a versioned top-level directory.
+          executable="$(find "$extract_dir" -type f -path '*/bin/sl' -print -quit)"
+          if [[ -z "$executable" || ! -x "$executable" ]]; then
+            echo "::error::TGZ package is missing executable */bin/sl"
+            exit 1
+          fi
+
+          xvfb-run -a env SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 "$executable" smoketest
+
+      - name: Smoke-test macOS DMG package
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          package="$(find dist -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          if [[ -z "$package" ]]; then
+            echo "::error::macOS DMG package not found"
+            exit 1
+          fi
+
+          mountpoint="$RUNNER_TEMP/scalix-dmg-smoke"
+          mkdir -p "$mountpoint"
+          hdiutil attach -readonly -nobrowse -mountpoint "$mountpoint" "$package"
+
+          cleanup() {
+            hdiutil detach "$mountpoint" -force >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          executable="$mountpoint/Scalix.app/Contents/MacOS/Scalix"
+          if [[ ! -x "$executable" ]]; then
+            echo "::error::DMG package is missing Scalix.app/Contents/MacOS/Scalix"
+            exit 1
+          fi
+
+          if "$executable" smoketest; then
+            exit 0
+          else
+            smoke_status=$?
+            echo "::error::macOS smoketest exited with status $smoke_status; collecting a native backtrace."
+            if command -v lldb >/dev/null 2>&1; then
+              lldb --batch -o run -o "thread backtrace all" -- "$executable" smoketest || true
+            elif command -v xcrun >/dev/null 2>&1; then
+              xcrun lldb --batch -o run -o "thread backtrace all" -- "$executable" smoketest || true
+            else
+              echo "::warning::LLDB is unavailable on this runner."
+            fi
+            exit "$smoke_status"
+          fi
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: verify
     runs-on: ubuntu-24.04
     permissions:
       contents: write
