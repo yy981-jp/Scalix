@@ -7,6 +7,7 @@ import argparse
 import os
 import platform
 import plistlib
+import re
 import stat
 import subprocess
 import sys
@@ -383,6 +384,8 @@ def verify_deb(path: Path) -> list[str]:
         files = [candidate for candidate in root.rglob("*") if candidate.is_file()]
         entries = [candidate.relative_to(root).as_posix() for candidate in files]
         file_by_name = {name: root / name for name in entries}
+        if (root / "home").exists():
+            fail(f"Debian package contains an accidental host staging path under /home: {path.name}")
         if any(
             PurePosixPath(name).parent == PurePosixPath("usr/bin")
             and ".so" in PurePosixPath(name).name
@@ -391,6 +394,34 @@ def verify_deb(path: Path) -> list[str]:
             fail(f"Debian package leaves private shared libraries in /usr/bin: {path.name}")
         if any(name.startswith("usr/resources/") for name in entries):
             fail(f"Debian package does not use /usr/share/scalix/resources: {path.name}")
+
+        def check_runpath(binary: Path, expected: str) -> None:
+            result = subprocess.run(
+                ["readelf", "-d", str(binary)],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            if result.returncode != 0:
+                fail(f"Could not inspect ELF dynamic section for {binary}: {result.stdout}")
+            match = re.search(r"\\((?:RUNPATH|RPATH)\\).*?\\[(.*?)\\]", result.stdout)
+            if match is None:
+                fail(f"ELF file has no RPATH/RUNPATH: {binary}")
+            actual = match.group(1)
+            if actual != expected:
+                fail(f"Unexpected RUNPATH in {binary}: expected {expected!r}, found {actual!r}")
+
+        executable = root / "usr" / "bin" / "sl"
+        check_runpath(executable, "$ORIGIN/../lib/scalix")
+        runtime_directory = root / "usr" / "lib" / "scalix"
+        runtime_libraries = [
+            candidate for candidate in runtime_directory.glob("*.so*")
+            if candidate.is_file() and not candidate.is_symlink()
+        ]
+        if not runtime_libraries:
+            fail(f"Debian package contains no real shared libraries in {runtime_directory}")
+        for library in runtime_libraries:
+            check_runpath(library, "$ORIGIN")
 
         def size_for(name: str) -> int:
             return file_by_name[name].stat().st_size
