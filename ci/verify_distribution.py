@@ -198,12 +198,15 @@ def validate_payload(
     size_for: Callable[[str], int],
     read_prefix: Callable[[str, int], bytes],
     source_label: str,
+    *,
+    debian: bool = False,
 ) -> list[str]:
     if system == "macos":
         executable_suffix = "Contents/MacOS/Scalix"
         library_suffix = "Contents/Frameworks/libsxmp_be.dylib"
         resources_prefix = "Contents/Resources/"
         licenses_prefix = "Contents/Resources/licenses/Scalix/"
+        license_files = ("LICENSE", "THIRD_PARTY_NOTICES.md")
         info_plist = find_entry(entries, "Contents/Info.plist", system)
         assert info_plist is not None
         try:
@@ -217,11 +220,18 @@ def validate_payload(
             fail(f"App bundle must launch the 'Scalix' executable in {source_label}")
         if info.get("CFBundleIdentifier") != "jp.yy981.scalix":
             fail(f"App bundle has an unexpected CFBundleIdentifier in {source_label}")
+    elif debian:
+        executable_suffix = "bin/sl"
+        library_suffix = "lib/scalix/libsxmp_be.so"
+        resources_prefix = "share/scalix/resources/"
+        licenses_prefix = "share/doc/scalix/"
+        license_files = ("copyright", "LICENSE", "THIRD_PARTY_NOTICES.md")
     else:
         executable_suffix = f"bin/{exe_name(system)}"
         library_suffix = f"bin/{runtime_library_name(system)}"
         resources_prefix = ""
         licenses_prefix = "share/licenses/Scalix/"
+        license_files = ("LICENSE", "THIRD_PARTY_NOTICES.md")
 
     executable_path = find_entry(entries, executable_suffix, system)
     assert executable_path is not None
@@ -242,15 +252,14 @@ def validate_payload(
     ]
 
     shader_paths = [
-        relative.removeprefix("resources/") if system == "macos" else relative
+        relative.removeprefix("resources/") if system == "macos" or debian else relative
         for relative in runtime_shader_files(system)
     ]
     required_files = [
         *(f"{resources_prefix}{relative}" for relative in shader_paths),
         f"{resources_prefix}assets/icon.webp",
         f"{resources_prefix}assets/logo.webp",
-        f"{licenses_prefix}LICENSE",
-        f"{licenses_prefix}THIRD_PARTY_NOTICES.md",
+        *(f"{licenses_prefix}{name}" for name in license_files),
     ]
 
     if system == "windows":
@@ -283,7 +292,6 @@ def validate_payload(
         fail(f"Package contains no third-party license documents: {source_label}")
     verified.append(f"Third-party license documents: {len(third_party)}")
     return verified
-
 
 def verify_zip(path: Path, system: str) -> list[str]:
     try:
@@ -333,6 +341,72 @@ def verify_tar(path: Path, system: str) -> list[str]:
     except (OSError, tarfile.TarError, EOFError) as error:
         fail(f"Could not inspect TGZ package {path.name}: {error}")
     raise AssertionError("unreachable")
+
+
+def verify_deb(path: Path) -> list[str]:
+    def field(name: str) -> str:
+        result = subprocess.run(
+            ["dpkg-deb", "--field", str(path), name],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        if result.returncode != 0:
+            fail(f"Could not read DEB control field {name} from {path.name}: {result.stdout}")
+        return result.stdout.strip()
+
+    package_name = field("Package")
+    architecture = field("Architecture")
+    depends = field("Depends")
+    recommends = field("Recommends")
+    if package_name != "scalix":
+        fail(f"Unexpected Debian package name in {path.name}: {package_name}")
+    if not architecture:
+        fail(f"Debian package has no Architecture field: {path.name}")
+    for dependency in ("libegl1", "libgl1"):
+        if dependency not in depends:
+            fail(f"Debian package does not declare {dependency}: {path.name}")
+    if "libvulkan1" not in recommends:
+        fail(f"Debian package does not recommend the Vulkan loader: {path.name}")
+
+    with tempfile.TemporaryDirectory(prefix="scalix-deb-") as temporary:
+        root = Path(temporary)
+        result = subprocess.run(
+            ["dpkg-deb", "--extract", str(path), str(root)],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        if result.returncode != 0:
+            fail(f"Could not extract Debian package {path.name}: {result.stdout}")
+
+        files = [candidate for candidate in root.rglob("*") if candidate.is_file()]
+        entries = [candidate.relative_to(root).as_posix() for candidate in files]
+        file_by_name = {name: root / name for name in entries}
+        if any(
+            PurePosixPath(name).parent == PurePosixPath("usr/bin")
+            and ".so" in PurePosixPath(name).name
+            for name in entries
+        ):
+            fail(f"Debian package leaves private shared libraries in /usr/bin: {path.name}")
+        if any(name.startswith("usr/resources/") for name in entries):
+            fail(f"Debian package does not use /usr/share/scalix/resources: {path.name}")
+
+        def size_for(name: str) -> int:
+            return file_by_name[name].stat().st_size
+
+        def read_prefix(name: str, size: int) -> bytes:
+            with file_by_name[name].open("rb") as stream:
+                return stream.read(size)
+
+        details = [
+            f'DEB: "{path.name}" ({path.stat().st_size:,} bytes)',
+            f"Package metadata: {package_name}, {field('Version')}, {architecture}",
+            f"Depends: {depends}",
+            f"Recommends: {recommends}",
+        ]
+        details.extend(validate_payload("linux", entries, size_for, read_prefix, path.name, debian=True))
+        return details
 
 
 def verify_dmg(path: Path, system: str) -> list[str]:
@@ -414,13 +488,20 @@ def verify_package() -> None:
         packages = sorted(path for path in dist.glob("*.tar.gz") if path.is_file())
         if not packages:
             packages = sorted(path for path in dist.glob("*.tgz") if path.is_file())
+        debs = sorted(path for path in dist.glob("*.deb") if path.is_file())
         if len(packages) != 1:
             fail(f"Expected exactly one Linux TGZ package in {dist}, found {len(packages)}")
+        if len(debs) != 1:
+            fail(f"Expected exactly one Linux DEB package in {dist}, found {len(debs)}")
         package = packages[0]
+        deb = debs[0]
         if package.stat().st_size < 4096:
             fail(f"Linux TGZ package is unexpectedly small: {package.name}")
+        if deb.stat().st_size < 4096:
+            fail(f"Linux DEB package is unexpectedly small: {deb.name}")
         details = [f'TGZ: "{package.name}" ({package.stat().st_size:,} bytes; archive opened successfully)']
         details.extend(verify_tar(package, system))
+        details.extend(verify_deb(deb))
     else:
         packages = sorted(path for path in dist.glob("*.dmg") if path.is_file())
         if len(packages) != 1:

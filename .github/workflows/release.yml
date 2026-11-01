@@ -104,12 +104,33 @@ jobs:
             throw "NSIS uninstallation failed with exit code $($uninstall.ExitCode)"
           }
 
-      - name: Install Linux smoke-test graphics runtime
+      - name: Smoke-test Linux DEB package
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          set -euo pipefail
+
+          package="$(find dist -maxdepth 1 -type f -name '*.deb' -print -quit)"
+          if [[ -z "$package" ]]; then
+            echo "::error::Linux DEB package not found"
+            exit 1
+          fi
+
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends libegl1
+          sudo apt-get install --yes --no-install-recommends "./$package"
+
+          cleanup() {
+            sudo apt-get remove --yes scalix >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          executable="$(dpkg-query -L scalix | awk '$0 ~ /\/bin\/sl$/ { print; exit }')"
+          if [[ -z "$executable" || ! -x "$executable" ]]; then
+            echo "::error::Installed DEB package is missing /usr/bin/sl"
+            exit 1
+          fi
+
+          xvfb-run -a env SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 "$executable" smoketest
 
       - name: Smoke-test Linux TGZ package
         if: runner.os == 'Linux'

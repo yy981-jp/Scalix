@@ -1,15 +1,11 @@
 @echo off
 
-set "BAZEL_COMPILER=mingw-gcc"
-if exist "C:\msys64\ucrt64\bin\gcc.exe" set "BAZEL_COMPILER=ucrt64-gcc"
-echo Using Bazel compiler: %BAZEL_COMPILER%
-
 pushd external\mediapipe
 
 
 bazel build ^
 	-c opt ^
- 	--copt=-O3 ^
+  	--copt=-O3 ^
 	--copt=-fomit-frame-pointer ^
 	--copt=-ffunction-sections ^
 	--copt=-fdata-sections ^
@@ -17,7 +13,7 @@ bazel build ^
 	 ^
 	--crosstool_top=//third_party/mingw_cc_toolchain:toolchain ^
 	--cpu=x64_windows ^
-	--compiler=%BAZEL_COMPILER% ^
+	--compiler=mingw-gcc ^
 	--define MEDIAPIPE_DISABLE_GPU=1 ^
 	--repo_env=HERMETIC_PYTHON_VERSION=3.12 ^
 	--copt=-DHAVE_PTHREAD ^
