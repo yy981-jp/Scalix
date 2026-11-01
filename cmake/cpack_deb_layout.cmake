@@ -34,6 +34,7 @@ endif()
 
 get_filename_component(_bin_directory "${_scalix_executable}" DIRECTORY)
 get_filename_component(_install_prefix "${_bin_directory}" DIRECTORY)
+get_filename_component(_staging_root "${_install_prefix}" DIRECTORY)
 set(_resources_directory "${_install_prefix}/resources")
 set(_licenses_directory "${_install_prefix}/share/licenses/Scalix")
 set(_documentation_directory "${_install_prefix}/share/doc/scalix")
@@ -53,27 +54,12 @@ file(MAKE_DIRECTORY
 )
 file(RENAME "${_resources_directory}" "${_install_prefix}/share/scalix/resources")
 
-# Runtime dependency installation can use a different staging path depending
-# on the CPack generator. Collect every bundled ELF shared library from the
-# package staging tree instead of assuming it was placed beside bin/sl.
-file(GLOB_RECURSE _staged_files LIST_DIRECTORIES false "${_stage_root}/*")
-set(_runtime_libraries)
-foreach(_candidate IN LISTS _staged_files)
-	get_filename_component(_candidate_name "${_candidate}" NAME)
-	if(_candidate_name MATCHES "\\.so($|\\.)")
-		string(FIND "${_candidate}" "${_runtime_library_directory}/" _already_in_runtime_directory)
-		if(_already_in_runtime_directory EQUAL 0)
-			continue()
-		endif()
-		list(APPEND _runtime_libraries "${_candidate}")
-	endif()
-endforeach()
-
+# Runtime dependencies must be staged beside bin/sl before they are moved
+# into the Debian private library directory. Do not recurse through the CPack
+# work directory: that can accidentally collect the host's absolute path tree.
+file(GLOB _runtime_libraries LIST_DIRECTORIES false "${_bin_directory}/*.so*")
 if(NOT _runtime_libraries)
-	message(FATAL_ERROR
-		"No bundled ELF shared libraries were staged under ${_stage_root}. "
-		"Expected runtime dependencies beside ${_scalix_executable} or elsewhere in the CPack staging tree."
-	)
+	message(FATAL_ERROR "No bundled ELF shared libraries found beside ${_scalix_executable}")
 endif()
 
 foreach(_library IN LISTS _runtime_libraries)
@@ -101,9 +87,12 @@ if(EXISTS "${_documentation_directory}/LICENSE" AND NOT EXISTS "${_documentation
 endif()
 file(REMOVE_RECURSE "${_install_prefix}/share/licenses")
 
-# The executable finds its private libraries in /usr/lib/scalix.
+# The executable finds private libraries in /usr/lib/scalix. Every bundled
+# library must use $ORIGIN too, not its original build-tree RUNPATH (which can
+# contain Bazel _solib paths or the CI workspace's absolute directories).
+find_program(_patchelf NAMES patchelf REQUIRED)
 execute_process(
-	COMMAND patchelf --set-rpath "$ORIGIN/../lib/scalix" "${_scalix_executable}"
+	COMMAND "${_patchelf}" --set-rpath "$ORIGIN/../lib/scalix" "${_scalix_executable}"
 	RESULT_VARIABLE _patchelf_result
 	OUTPUT_VARIABLE _patchelf_stdout
 	ERROR_VARIABLE _patchelf_stderr
@@ -114,11 +103,39 @@ if(NOT _patchelf_result EQUAL 0)
 	)
 endif()
 
+file(GLOB _runtime_library_files LIST_DIRECTORIES false "${_runtime_library_directory}/*.so*")
+set(_patched_library_count 0)
+foreach(_library IN LISTS _runtime_library_files)
+	if(IS_SYMLINK "${_library}")
+		continue()
+	endif()
+	execute_process(
+		COMMAND "${_patchelf}" --set-rpath "$ORIGIN" "${_library}"
+		RESULT_VARIABLE _patchelf_result
+		OUTPUT_VARIABLE _patchelf_stdout
+		ERROR_VARIABLE _patchelf_stderr
+	)
+	if(NOT _patchelf_result EQUAL 0)
+		message(FATAL_ERROR
+			"Could not set relocatable RUNPATH on ${_library}: "
+			"${_patchelf_stdout}${_patchelf_stderr}"
+		)
+	endif()
+	math(EXPR _patched_library_count "${_patched_library_count} + 1")
+endforeach()
+
+if(_patched_library_count EQUAL 0)
+	message(FATAL_ERROR "No real ELF shared libraries were found in ${_runtime_library_directory}")
+endif()
+
+# Previous staging versions could create this accidental tree by applying
+# DESTDIR twice in the custom install code. It is never part of the package.
+if(IS_DIRECTORY "${_staging_root}/home")
+	file(REMOVE_RECURSE "${_staging_root}/home")
+endif()
+
 if(NOT EXISTS "${_runtime_library_directory}/libsxmp_be.so")
 	message(FATAL_ERROR "Debian staging is missing lib/scalix/libsxmp_be.so")
-endif()
-if(NOT IS_DIRECTORY "${_runtime_library_directory}")
-	message(FATAL_ERROR "Debian staging is missing lib/scalix runtime directory")
 endif()
 if(NOT EXISTS "${_install_prefix}/share/scalix/resources/runtime")
 	message(FATAL_ERROR "Debian staging is missing share/scalix/resources/runtime")
@@ -126,5 +143,5 @@ endif()
 message(STATUS
 	"Prepared Debian/FHS layout under ${_install_prefix}; "
 	"moved ${_runtime_libraries} runtime libraries into ${_runtime_library_directory}; "
-	"dpkg-shlibdeps private search path: ${CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS}"
+	"rewrote RUNPATH on ${_patched_library_count} shared libraries"
 )
