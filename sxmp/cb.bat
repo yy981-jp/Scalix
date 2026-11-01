@@ -6,18 +6,23 @@ if exist "C:\msys64\ucrt64\bin\gcc.exe" set "BAZEL_COMPILER=ucrt64-gcc"
 echo Using Bazel compiler: %BAZEL_COMPILER%
 
 set "BAZEL_COMMAND=bazel"
-if defined BAZEL_EXE set "BAZEL_COMMAND="%BAZEL_EXE%""
+if defined BAZEL_EXE set "BAZEL_COMMAND=%BAZEL_EXE%"
 
 set "BAZEL_STARTUP_ARGS="
-if defined BAZEL_OUTPUT_BASE set "BAZEL_STARTUP_ARGS=--output_base="%BAZEL_OUTPUT_BASE%""
+if defined BAZEL_OUTPUT_BASE set "BAZEL_STARTUP_ARGS=--output_base=%BAZEL_OUTPUT_BASE%"
 
 set "BAZEL_BUILD_ARGS="
-if defined BAZEL_DISK_CACHE set "BAZEL_BUILD_ARGS=--disk_cache="%BAZEL_DISK_CACHE%""
-if defined BAZEL_REPOSITORY_CACHE set "BAZEL_BUILD_ARGS=%BAZEL_BUILD_ARGS% --repository_cache="%BAZEL_REPOSITORY_CACHE%""
+if defined BAZEL_DISK_CACHE set "BAZEL_BUILD_ARGS=%BAZEL_BUILD_ARGS% --disk_cache=%BAZEL_DISK_CACHE%"
+if defined BAZEL_REPOSITORY_CACHE set "BAZEL_BUILD_ARGS=%BAZEL_BUILD_ARGS% --repository_cache=%BAZEL_REPOSITORY_CACHE%"
+
+echo Using Bazel executable: "%BAZEL_COMMAND%"
+if defined BAZEL_OUTPUT_BASE echo Using Bazel output base: %BAZEL_OUTPUT_BASE%
+if defined BAZEL_DISK_CACHE echo Using Bazel disk cache: %BAZEL_DISK_CACHE%
+if defined BAZEL_REPOSITORY_CACHE echo Using Bazel repository cache: %BAZEL_REPOSITORY_CACHE%
 
 pushd external\mediapipe || exit /b 1
 
-%BAZEL_COMMAND% %BAZEL_STARTUP_ARGS% build ^
+"%BAZEL_COMMAND%" %BAZEL_STARTUP_ARGS% build ^
 	--announce_rc ^
 	%BAZEL_BUILD_ARGS% ^
 	-c opt ^
