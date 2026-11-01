@@ -274,7 +274,7 @@ def validate_payload(
 
     if system == "macos":
         required_files.append("Contents/Resources/icon.icns")
-    else:
+    elif system == "linux":
         required_files.extend((
             "share/applications/scalix.desktop",
             "share/icons/hicolor/48x48/apps/scalix.png",
