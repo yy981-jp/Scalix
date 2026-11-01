@@ -1,11 +1,13 @@
 #include <mocap/mocap.h>
 
+#include <SDL3/SDL_camera.h>
 #include <y9inc/time.h>
+
+#include <proto/pose.pb.h>
 
 #include <util/path.h>
 #include <def/fs.h>
 #include <mocap/pose.h>
-#include <proto/pose.pb.h>
 
 
 void Mocap::update() {
@@ -35,6 +37,11 @@ Mocap::Mocap():
 	socket(io, asio::ip::udp::v4()),
 	endpoint(asio::ip::make_address("127.0.0.1"), 51801)
 {
+    int camCount = 0;
+    SDL_CameraID *cameras = SDL_GetCameras(&camCount);
+	SDL_free(cameras);
+	// if (!camCount) // TODO: どうする loggerでも作るか?
+
 	fs::path modelpath = syspath.resource / "models" / "pose" / "full.task";
 	backend.init(modelpath.string());
 	cap.open(0);
@@ -45,8 +52,8 @@ Mocap::Mocap():
 
 void mocapWorker(std::stop_token stoken) {
 	Mocap mocap;
-	while (!stoken.stop_requested()) {
+	do {
 		mocap.tick();
 		sleepc(tu::ml, 16);
-	}
+	} while(!stoken.stop_requested());
 }

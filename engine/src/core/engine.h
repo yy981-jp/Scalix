@@ -20,8 +20,10 @@
 
 #include <core/avatarSystem.h>
 #include <core/nodeRegistry.h>
-#include <physics/springBone.h>
+#include <physics/physics.h>
 #include <mocap/recv.h>
+
+#include <memory>
 #include <mocap/poseSolver.h>
 
 
@@ -40,7 +42,21 @@ enum class EngineMode {
 
 
 class Engine {
+	struct SDLRuntime {
+		SDL_Window* window = nullptr;
+		bool initialized = false;
+
+		~SDLRuntime() {
+			if (window)
+				SDL_DestroyWindow(window);
+			if (initialized)
+				SDL_Quit();
+		}
+	};
+
+	SDLRuntime sdlRuntime;
 	EngineMode emode;
+	uint64_t frame = 0;
 
 	GlobalContext gctx = {
 		// .keyStat = keyStat,
@@ -66,8 +82,7 @@ class Engine {
 	bgfx::UniformHandle u_bones;
 	int usingUni;
 	AvatarSystem avatarSystem;
-
-	SpringBoneSystem springBoneSystem;
+	PhysicsSystem physicsSystem;
 
 	Camera cam0;
 	CameraType camId;
@@ -75,7 +90,7 @@ class Engine {
 	Grid grid;
 
 	std::jthread mocapThr;
-	Recv receiver;
+	std::unique_ptr<Recv> receiver;
 	PoseSolver* poseSolver;
 
 	int width, height;

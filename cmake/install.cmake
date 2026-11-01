@@ -1,5 +1,11 @@
 set(_scalix_runtime_dependency_module "${CMAKE_CURRENT_LIST_DIR}/runtime_dependencies.cmake")
 include("${_scalix_runtime_dependency_module}")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	# Resolve the packaged executable's adjacent shared libraries relative to
+	# itself instead of relying on the build machine's library paths.
+	set_property(TARGET sl PROPERTY INSTALL_RPATH "$ORIGIN")
+endif()
 get_filename_component(SCALIX_COMPILER_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
 
 set(_scalix_runtime_search_directories
@@ -72,12 +78,29 @@ install(
 	PATTERN ".git" EXCLUDE
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	# Install a freedesktop launcher and hicolor icons so desktop environments
+	# can discover Scalix independently of SDL's per-window icon support.
+	foreach(_size IN ITEMS 48 128 256)
+		install(
+			FILES "${CMAKE_SOURCE_DIR}/assets/dist/icons/icon-${_size}.png"
+			DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${_size}x${_size}/apps"
+			RENAME "scalix.png"
+		)
+	endforeach()
+
+	install(
+		FILES "${CMAKE_SOURCE_DIR}/cmake/scalix.desktop"
+		DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+	)
+endif()
+
 install(CODE "
 	include(\"${_scalix_runtime_dependency_module}\")
 	scalix_resolve_runtime_dependencies(
 		INSTALL_MODE
 		STRICT
-		EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\"
+		EXECUTABLE \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\"
 		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${_scalix_runtime_install_destination}\"
 		PLATFORM \"${SCALIX_RUNTIME_DEPENDENCY_PLATFORM}\"
 		TOOL \"${SCALIX_RUNTIME_DEPENDENCY_TOOL}\"

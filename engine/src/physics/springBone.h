@@ -39,7 +39,7 @@ public:
 		chains.push_back(chain);
 	}
 
-	void update(float dt) {
+	void tick(float dt) {
 		for (auto& chain: chains) {
 			chain.update(dt);
 		}

@@ -8,14 +8,20 @@
 		{
 			"origin": "ghrel",
 			"remote": "init.glb",
-			"local": "avatars/init.glb",
+			"local":  "avatars/init.glb",
 			"sha256": "71c68c6f94e34ce5bbe93d9091736e1914fcfb07a609f12bbe474217e651bf4b"
 		},
 		{
 			"origin": "model",
 			"remote": "pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task",
-			"local": "models/pose/full.task",
+			"local":  "models/pose/full.task",
 			"sha256": "4eaa5eb7a98365221087693fcc286334cf0858e2eb6e15b506aa4a7ecdcec4ad"
+		},
+		{
+			"origin": "ghrel",
+			"remote": "NotoSansJP.ttf",
+			"local":  "ui/NotoSansJP.ttf",
+			"sha256": "04b2ac921347b12c63bc35adda5722dd2b1860d900f668dc5050a44202464fa5"
 		}
 	]
 }

@@ -68,57 +68,34 @@ runs:
         disk-cache: sxmp-backend-${{ runner.os }}-${{ runner.arch }}
         # Rotate Windows caches because the initial failed run saved an empty cache.
         cache-version: ${{ runner.os == 'Windows' && '2' || '1' }}
-        # Temporarily enable this on Windows to measure the impact on CI time.
-        # Revert if restoring extracted repositories brings back absolute-path include errors.
         external-cache: true
-        repository-cache: true
+        # repository-cacheがcacheの容量を食い潰してる疑惑があるため
+        repository-cache: false
         module-root: sxmp/external/mediapipe
+        output-base: ${{ runner.os == 'Windows' && 'D:/_bazel' || '' }}
 
     - name: Build sxmp backend (Windows)
       if: runner.os == 'Windows'
       shell: msys2 {0}
-      working-directory: sxmp/external/mediapipe
+      working-directory: sxmp
       env:
         USE_BAZEL_VERSION: 7.4.1
       run: |
-        BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
-        if [[ ! -x "$BAZEL" ]]; then
-          echo "::error::Bazelisk executable not found: $BAZEL"
+        BAZEL_EXE="$(cygpath -w "$RUNNER_TOOL_CACHE")"
+        BAZEL_EXE="${BAZEL_EXE}\\bazelisk\\1.29.0\\x64\\bazel.exe"
+        if [[ ! -f "$(cygpath -u "$BAZEL_EXE")" ]]; then
+          echo "::error::Bazelisk executable not found: $BAZEL_EXE"
           exit 1
         fi
 
-        # setup-bazel's disk/repository cache paths are on D: for hosted Windows.
-        # Pass these paths directly because MSYS2 may use a different HOME than
-        # the setup-bazel action that writes the user .bazelrc.
-        DISK_CACHE="D:/_bazel-disk"
-        REPOSITORY_CACHE="D:/_bazel-repo"
-        mkdir -p "$(cygpath -u "$DISK_CACHE")" \
-          "$(cygpath -u "$REPOSITORY_CACHE")"
+        # Keep setup-bazel's cache paths and the Bazel process on the same output base.
+        # Pass it explicitly because MSYS2 may resolve a different HOME/.bazelrc.
+        export BAZEL_EXE
+        export BAZEL_OUTPUT_BASE="D:/_bazel"
+        export BAZEL_DISK_CACHE="D:/_bazel-disk"
+        export BAZEL_REPOSITORY_CACHE="D:/_bazel-repo"
 
-        "$BAZEL" \
-          build \
-          --announce_rc \
-          --disk_cache="$DISK_CACHE" \
-          --repository_cache="$REPOSITORY_CACHE" \
-          -c opt \
-          --copt=-O3 \
-          --copt=-fomit-frame-pointer \
-          --copt=-ffunction-sections \
-          --copt=-fdata-sections \
-          --linkopt=-Wl,--gc-sections \
-          --crosstool_top=//third_party/mingw_cc_toolchain:toolchain \
-          --cpu=x64_windows \
-          --compiler=mingw-gcc \
-          --define MEDIAPIPE_DISABLE_GPU=1 \
-          --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
-          --copt=-DHAVE_PTHREAD \
-          --host_copt=-DHAVE_PTHREAD \
-          --copt=-D_WIN32_WINNT=0x0601 \
-          --host_copt=-D_WIN32_WINNT=0x0601 \
-          --copt=-fno-canonical-system-headers \
-          --reuse_sandbox_directories \
-          @sxmp//:sxmp_be \
-          @sxmp//:sxmp_be_import_lib
+        cmd.exe //c cb.bat
 
     - name: Verify sxmp backend runtime DLL (Windows)
       if: runner.os == 'Windows'
@@ -139,7 +116,7 @@ runs:
           echo "::error::Bazel finished without producing libsxmp_be.dll."
           echo "Bazel's declared output files:"
           BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
-          "$BAZEL" cquery --output=files @sxmp//:sxmp_be || true
+          "$BAZEL" --output_base="D:/_bazel" cquery --output=files @sxmp//:sxmp_be || true
           echo "Available sxmp backend outputs:"
           find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
           exit 1
@@ -159,9 +136,14 @@ runs:
       env:
         USE_BAZEL_VERSION: 7.4.1
       run: |
-        LINK_GC_ARGS=()
+        LINK_ARGS=(
+          --copt=-fvisibility=hidden
+        )
         if [[ "$RUNNER_OS" == "Linux" ]]; then
-          LINK_GC_ARGS+=(--linkopt=-Wl,--gc-sections)
+          LINK_ARGS+=(
+            --linkopt=-Wl,--gc-sections
+            --linkopt=-Wl,--exclude-libs,ALL
+          )
         fi
 
         bazel build \
@@ -170,7 +152,7 @@ runs:
           --copt=-fomit-frame-pointer \
           --copt=-ffunction-sections \
           --copt=-fdata-sections \
-          "${LINK_GC_ARGS[@]}" \
+          "${LINK_ARGS[@]}" \
           --define MEDIAPIPE_DISABLE_GPU=1 \
           --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
           --reuse_sandbox_directories \
@@ -207,6 +189,33 @@ runs:
           find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
           exit 1
         fi
+
+        # Protobuf and Abseil are private implementation details of the backend.
+        # They must not leak into the process-wide symbol namespace or be
+        # supplied by the Engine's separately linked Protobuf runtime.
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          exported_symbols="$(nm -D -g --defined-only "$runtime_library")"
+          unresolved_symbols="$(nm -D --undefined-only "$runtime_library")"
+        else
+          exported_symbols="$(nm -gU "$runtime_library")"
+          unresolved_symbols="$(nm -u "$runtime_library")"
+        fi
+
+        if ! grep -q 'SXMocapBackend' <<<"$exported_symbols"; then
+          echo "::error::SXMocapBackend public API symbols are not exported."
+          exit 1
+        fi
+        if grep -Eq 'google.*protobuf|absl' <<<"$exported_symbols"; then
+          echo "::error::Private Protobuf/Abseil symbols are still exported by libsxmp_be."
+          grep -E 'google.*protobuf|absl' <<<"$exported_symbols" | head -n 20
+          exit 1
+        fi
+        if grep -Eq 'google.*protobuf|absl' <<<"$unresolved_symbols"; then
+          echo "::error::libsxmp_be still depends on process-global Protobuf/Abseil symbols."
+          grep -E 'google.*protobuf|absl' <<<"$unresolved_symbols" | head -n 20
+          exit 1
+        fi
+        echo "Verified: SXMocapBackend API exported; Protobuf/Abseil symbols remain private."
 
         if [[ "$RUNNER_OS" == "macOS" ]]; then
           # Stage a copy instead of modifying Bazel's output/cache artifact.

@@ -1,6 +1,6 @@
 bazel build ^
 	--cpu=x64_windows ^
-	--compiler=mingw-gcc ^
+	--compiler=ucrt64-gcc ^
 	--define MEDIAPIPE_DISABLE_GPU=1 ^
 	--repo_env=HERMETIC_PYTHON_VERSION=3.12 ^
 	--copt=-DHAVE_PTHREAD ^
@@ -14,7 +14,7 @@ bazel build ^
 bazel build ^
   --crosstool_top=//third_party/mingw_cc_toolchain:toolchain ^
   --cpu=x64_windows ^
-  --compiler=mingw-gcc ^
+  --compiler=ucrt64-gcc ^
   --define MEDIAPIPE_DISABLE_GPU=1 ^
   --repo_env=HERMETIC_PYTHON_VERSION=3.12 ^
   --copt=-DHAVE_PTHREAD ^
@@ -22,7 +22,7 @@ bazel build ^
   --copt=-D_WIN32_WINNT=0x0601 ^
   --host_copt=-D_WIN32_WINNT=0x0601 ^
   --copt=-fno-canonical-system-headers ^
-  --linkopt=-LC:/msys64/mingw64/lib ^
+  --linkopt=-LC:/msys64/ucrt64/lib ^
   --linkopt=-lopencv_geometry ^
   --verbose_failures --subcommands --sandbox_debug ^
   @sxmp//:sxmp
@@ -30,7 +30,7 @@ bazel build ^
 bazel run //:refresh_compile_commands ^
 	--crosstool_top=//third_party/mingw_cc_toolchain:toolchain ^
 	--cpu=x64_windows ^
-	--compiler=mingw-gcc ^
+	--compiler=ucrt64-gcc ^
 	--define MEDIAPIPE_DISABLE_GPU=1 ^
 	--repo_env=HERMETIC_PYTHON_VERSION=3.12 ^
 	--copt=-DHAVE_PTHREAD ^
@@ -38,13 +38,13 @@ bazel run //:refresh_compile_commands ^
 	--copt=-D_WIN32_WINNT=0x0601 ^
 	--host_copt=-D_WIN32_WINNT=0x0601 ^
 	--copt=-fno-canonical-system-headers ^
-	--linkopt=-LC:/msys64/mingw64/lib ^
+	--linkopt=-LC:/msys64/ucrt64/lib ^
 	--linkopt=-lopencv_geometry ^
 	--verbose_failures --subcommands --sandbox_debug ^
 	-- ^
 	--crosstool_top=//third_party/mingw_cc_toolchain:toolchain ^
 	--cpu=x64_windows ^
-	--compiler=mingw-gcc ^
+	--compiler=ucrt64-gcc ^
 	--define MEDIAPIPE_DISABLE_GPU=1 ^
 	--repo_env=HERMETIC_PYTHON_VERSION=3.12 ^
 	--copt=-DHAVE_PTHREAD ^
@@ -52,8 +52,10 @@ bazel run //:refresh_compile_commands ^
 	--copt=-D_WIN32_WINNT=0x0601 ^
 	--host_copt=-D_WIN32_WINNT=0x0601 ^
 	--copt=-fno-canonical-system-headers ^
-	--linkopt=-LC:/msys64/mingw64/lib ^
+	--linkopt=-LC:/msys64/ucrt64/lib ^
 	--linkopt=-lopencv_geometry
+
+
 
 external\mediapipe\bazel-bin\external\sxmp\sxmp.exe
 
@@ -74,7 +76,7 @@ bazel build -c opt \
 bazel build -c opt ^
   --crosstool_top=//third_party/mingw_cc_toolchain:toolchain ^
   --cpu=x64_windows ^
-  --compiler=mingw-gcc ^
+  --compiler=ucrt64-gcc ^
   --define MEDIAPIPE_DISABLE_GPU=1 ^
   --repo_env=HERMETIC_PYTHON_VERSION=3.12 ^
   --copt=-DHAVE_PTHREAD ^
@@ -85,6 +87,6 @@ bazel build -c opt ^
   --verbose_failures ^
   --subcommands ^
   --sandbox_debug ^
-  --linkopt=-LC:/msys64/mingw64/lib ^
+  --linkopt=-LC:/msys64/ucrt64/lib ^
   --linkopt=-lopencv_geometry ^
   @sxmp//:sxmp_be

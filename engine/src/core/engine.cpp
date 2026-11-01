@@ -3,6 +3,9 @@
 #include <mocap/mocap.h>
 
 #include <stdexcept>
+#include <string>
+#include <cstring>
+#include <cstdint>
 #include <bx/math.h>
 
 #include <gfx/shader.h>
@@ -10,10 +13,13 @@
 #include <util/path.h>
 #include <core/config.h>
 #include <physics/util.h>
+#include <def/fs.h>
 
 
 Engine::Engine(EngineMode emode): emode(emode) {
-	SDL_Init(SDL_INIT_VIDEO);
+	if (!SDL_Init(SDL_INIT_VIDEO))
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.initialized = true;
 
 	// ===== window 作成 (SDL) =====
 	window = SDL_CreateWindow(
@@ -21,6 +27,9 @@ Engine::Engine(EngineMode emode): emode(emode) {
 		T_WIDTH, T_HEIGHT,
 		0
 	);
+	if (!window)
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.window = window;
 	SDL_SetWindowFullscreen(window, true);
 
 	// path system
@@ -36,7 +45,9 @@ Engine::Engine(EngineMode emode): emode(emode) {
 	// ===== bgfx初期化 =====
 	bgfx::PlatformData pd{};
 
-	SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	if (!props)
+		throw std::runtime_error(std::string("Get window properties: ") + SDL_GetError());
 
 	#if defined(_WIN32)
 		pd.nwh = SDL_GetPointerProperty(
@@ -45,13 +56,41 @@ Engine::Engine(EngineMode emode): emode(emode) {
 			nullptr
 		);
 	#elif defined(__linux__)
-		pd.nwh = reinterpret_cast<void*>(
-			SDL_GetNumberProperty(
+		const char* videoDriver = SDL_GetCurrentVideoDriver();
+		if (!videoDriver)
+			throw std::runtime_error("Get current SDL video driver");
+
+		if (std::strcmp(videoDriver, "x11") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
 				props,
-				SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
-				0
-			)
-		);
+				SDL_PROP_WINDOW_X11_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = reinterpret_cast<void*>(static_cast<std::uintptr_t>(
+				SDL_GetNumberProperty(
+					props,
+					SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
+					0
+				)
+			));
+		} else if (std::strcmp(videoDriver, "wayland") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER,
+				nullptr
+			);
+			pd.type = bgfx::NativeWindowHandleType::Wayland;
+		} else {
+			throw std::runtime_error(std::string("Unsupported SDL video driver: ") + videoDriver);
+		}
+
+		if (!pd.ndt || !pd.nwh)
+			throw std::runtime_error(std::string("Get native window handles for SDL video driver: ") + videoDriver);
 	#elif defined(__APPLE__)
 		pd.nwh = SDL_GetPointerProperty(
 			props,
@@ -65,8 +104,7 @@ Engine::Engine(EngineMode emode): emode(emode) {
 
 	bgfx::Init init{};
 	init.type = bgfx::RendererType::Count;
-
-	init.platformData.nwh = pd.nwh;
+	init.platformData = pd;
 
 	init.resolution.width = width;
 	init.resolution.height = height;
@@ -91,11 +129,7 @@ Engine::Engine(EngineMode emode): emode(emode) {
 
 }
 
-Engine::~Engine() {
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-	// IMG_Quit();
-}
+Engine::~Engine() = default;
 
 void Engine::tick() {
 	SDL_Event event;
@@ -160,6 +194,10 @@ void Engine::tick() {
 
 
 	bgfx::frame();
+
+	frame++;
+	if (emode == EngineMode::smokeTest && frame >= 100) // 数値は適当
+		running = false;
 }
 
 
@@ -168,10 +206,10 @@ void Engine::update(float dt) {
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
 		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
 	);
-	springBoneSystem.update(dt);
+	physicsSystem.tick(dt);
 
 	PoseFrame frame;
-	if (receiver.tick(frame)) {
+	if (receiver && receiver->tick(frame)) {
 		poseSolver->solve(frame);
 	}
 
@@ -205,22 +243,32 @@ void Engine::gameInit() {
 	// ===== load glTF ====
 	// nodeReg.setAvatarSystemPtr(&avatarSystem);
 	const auto& avaIdNode = cfg.get()["avatar"]["id"];
-	// if (!avaIdNode.is_null()) {
-	avatarSystem.loadData({
-		UUID::fromString(
-			avaIdNode.get<std::string>()
-		)
-	});
+	AvatarId avaId;
+	if (!avaIdNode.is_null()) {
+		avaId = UUID::fromString(avaIdNode.get<std::string>());
+	} else {
+		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.glb";
+		if (!fs::exists(dest)) {
+			const auto& orig = syspath.resource / "avatars" / "init.glb";
+			const auto& dest_parent = dest.parent_path();
+			if (!fs::exists(dest_parent))
+				fs::create_directories(dest_parent);
+			fs::copy(orig,dest);
+		}
+		avaId = UUID{0,0};
+	}
+	avatarSystem.loadData(avaId);
 
 
 	// ===== load Shader =====
+	const auto shaderDirectory = getRuntimeShaderDirectory(syspath.resource);
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(
-		(syspath.resource / "runtime/vs_tex.bin").string(),
-		(syspath.resource / "runtime/fs_tex.bin").string()
+		(shaderDirectory / "vs_tex.bin").string(),
+		(shaderDirectory / "fs_tex.bin").string()
 	);
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram(
-		(syspath.resource / "runtime/vs_grid.bin").string(),
-		(syspath.resource / "runtime/fs_grid.bin").string()
+		(shaderDirectory / "vs_grid.bin").string(),
+		(shaderDirectory / "fs_grid.bin").string()
 	);
 	
 	debug.init();
@@ -240,19 +288,12 @@ void Engine::gameInit() {
 
 	poseSolver = new PoseSolver{avatarSystem.player()};
 
-	
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,113)) )); // back d l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,117)) )); // back d r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,105)) )); // back c l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,109)) )); // back c r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,120)) )); // back e l
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,123)) )); // back e r
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,98)) )); // back a
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,101)) )); // back b
-	springBoneSystem.add(SpringBoneChain( detectBonePath(nodeReg.findFromAvaId(avatarSystem.player().id,199)) )); // 
+	physicsSystem.init(avatarSystem.player());
 
-	if (cfg.get()["mocap"].get<bool>())
+	if (cfg.get()["mocap"].get<bool>()) {
+		receiver = std::make_unique<Recv>();
 		mocapThr = std::jthread(mocapWorker);
+	}
 }
 
 void Engine::onKeyDown(const SDL_KeyboardEvent& e) {

@@ -1,4 +1,5 @@
 #include <ui/rml.h>
+#include <gfx/shader.h>
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
@@ -342,7 +343,7 @@ void RmlUiLayer::init(int width, int height) {
 		.view_id = static_cast<bgfx::ViewId>(ViewId::ui),
 		.width = width,
 		.height = height,
-		.shader_directory = syspath.resource / "runtime",
+		.shader_directory = getRuntimeShaderDirectory(syspath.resource),
 		.texture_loader = loadRmlUiTexture
 	};
 	backend.init(config);

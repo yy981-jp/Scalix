@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Scalix
+Comment=High-performance 3D avatar engine
+Exec=sl
+TryExec=sl
+Icon=scalix
+Terminal=false
+Categories=Graphics;3DGraphics;
+StartupNotify=true
