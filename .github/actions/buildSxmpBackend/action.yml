@@ -95,7 +95,7 @@ runs:
         export BAZEL_DISK_CACHE="D:/_bazel-disk"
         export BAZEL_REPOSITORY_CACHE="D:/_bazel-repo"
 
-        cmd.exe /c cb.bat
+        cmd.exe //c cb.bat
 
     - name: Verify sxmp backend runtime DLL (Windows)
       if: runner.os == 'Windows'
@@ -116,7 +116,7 @@ runs:
           echo "::error::Bazel finished without producing libsxmp_be.dll."
           echo "Bazel's declared output files:"
           BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
-          "$BAZEL" cquery --output=files @sxmp//:sxmp_be || true
+          "$BAZEL" --output_base="D:/_bazel" cquery --output=files @sxmp//:sxmp_be || true
           echo "Available sxmp backend outputs:"
           find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
           exit 1
