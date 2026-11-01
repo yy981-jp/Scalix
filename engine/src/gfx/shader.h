@@ -5,3 +5,4 @@
 
 bgfx::ShaderHandle loadShader(const std::string& path);
 bgfx::ProgramHandle loadProgram(const std::string& vs, const std::string& fs);
+fs::path getRuntimeShaderDirectory(const fs::path& resourceDirectory);

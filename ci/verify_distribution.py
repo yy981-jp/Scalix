@@ -16,12 +16,24 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Callable
 
-SHADERS = (
-    "resources/runtime/vs_tex.bin",
-    "resources/runtime/fs_tex.bin",
-    "resources/runtime/vs_grid.bin",
-    "resources/runtime/fs_grid.bin",
+SHADER_NAMES = (
+    "vs_tex.bin",
+    "fs_tex.bin",
+    "vs_grid.bin",
+    "fs_grid.bin",
+    "vs_rmlui_bgfx.bin",
+    "fs_rmlui_bgfx.bin",
 )
+
+
+def runtime_shader_files(system: str) -> tuple[str, ...]:
+    if system == "linux":
+        return tuple(
+            f"resources/runtime/{renderer}/{name}"
+            for renderer in ("opengl", "vulkan")
+            for name in SHADER_NAMES
+        )
+    return tuple(f"resources/runtime/{name}" for name in SHADER_NAMES)
 LICENSES = (
     "share/licenses/Scalix/LICENSE",
     "share/licenses/Scalix/THIRD_PARTY_NOTICES.md",
@@ -110,8 +122,9 @@ def verify_build() -> None:
     if system != "windows" and not (binary.stat().st_mode & stat.S_IXUSR):
         fail(f"Native executable is not marked executable: {binary}")
 
+    shader_files = runtime_shader_files(system)
     missing_shaders = []
-    for relative in SHADERS:
+    for relative in shader_files:
         shader = root / relative
         if not shader.is_file() or shader.stat().st_size == 0:
             missing_shaders.append(relative)
@@ -145,7 +158,7 @@ def verify_build() -> None:
         f"Build output verified ({system})",
         [
             f'Executable: "{binary.relative_to(root).as_posix()}" ({binary_size:,} bytes; valid native signature)',
-            f"Runtime shaders: {len(SHADERS)}/{len(SHADERS)} present and non-empty",
+            f"Runtime shaders: {len(shader_files)}/{len(shader_files)} present and non-empty",
             *verified_icons,
         ],
     )
@@ -228,11 +241,10 @@ def validate_payload(
         f'"{library_path}" ({size_for(library_path):,} bytes)',
     ]
 
-    shader_paths = (
-        [relative.removeprefix("resources/") for relative in SHADERS]
-        if system == "macos"
-        else list(SHADERS)
-    )
+    shader_paths = [
+        relative.removeprefix("resources/") if system == "macos" else relative
+        for relative in runtime_shader_files(system)
+    ]
     required_files = [
         *(f"{resources_prefix}{relative}" for relative in shader_paths),
         f"{resources_prefix}assets/icon.webp",

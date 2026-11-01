@@ -229,13 +229,14 @@ void Engine::gameInit() {
 
 
 	// ===== load Shader =====
+	const auto shaderDirectory = getRuntimeShaderDirectory(syspath.resource);
 	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(
-		(syspath.resource / "runtime/vs_tex.bin").string(),
-		(syspath.resource / "runtime/fs_tex.bin").string()
+		(shaderDirectory / "vs_tex.bin").string(),
+		(shaderDirectory / "fs_tex.bin").string()
 	);
 	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram(
-		(syspath.resource / "runtime/vs_grid.bin").string(),
-		(syspath.resource / "runtime/fs_grid.bin").string()
+		(shaderDirectory / "vs_grid.bin").string(),
+		(shaderDirectory / "fs_grid.bin").string()
 	);
 	
 	debug.init();
