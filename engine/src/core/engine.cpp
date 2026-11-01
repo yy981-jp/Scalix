@@ -3,6 +3,9 @@
 #include <mocap/mocap.h>
 
 #include <stdexcept>
+#include <string>
+#include <cstring>
+#include <cstdint>
 #include <bx/math.h>
 
 #include <gfx/shader.h>
@@ -42,7 +45,9 @@ Engine::Engine(EngineMode emode): emode(emode) {
 	// ===== bgfx初期化 =====
 	bgfx::PlatformData pd{};
 
-	SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	if (!props)
+		throw std::runtime_error(std::string("Get window properties: ") + SDL_GetError());
 
 	#if defined(_WIN32)
 		pd.nwh = SDL_GetPointerProperty(
@@ -51,13 +56,41 @@ Engine::Engine(EngineMode emode): emode(emode) {
 			nullptr
 		);
 	#elif defined(__linux__)
-		pd.nwh = reinterpret_cast<void*>(
-			SDL_GetNumberProperty(
+		const char* videoDriver = SDL_GetCurrentVideoDriver();
+		if (!videoDriver)
+			throw std::runtime_error("Get current SDL video driver");
+
+		if (std::strcmp(videoDriver, "x11") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
 				props,
-				SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
-				0
-			)
-		);
+				SDL_PROP_WINDOW_X11_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = reinterpret_cast<void*>(static_cast<std::uintptr_t>(
+				SDL_GetNumberProperty(
+					props,
+					SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
+					0
+				)
+			));
+		} else if (std::strcmp(videoDriver, "wayland") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER,
+				nullptr
+			);
+			pd.type = bgfx::NativeWindowHandleType::Wayland;
+		} else {
+			throw std::runtime_error(std::string("Unsupported SDL video driver: ") + videoDriver);
+		}
+
+		if (!pd.ndt || !pd.nwh)
+			throw std::runtime_error(std::string("Get native window handles for SDL video driver: ") + videoDriver);
 	#elif defined(__APPLE__)
 		pd.nwh = SDL_GetPointerProperty(
 			props,
@@ -71,8 +104,7 @@ Engine::Engine(EngineMode emode): emode(emode) {
 
 	bgfx::Init init{};
 	init.type = bgfx::RendererType::Count;
-
-	init.platformData.nwh = pd.nwh;
+	init.platformData = pd;
 
 	init.resolution.width = width;
 	init.resolution.height = height;
@@ -111,7 +143,7 @@ void Engine::tick() {
 			case SDL_EVENT_KEY_DOWN:			onKeyDown(event.key);			break;
 			case SDL_EVENT_KEY_UP:				onKeyUp(event.key);			break;
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:	onMouseBtDown(event.button);	break;
-			case SDL_EVENT_MOUSE_BUTTON_UP:		onMouseBtUp(event.button);	break;
+			case SDL_EVENT_MOUSE_BUTTON_UP:		onMouseBtUp(event.button);		break;
 			case SDL_EVENT_MOUSE_MOTION:		onMouseMt(event.motion);		break;
 		}
 
@@ -292,7 +324,7 @@ void Engine::onMouseBtUp(const SDL_MouseButtonEvent& e) {
 // void Engine::onWindowEve(const SDL_WindowEvent& e) {
 // /*
 // 	if (e.event == SDL_EVENT_WINDOW_FOCUS_LOST) {
-// 		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
+// 		// ウィンドウがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
 // 	}
 // */
 // }
