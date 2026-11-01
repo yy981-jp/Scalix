@@ -3,9 +3,9 @@ OUTPUT_DIRECTORY		= docs
 OUTPUT_LANGUAGE		 = Japanese
 NUM_PROC_THREADS		= 32
 
-INPUT				   = engine/src importer/src shared
+INPUT				   = engine/src importer/src shared sxmp ui 
 RECURSIVE			   = YES
-EXCLUDE_PATTERNS		= */build/*
+EXCLUDE_PATTERNS		= */build/* */external/*
 
 JAVADOC_AUTOBRIEF	   = YES
 MULTILINE_CPP_IS_BRIEF  = YES
