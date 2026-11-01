@@ -143,7 +143,7 @@ void Engine::tick() {
 			case SDL_EVENT_KEY_DOWN:			onKeyDown(event.key);			break;
 			case SDL_EVENT_KEY_UP:				onKeyUp(event.key);			break;
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:	onMouseBtDown(event.button);	break;
-			case SDL_EVENT_MOUSE_BUTTON_UP:		onMouseBtUp(event.button);		break;
+			case SDL_EVENT_MOUSE_BUTTON_UP:		onMouseBtUp(event.button);	break;
 			case SDL_EVENT_MOUSE_MOTION:		onMouseMt(event.motion);		break;
 		}
 
@@ -324,7 +324,7 @@ void Engine::onMouseBtUp(const SDL_MouseButtonEvent& e) {
 // void Engine::onWindowEve(const SDL_WindowEvent& e) {
 // /*
 // 	if (e.event == SDL_EVENT_WINDOW_FOCUS_LOST) {
-// 		// ウィンドウがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
+// 		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
 // 	}
 // */
 // }
