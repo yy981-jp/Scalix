@@ -40,6 +40,7 @@ pushd external\mediapipe || exit /b 1
 	--host_copt=-DHAVE_PTHREAD ^
 	--copt=-D_WIN32_WINNT=0x0601 ^
 	--host_copt=-D_WIN32_WINNT=0x0601 ^
+	--copt=-no-canonical-prefixes ^
 	--copt=-fno-canonical-system-headers ^
 	--reuse_sandbox_directories ^
 	@sxmp//:sxmp_be ^
