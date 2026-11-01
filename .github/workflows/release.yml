@@ -104,6 +104,13 @@ jobs:
             throw "NSIS uninstallation failed with exit code $($uninstall.ExitCode)"
           }
 
+      - name: Install Linux smoke-test graphics runtime
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends libegl1
+
       - name: Smoke-test Linux TGZ package
         if: runner.os == 'Linux'
         shell: bash
