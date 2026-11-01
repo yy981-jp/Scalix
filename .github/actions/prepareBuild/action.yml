@@ -39,7 +39,7 @@ runs:
       if: runner.os == 'Windows'
       shell: pwsh
       env:
-        CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\mingw64\bin
+        CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\ucrt64\bin
       run: |
         $env:PATH = "$env:PATH;$env:CAIROCFFI_DLL_DIRECTORIES"
         python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
@@ -61,7 +61,7 @@ runs:
       if: runner.os == 'Windows'
       shell: pwsh
       env:
-        CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\\mingw64\\bin
+        CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\\ucrt64\\bin
       run: |
         $env:PATH = "$env:PATH;$env:CAIROCFFI_DLL_DIRECTORIES"
         python tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
