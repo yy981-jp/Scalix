@@ -404,7 +404,7 @@ def verify_deb(path: Path) -> list[str]:
             )
             if result.returncode != 0:
                 fail(f"Could not inspect ELF dynamic section for {binary}: {result.stdout}")
-            match = re.search(r"\\((?:RUNPATH|RPATH)\\).*?\\[(.*?)\\]", result.stdout)
+            match = re.search(r"\((?:RUNPATH|RPATH)\).*?\[(.*?)\]", result.stdout)
             if match is None:
                 fail(f"ELF file has no RPATH/RUNPATH: {binary}")
             actual = match.group(1)
