@@ -22,7 +22,13 @@ runs:
             sha256sum external/CMakeLists.txt
           } | sha256sum | cut -d' ' -f1
         )
-        key="external-v2-${{ runner.os }}-${{ runner.arch }}-${hash}"
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          # Windows external binaries must match the active MSYS2 runtime.
+          # Keep the old MINGW64 cache isolated from the UCRT64 toolchain.
+          key="external-v3-Windows-${{ runner.arch }}-ucrt64-${hash}"
+        else
+          key="external-v2-${{ runner.os }}-${{ runner.arch }}-${hash}"
+        fi
         echo "key=$key" >> "$GITHUB_OUTPUT"
 
 
