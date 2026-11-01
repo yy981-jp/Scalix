@@ -36,6 +36,15 @@ fs::path SysPath::getResourcePath() {
 		return normalized;
 	}
 	return (normalized / ".." / "resources").lexically_normal();
+#elif defined(SDL_PLATFORM_LINUX)
+	// Debian packages follow the FHS and keep application resources under
+	// /usr/share/scalix/resources. Portable TGZ packages and development
+	// builds retain the adjacent resources/ layout.
+	const auto debianResources =
+		(result / ".." / "share" / "scalix" / "resources").lexically_normal();
+	if (fs::is_directory(debianResources))
+		return debianResources;
+	return (result / ".." / "resources").lexically_normal();
 #else
 	return (result / ".." / "resources").lexically_normal();
 #endif

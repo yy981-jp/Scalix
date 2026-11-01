@@ -24,12 +24,14 @@ Animated WebP is treated as a still image; only its first frame is used.
 ```cmd
 python assetgen.py webp --original path/to/source.svg --output-dir build/generated
 python assetgen.py icon --original path/to/source.svg --output-dir build/generated/icons
+python assetgen.py icon --original path/to/source.svg --output-dir build/generated/icons --webp-output-dir build/generated/assets
 ```
 
 Optional arguments:
 
 - `--name NAME`: output filename stem (defaults to the source filename without extension)
 - `--quality 0-100`: WebP quality (default: `90`)
+- `--webp-output-dir DIRECTORY` (icon mode only): directory for the SDL WebP; defaults to `--output-dir`
 
 Existing outputs are overwritten on every run.
 
@@ -48,7 +50,7 @@ Existing outputs are overwritten on every run.
 - `<name>-48.png`
 - `<name>-128.png`
 - `<name>-256.png`
-- `<name>.webp`: 256x256, for SDL3
+- `<name>.webp`: 256x256, for SDL3; written to `--webp-output-dir` when supplied
 
 All icon outputs are square. The source aspect ratio is retained and any remaining canvas area is transparent padding; the image is never cropped or stretched.
 

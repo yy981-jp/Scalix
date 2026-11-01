@@ -246,12 +246,20 @@ function(scalix_resolve_runtime_dependencies)
 	endif()
 
 	if(ARG_INSTALL_MODE)
+		# file(INSTALL) applies DESTDIR when staging files. Keep the logical
+		# destination for the copy operation, then use the physical staged path
+		# for post-install inspection and RPATH rewriting.
 		file(INSTALL
 			DESTINATION "${ARG_DESTINATION}"
 			TYPE SHARED_LIBRARY
 			FOLLOW_SYMLINK_CHAIN
 			FILES ${_resolved_dependencies}
 		)
+
+		set(_runtime_destination "${ARG_DESTINATION}")
+		if(UNIX AND DEFINED ENV{DESTDIR} AND NOT "$ENV{DESTDIR}" STREQUAL "")
+			set(_runtime_destination "$ENV{DESTDIR}${ARG_DESTINATION}")
+		endif()
 
 		if(ARG_PLATFORM STREQUAL "linux+elf")
 			# The runtime libraries are installed next to the executable.
@@ -261,7 +269,7 @@ function(scalix_resolve_runtime_dependencies)
 			set(_linux_runtime_files "${ARG_EXECUTABLE}")
 			file(GLOB _linux_runtime_libraries
 				LIST_DIRECTORIES false
-				"${ARG_DESTINATION}/*.so*"
+				"${_runtime_destination}/*.so*"
 			)
 			foreach(_runtime_file IN LISTS _linux_runtime_libraries)
 				if(NOT IS_SYMLINK "${_runtime_file}")
@@ -295,7 +303,7 @@ function(scalix_resolve_runtime_dependencies)
 			set(_macos_runtime_files "${ARG_EXECUTABLE}")
 			foreach(_dependency IN LISTS _resolved_dependencies)
 				get_filename_component(_dependency_name "${_dependency}" NAME)
-				set(_installed_dependency "${ARG_DESTINATION}/${_dependency_name}")
+				set(_installed_dependency "${_runtime_destination}/${_dependency_name}")
 				if(EXISTS "${_installed_dependency}" AND NOT IS_DIRECTORY "${_installed_dependency}")
 					list(APPEND _macos_runtime_files "${_installed_dependency}")
 				endif()
@@ -330,7 +338,7 @@ function(scalix_resolve_runtime_dependencies)
 					endif()
 
 					get_filename_component(_load_basename "${_load_name}" NAME)
-					set(_bundled_library "${ARG_DESTINATION}/${_load_basename}")
+					set(_bundled_library "${_runtime_destination}/${_load_basename}")
 					if(NOT EXISTS "${_bundled_library}")
 						continue()
 					endif()

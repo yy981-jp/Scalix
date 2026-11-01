@@ -83,7 +83,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	# can discover Scalix independently of SDL's per-window icon support.
 	foreach(_size IN ITEMS 48 128 256)
 		install(
-			FILES "${CMAKE_SOURCE_DIR}/assets/dist/assets/icon-${_size}.png"
+			FILES "${CMAKE_SOURCE_DIR}/assets/dist/icons/icon-${_size}.png"
 			DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${_size}x${_size}/apps"
 			RENAME "scalix.png"
 		)
@@ -100,7 +100,7 @@ install(CODE "
 	scalix_resolve_runtime_dependencies(
 		INSTALL_MODE
 		STRICT
-		EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\"
+		EXECUTABLE \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${_scalix_installed_executable}\"
 		DESTINATION \"\${CMAKE_INSTALL_PREFIX}/${_scalix_runtime_install_destination}\"
 		PLATFORM \"${SCALIX_RUNTIME_DEPENDENCY_PLATFORM}\"
 		TOOL \"${SCALIX_RUNTIME_DEPENDENCY_TOOL}\"

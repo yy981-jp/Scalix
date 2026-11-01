@@ -18,6 +18,7 @@ def generate_icons(
 	*,
 	name: str | None = None,
 	quality: int = 90,
+	webp_output_dir: str | Path | None = None,
 ) -> list[Path]:
 	if not 0 <= quality <= 100:
 		raise ValueError("WebP quality must be between 0 and 100")
@@ -63,7 +64,11 @@ def generate_icons(
 		outputs.append(png_path)
 
 	# SDL3: a square WebP, preserving transparency.
-	webp_path = destination_dir / f"{output_name}.webp"
+	webp_destination_dir = (
+		Path(webp_output_dir) if webp_output_dir is not None else destination_dir
+	)
+	webp_destination_dir.mkdir(parents=True, exist_ok=True)
+	webp_path = webp_destination_dir / f"{output_name}.webp"
 	webp_options: dict[str, object] = {
 		"format": "WEBP",
 		"quality": quality,

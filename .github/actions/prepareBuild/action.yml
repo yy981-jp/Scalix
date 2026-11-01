@@ -14,6 +14,11 @@ runs:
         git config --global url."https://github.com/".insteadOf "git@github.com:"
         git submodule update --init --depth 1 assets
 
+    - name: Prepare generated asset directories
+      shell: bash
+      run: |
+        rm -rf assets/dist/assets assets/dist/icons
+
     - name: Setup env
       id: setup-env
       uses: ./.github/actions/setupCENV
@@ -42,20 +47,20 @@ runs:
         CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\ucrt64\bin
       run: |
         $env:PATH = "$env:PATH;$env:CAIROCFFI_DLL_DIRECTORIES"
-        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/icons --webp-output-dir assets/dist/assets --name icon
 
     - name: Generate icon assets (macOS)
       if: runner.os == 'macOS'
       shell: bash
       run: |
         export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix cairo)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
-        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/icons --webp-output-dir assets/dist/assets --name icon
 
     - name: Generate icon assets (Linux)
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/assets --name icon
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/icons --webp-output-dir assets/dist/assets --name icon
 
     - name: Generate logo WebP (Windows)
       if: runner.os == 'Windows'

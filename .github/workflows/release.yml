@@ -5,6 +5,7 @@ on:
     tags:
       - 'v*'
     branches:
+      - main
       - develop
       - ci/github-actions
 
@@ -104,41 +105,83 @@ jobs:
             throw "NSIS uninstallation failed with exit code $($uninstall.ExitCode)"
           }
 
-      - name: Install Linux smoke-test graphics runtime
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends libegl1
-
-      - name: Smoke-test Linux TGZ package
+      - name: Smoke-test Linux packages in a clean Ubuntu container
         if: runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
 
-          package="$(find dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
-          if [[ -z "$package" ]]; then
-            package="$(find dist -maxdepth 1 -type f -name '*.tgz' -print -quit)"
-          fi
-          if [[ -z "$package" ]]; then
-            echo "::error::Linux TGZ package not found"
-            exit 1
-          fi
+          # Use a fresh Ubuntu root filesystem instead of the preloaded GitHub
+          # runner, whose packages can accidentally satisfy missing dependencies.
+          docker run --rm --platform linux/amd64 \
+            --volume "$GITHUB_WORKSPACE/dist:/dist:ro" \
+            ubuntu:24.04 \
+            bash -euo pipefail -c '
+              export DEBIAN_FRONTEND=noninteractive
 
-          extract_dir="$RUNNER_TEMP/scalix-tgz-smoke"
-          rm -rf "$extract_dir"
-          mkdir -p "$extract_dir"
-          tar -xzf "$package" -C "$extract_dir"
+              apt-get update
+              # Test infrastructure only. Application runtime dependencies must
+              # come from the DEB package metadata below.
+              apt-get install --yes --no-install-recommends xvfb xauth
 
-          # CPack TGZ archives contain a versioned top-level directory.
-          executable="$(find "$extract_dir" -type f -path '*/bin/sl' -print -quit)"
-          if [[ -z "$executable" || ! -x "$executable" ]]; then
-            echo "::error::TGZ package is missing executable */bin/sl"
-            exit 1
-          fi
+              shopt -s nullglob
+              deb_packages=(/dist/*.deb)
+              if [[ ${#deb_packages[@]} -ne 1 ]]; then
+                echo "Expected exactly one Linux DEB package, found ${#deb_packages[@]}"
+                exit 1
+              fi
 
-          xvfb-run -a env SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 "$executable" smoketest
+              apt-get install --yes --no-install-recommends "${deb_packages[0]}"
+
+              # A clean package test must not accidentally resolve OpenCV from
+              # the host image. Scalix must load its private copies from the DEB.
+              if dpkg-query -W "libopencv*" >/dev/null 2>&1; then
+                echo "Unexpected system OpenCV package installed in clean test container"
+                dpkg-query -W "libopencv*"
+                exit 1
+              fi
+
+              check_dependencies() {
+                local binary="$1"
+                local dependencies
+                dependencies="$(ldd "$binary")"
+                printf "%s\n" "$dependencies"
+                if grep -Fq "not found" <<< "$dependencies"; then
+                  echo "Unresolved shared-library dependency: $binary"
+                  exit 1
+                fi
+              }
+
+              deb_executable="/usr/bin/sl"
+              if [[ ! -x "$deb_executable" ]]; then
+                echo "Installed DEB package is missing /usr/bin/sl"
+                exit 1
+              fi
+              check_dependencies "$deb_executable"
+
+              tarballs=(/dist/*.tar.gz /dist/*.tgz)
+              if [[ ${#tarballs[@]} -ne 1 ]]; then
+                echo "Expected exactly one Linux TGZ package, found ${#tarballs[@]}"
+                exit 1
+              fi
+              extract_dir="/tmp/scalix-tgz-smoke"
+              mkdir -p "$extract_dir"
+              tar -xzf "${tarballs[0]}" -C "$extract_dir"
+
+              tgz_executable="$(find "$extract_dir" -type f -path "*/bin/sl" -print -quit)"
+              if [[ -z "$tgz_executable" || ! -x "$tgz_executable" ]]; then
+                echo "TGZ package is missing executable */bin/sl"
+                exit 1
+              fi
+              check_dependencies "$tgz_executable"
+
+              # Mesa software rendering is test infrastructure, installed only
+              # after dependency resolution has been checked.
+              apt-get install --yes --no-install-recommends libgl1-mesa-dri
+
+              xvfb-run -a env -u LD_LIBRARY_PATH SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 "$deb_executable" smoketest
+              xvfb-run -a env -u LD_LIBRARY_PATH SDL_VIDEODRIVER=x11 LIBGL_ALWAYS_SOFTWARE=1 "$tgz_executable" smoketest
+            '
 
       - name: Smoke-test macOS DMG package
         if: runner.os == 'macOS'
