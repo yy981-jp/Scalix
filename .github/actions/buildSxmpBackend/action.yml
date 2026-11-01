@@ -95,6 +95,26 @@ runs:
         mkdir -p "$(cygpath -u "$DISK_CACHE")" \
           "$(cygpath -u "$REPOSITORY_CACHE")"
 
+        GCC_PATH="$(command -v gcc || true)"
+        if [[ -z "$GCC_PATH" ]]; then
+          echo "::error::GCC is not available in the active MSYS2 environment."
+          exit 1
+        fi
+        GCC_PATH_WIN="$(cygpath -m "$GCC_PATH")"
+        case "$GCC_PATH_WIN" in
+          */ucrt64/bin/gcc|*/ucrt64/bin/gcc.exe)
+            BAZEL_COMPILER="ucrt64-gcc"
+            ;;
+          */mingw64/bin/gcc|*/mingw64/bin/gcc.exe)
+            BAZEL_COMPILER="mingw-gcc"
+            ;;
+          *)
+            echo "::error::Unsupported MSYS2 GCC path: $GCC_PATH_WIN"
+            exit 1
+            ;;
+        esac
+        echo "Using Bazel compiler: $BAZEL_COMPILER ($GCC_PATH_WIN)"
+
         "$BAZEL" \
           build \
           --announce_rc \
@@ -108,7 +128,7 @@ runs:
           --linkopt=-Wl,--gc-sections \
           --crosstool_top=//third_party/mingw_cc_toolchain:toolchain \
           --cpu=x64_windows \
-          --compiler=mingw-gcc \
+          --compiler="$BAZEL_COMPILER" \
           --define MEDIAPIPE_DISABLE_GPU=1 \
           --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
           --copt=-DHAVE_PTHREAD \
