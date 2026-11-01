@@ -37,6 +37,7 @@ get_filename_component(_install_prefix "${_bin_directory}" DIRECTORY)
 set(_resources_directory "${_install_prefix}/resources")
 set(_licenses_directory "${_install_prefix}/share/licenses/Scalix")
 set(_documentation_directory "${_install_prefix}/share/doc/scalix")
+set(_runtime_library_directory "${_install_prefix}/lib/scalix")
 
 if(NOT IS_DIRECTORY "${_resources_directory}")
 	message(FATAL_ERROR "Staged resources directory is missing: ${_resources_directory}")
@@ -46,20 +47,45 @@ if(NOT IS_DIRECTORY "${_licenses_directory}")
 endif()
 
 file(MAKE_DIRECTORY
-	"${_install_prefix}/lib/scalix"
+	"${_runtime_library_directory}"
 	"${_install_prefix}/share/scalix"
 	"${_documentation_directory}"
 )
 file(RENAME "${_resources_directory}" "${_install_prefix}/share/scalix/resources")
 
-# Move bundled private ELF libraries out of /usr/bin.
-file(GLOB _runtime_libraries LIST_DIRECTORIES false "${_bin_directory}/*.so*")
+# Runtime dependency installation can use a different staging path depending
+# on the CPack generator. Collect every bundled ELF shared library from the
+# package staging tree instead of assuming it was placed beside bin/sl.
+file(GLOB_RECURSE _staged_files LIST_DIRECTORIES false "${_stage_root}/*")
+set(_runtime_libraries)
+foreach(_candidate IN LISTS _staged_files)
+	get_filename_component(_candidate_name "${_candidate}" NAME)
+	if(_candidate_name MATCHES "\\.so($|\\.)")
+		string(FIND "${_candidate}" "${_runtime_library_directory}/" _already_in_runtime_directory)
+		if(_already_in_runtime_directory EQUAL 0)
+			continue()
+		endif()
+		list(APPEND _runtime_libraries "${_candidate}")
+	endif()
+endforeach()
+
 if(NOT _runtime_libraries)
-	message(FATAL_ERROR "No bundled ELF shared libraries found beside ${_scalix_executable}")
+	message(FATAL_ERROR
+		"No bundled ELF shared libraries were staged under ${_stage_root}. "
+		"Expected runtime dependencies beside ${_scalix_executable} or elsewhere in the CPack staging tree."
+	)
 endif()
+
 foreach(_library IN LISTS _runtime_libraries)
 	get_filename_component(_library_name "${_library}" NAME)
-	file(RENAME "${_library}" "${_install_prefix}/lib/scalix/${_library_name}")
+	set(_library_destination "${_runtime_library_directory}/${_library_name}")
+	if(EXISTS "${_library_destination}" OR IS_SYMLINK "${_library_destination}")
+		message(FATAL_ERROR
+			"Duplicate staged runtime library name '${_library_name}': "
+			"${_library} and ${_library_destination}"
+		)
+	endif()
+	file(RENAME "${_library}" "${_library_destination}")
 endforeach()
 
 # Preserve the project license while also providing the Debian copyright file.
@@ -82,10 +108,13 @@ if(NOT _patchelf_result EQUAL 0)
 	)
 endif()
 
-if(NOT EXISTS "${_install_prefix}/lib/scalix/libsxmp_be.so")
+if(NOT EXISTS "${_runtime_library_directory}/libsxmp_be.so")
 	message(FATAL_ERROR "Debian staging is missing lib/scalix/libsxmp_be.so")
 endif()
 if(NOT EXISTS "${_install_prefix}/share/scalix/resources/runtime")
 	message(FATAL_ERROR "Debian staging is missing share/scalix/resources/runtime")
 endif()
-message(STATUS "Prepared Debian/FHS layout under ${_install_prefix}")
+message(STATUS
+	"Prepared Debian/FHS layout under ${_install_prefix}; "
+	"moved ${_runtime_libraries} runtime libraries into ${_runtime_library_directory}"
+)
