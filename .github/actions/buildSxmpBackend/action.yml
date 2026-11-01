@@ -72,72 +72,30 @@ runs:
         # repository-cacheがcacheの容量を食い潰してる疑惑があるため
         repository-cache: false
         module-root: sxmp/external/mediapipe
+        output-base: ${{ runner.os == 'Windows' && 'D:/_bazel' || '' }}
 
     - name: Build sxmp backend (Windows)
       if: runner.os == 'Windows'
       shell: msys2 {0}
-      working-directory: sxmp/external/mediapipe
+      working-directory: sxmp
       env:
         USE_BAZEL_VERSION: 7.4.1
       run: |
-        BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
-        if [[ ! -x "$BAZEL" ]]; then
-          echo "::error::Bazelisk executable not found: $BAZEL"
+        BAZEL_EXE="$(cygpath -w "$RUNNER_TOOL_CACHE")"
+        BAZEL_EXE="${BAZEL_EXE}\\bazelisk\\1.29.0\\x64\\bazel.exe"
+        if [[ ! -f "$(cygpath -u "$BAZEL_EXE")" ]]; then
+          echo "::error::Bazelisk executable not found: $BAZEL_EXE"
           exit 1
         fi
 
-        # setup-bazel's disk/repository cache paths are on D: for hosted Windows.
-        # Pass these paths directly because MSYS2 may use a different HOME than
-        # the setup-bazel action that writes the user .bazelrc.
-        DISK_CACHE="D:/_bazel-disk"
-        REPOSITORY_CACHE="D:/_bazel-repo"
-        mkdir -p "$(cygpath -u "$DISK_CACHE")" \
-          "$(cygpath -u "$REPOSITORY_CACHE")"
+        # Keep setup-bazel's cache paths and the Bazel process on the same output base.
+        # Pass it explicitly because MSYS2 may resolve a different HOME/.bazelrc.
+        export BAZEL_EXE
+        export BAZEL_OUTPUT_BASE="D:/_bazel"
+        export BAZEL_DISK_CACHE="D:/_bazel-disk"
+        export BAZEL_REPOSITORY_CACHE="D:/_bazel-repo"
 
-        GCC_PATH="$(command -v gcc || true)"
-        if [[ -z "$GCC_PATH" ]]; then
-          echo "::error::GCC is not available in the active MSYS2 environment."
-          exit 1
-        fi
-        GCC_PATH_WIN="$(cygpath -m "$GCC_PATH")"
-        case "$GCC_PATH_WIN" in
-          */ucrt64/bin/gcc|*/ucrt64/bin/gcc.exe)
-            BAZEL_COMPILER="ucrt64-gcc"
-            ;;
-          */mingw64/bin/gcc|*/mingw64/bin/gcc.exe)
-            BAZEL_COMPILER="mingw-gcc"
-            ;;
-          *)
-            echo "::error::Unsupported MSYS2 GCC path: $GCC_PATH_WIN"
-            exit 1
-            ;;
-        esac
-        echo "Using Bazel compiler: $BAZEL_COMPILER ($GCC_PATH_WIN)"
-
-        "$BAZEL" \
-          build \
-          --announce_rc \
-          --disk_cache="$DISK_CACHE" \
-          --repository_cache="$REPOSITORY_CACHE" \
-          -c opt \
-          --copt=-O3 \
-          --copt=-fomit-frame-pointer \
-          --copt=-ffunction-sections \
-          --copt=-fdata-sections \
-          --linkopt=-Wl,--gc-sections \
-          --crosstool_top=//third_party/mingw_cc_toolchain:toolchain \
-          --cpu=x64_windows \
-          --compiler="$BAZEL_COMPILER" \
-          --define MEDIAPIPE_DISABLE_GPU=1 \
-          --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
-          --copt=-DHAVE_PTHREAD \
-          --host_copt=-DHAVE_PTHREAD \
-          --copt=-D_WIN32_WINNT=0x0601 \
-          --host_copt=-D_WIN32_WINNT=0x0601 \
-          --copt=-fno-canonical-system-headers \
-          --reuse_sandbox_directories \
-          @sxmp//:sxmp_be \
-          @sxmp//:sxmp_be_import_lib
+        cmd.exe /c cb.bat
 
     - name: Verify sxmp backend runtime DLL (Windows)
       if: runner.os == 'Windows'

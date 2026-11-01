@@ -51,6 +51,13 @@ def build_parser() -> argparse.ArgumentParser:
 			metavar="0-100",
 			help="WebP quality (default: 90).",
 		)
+		if mode == "icon":
+			mode_parser.add_argument(
+				"--webp-output-dir",
+				type=Path,
+				default=None,
+				help="Directory for the generated SDL WebP; defaults to --output-dir.",
+			)
 
 	return parser
 
@@ -75,6 +82,7 @@ def main(argv: list[str] | None = None) -> int:
 				args.output_dir,
 				name=args.name,
 				quality=args.quality,
+				webp_output_dir=args.webp_output_dir,
 			)
 	except (FileNotFoundError, RuntimeError, ValueError, OSError) as exc:
 		print(f"assetgen: error: {exc}", file=sys.stderr)

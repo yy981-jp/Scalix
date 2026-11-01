@@ -83,7 +83,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 	# can discover Scalix independently of SDL's per-window icon support.
 	foreach(_size IN ITEMS 48 128 256)
 		install(
-			FILES "${CMAKE_SOURCE_DIR}/assets/dist/assets/icon-${_size}.png"
+			FILES "${CMAKE_SOURCE_DIR}/assets/dist/icons/icon-${_size}.png"
 			DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${_size}x${_size}/apps"
 			RENAME "scalix.png"
 		)

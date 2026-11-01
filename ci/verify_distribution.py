@@ -140,20 +140,29 @@ def verify_build() -> None:
     if not runtime_logo.is_file() or runtime_logo.stat().st_size == 0:
         fail(f"Build is missing the loading-screen WebP asset: {runtime_logo}")
 
+    platform_icon_paths = {
+        "windows": ("assets/dist/icons/icon.ico",),
+        "macos": ("assets/dist/icons/icon.icns",),
+        "linux": tuple(
+            f"assets/dist/icons/icon-{size}.png"
+            for size in (48, 128, 256)
+        ),
+    }[system]
+    for relative in platform_icon_paths:
+        icon_path = root / relative
+        if not icon_path.is_file() or icon_path.stat().st_size == 0:
+            fail(f"Generated platform icon is missing: {icon_path}")
+
     verified_icons = [
         f'Generated icon WebP: "{runtime_icon.relative_to(root).as_posix()}"',
         f'Generated loading logo: "{runtime_logo.relative_to(root).as_posix()}"',
+        *[f'Platform icon source: "{relative}"' for relative in platform_icon_paths],
     ]
     if system == "macos":
         native_icon = root / "build" / "Scalix.app" / "Contents" / "Resources" / "icon.icns"
         if not native_icon.is_file() or native_icon.stat().st_size == 0:
             fail(f"macOS app bundle is missing its ICNS icon: {native_icon}")
         verified_icons.append(f'App bundle icon: "{native_icon.relative_to(root).as_posix()}"')
-    elif system == "windows":
-        native_icon = root / "assets" / "dist" / "assets" / "icon.ico"
-        if not native_icon.is_file() or native_icon.stat().st_size == 0:
-            fail(f"Windows icon resource input is missing: {native_icon}")
-        verified_icons.append(f'Executable icon resource input: "{native_icon.relative_to(root).as_posix()}"')
 
     append_summary(
         f"Build output verified ({system})",
@@ -263,9 +272,7 @@ def validate_payload(
         *(f"{licenses_prefix}{name}" for name in license_files),
     ]
 
-    if system == "windows":
-        required_files.append(f"{resources_prefix}assets/icon.ico")
-    elif system == "macos":
+    if system == "macos":
         required_files.append("Contents/Resources/icon.icns")
     else:
         required_files.extend((
