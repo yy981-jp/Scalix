@@ -217,7 +217,7 @@ runs:
         # They must not leak into the process-wide symbol namespace or be
         # supplied by the Engine's separately linked Protobuf runtime.
         if [[ "$RUNNER_OS" == "Linux" ]]; then
-          exported_symbols="$(nm -D --defined-only "$runtime_library")"
+          exported_symbols="$(nm -D -g --defined-only "$runtime_library")"
           unresolved_symbols="$(nm -D --undefined-only "$runtime_library")"
         else
           exported_symbols="$(nm -gU "$runtime_library")"
