@@ -5,6 +5,7 @@
 [![Build](https://github.com/yy981-jp/Scalix/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/build.yml)
 [![CodeQL](https://github.com/yy981-jp/Scalix/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/codeql.yml)
 [![Doxygen](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/doxygen.yml)
+[![Doxygen](https://github.com/yy981-jp/Scalix/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/yy981-jp/Scalix/actions/workflows/release.yml)
 
 **Scalixは、C++23で開発している、性能を重視した実験的な3Dアバターエンジンです。**
 
