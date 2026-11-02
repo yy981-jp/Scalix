@@ -40,6 +40,7 @@ Engine::Engine(EngineMode emode): emode(emode) {
 	logo.draw();
 
 	// get window size
+	SDL_SyncWindow(window);
 	SDL_GetWindowSize(window, &width, &height);
 
 	// ===== bgfx初期化 =====
