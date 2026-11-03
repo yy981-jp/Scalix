@@ -153,10 +153,10 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 
 	GltfLoader loader(path, type);
 	loader.load();
-	if (vrm) VRMLoader vrml(loader.extensions());
+	VRMLoader vrml(loader.extensions());
 	loader.procHdl(this);
 	model = loader.get();
-	model.init();
+	model.init(vrml.vrm);
 
 	// anim.init("test.sxa",*this);
 

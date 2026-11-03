@@ -146,8 +146,49 @@ static inline void selectHelper(std::span<NodeHandle> to,
 	to[static_cast<size_t>(target)] = select(from[static_cast<size_t>(target)]);
 }
 
+
 void Humanoid::init(const Model& model, const VRM& vrm) {
-	// vrm.humanoid.humanBones
+	const auto& bs = vrm.humanoid.humanBones;
+
+	#define X(name) {HBT::name, bs.name},
+
+	std::vector<std::pair<HBT, VRMC_VRM_1_0::HumanBone>> dict {
+		X(hips)
+
+		X(spine)
+		X(chest)
+		X(upperChest)
+		X(neck)
+		X(head)
+
+		X(leftShoulder)
+		X(leftUpperArm)
+		X(leftLowerArm)
+		X(leftHand)
+
+		X(rightShoulder)
+		X(rightUpperArm)
+		X(rightLowerArm)
+		X(rightHand)
+
+		X(leftUpperLeg)
+		X(leftLowerLeg)
+		X(leftFoot)
+		X(leftToes)
+
+		X(rightUpperLeg)
+		X(rightLowerLeg)
+		X(rightFoot)
+		X(rightToes)
+	};
+
+	#undef X
+
+
+	for (auto [hbt,vrm_hbt]: dict) {
+		bones[static_cast<size_t>(hbt)] = model.nodeHandles[vrm_hbt.node];
+	}
+
 }
 
 

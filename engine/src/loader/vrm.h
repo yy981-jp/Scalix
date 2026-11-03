@@ -6,12 +6,10 @@
 #include <loader/gltf.h>
 
 
-class VRMLoader {
+struct VRMLoader {
+	VRMC_VRM_1_0::Vrm vrm;
 
-
-public:
 	VRMLoader(const json& extensions) {
-		VRMC_VRM_1_0::Vrm vrm;
-		VRMC_VRM_1_0::from_json(extensions.at("VRMC_vrm"), vrm);
+		VRMC_VRM_1_0::from_json(extensions, vrm);
 	}
 };

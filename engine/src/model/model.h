@@ -56,9 +56,8 @@ struct Model {
 	Humanoid humanoid;
 	RigGraph rig;
 
-	void init() {
-		humanoid.init(*this);
-		// physics.init(*this);
+	void init(const VRM& vrm) {
+		humanoid.init(*this,vrm);
 	}
 
 	// scalix側で用意した仮想的なroot
