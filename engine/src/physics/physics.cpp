@@ -115,8 +115,8 @@ void PhysicsSystem::init(Avatar& avatar) {
 				continue;
 			}
 
-			// VRMC_springBone forbids a center that is a joint or a descendant
-			// of a joint belonging to another spring chain.
+			// A center cannot be a joint or a descendant of a joint in
+			// another spring chain.
 			bool centerConflict = false;
 			for (NodeHandle used: usedJointNodes) {
 				if (isAncestorOrSelf(used, center)) {
@@ -124,19 +124,27 @@ void PhysicsSystem::init(Avatar& avatar) {
 					break;
 				}
 			}
-			for (NodeHandle previousCenter: usedCenters) {
-				if (centerConflict) break;
-				for (NodeHandle joint: nodes) {
-					if (isAncestorOrSelf(joint, previousCenter)) {
-						centerConflict = true;
-						break;
-					}
-				}
-			}
 			if (centerConflict) {
 				warnSpring(springIndex, "center conflicts with another spring chain");
 				continue;
 			}
+		}
+
+		// Check earlier centers against this chain even if this chain has
+		// no center of its own.
+		bool previousCenterConflict = false;
+		for (NodeHandle previousCenter: usedCenters) {
+			for (NodeHandle joint: nodes) {
+				if (isAncestorOrSelf(joint, previousCenter)) {
+					previousCenterConflict = true;
+					break;
+				}
+			}
+			if (previousCenterConflict) break;
+		}
+		if (previousCenterConflict) {
+			warnSpring(springIndex, "a previous center is a joint or descendant of this spring chain");
+			continue;
 		}
 
 		std::vector<SpringBoneParams> params;
