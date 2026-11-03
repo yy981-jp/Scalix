@@ -1,58 +1,80 @@
 #pragma once
+
 #include <vector>
 
-#include <def/def.h>
+#include <def/node.h>
+#include <def/quat.h>
 #include <def/vec3.h>
-#include <model/model.h>
-
-#include <physics/def.h>
-#include <core/nodeRegistry.h>
 
 
-struct SpringBoneNode {
-	vec3f prevPos;
-	vec3f currPos; // 直前の位置
-};
+struct Avatar;
 
 struct SpringBoneParams {
-	float stiffness;
-	float dragForce;
-	float gravityPower;
-	vec3f gravityDir;
-	float hitRadius;
+	float stiffness = 1.0f;
+	float dragForce = 0.5f;
+	float gravityPower = 0.0f;
+	vec3f gravityDir{0.0f, -1.0f, 0.0f};
+	float hitRadius = 0.0f;
+};
+
+enum class SpringBoneColliderShape {
+	Sphere,
+	Capsule
+};
+
+struct SpringBoneCollider {
+	NodeHandle node = NodeHandle::invalid();
+	SpringBoneColliderShape shape = SpringBoneColliderShape::Sphere;
+	vec3f offset{};
+	vec3f tail{};
+	float radius = 0.0f;
 };
 
 class SpringBoneChain {
-	std::vector<NodeHandle> nodes; // 鎖の基点から末端まで順に並べる
-	std::vector<SpringBoneNode> bones;
-	std::vector<float> restLengths; // bone間の長さ
-	std::vector<vec3f> restDirections;
+	struct JointState {
+		NodeHandle head = NodeHandle::invalid();
+		NodeHandle tail = NodeHandle::invalid();
 
-	std::vector<SpringBoneParams> params;
+		vec3f prevTail{};
+		vec3f currTail{};
+		vec3f boneAxis{};
+		float boneLength = 0.0f;
+
+		Quat baseRotation;
+		Quat lastAppliedRotation;
+		SpringBoneParams params;
+	};
+
+	Avatar* avatar = nullptr;
+	NodeHandle center = NodeHandle::invalid();
+	bool hasCenter = false;
+	uint32_t rootDepth = 0;
+
+	std::vector<JointState> joints;
+	std::vector<SpringBoneCollider> colliders;
+
+	void prepareFrame();
+	void update(float dt);
+
+	friend class SpringBoneSystem;
 
 public:
 	SpringBoneChain(
+		Avatar& avatar,
 		const std::vector<NodeHandle>& nodes,
-		const std::vector<SpringBoneParams>& params
+		const std::vector<SpringBoneParams>& params,
+		NodeHandle center,
+		const std::vector<SpringBoneCollider>& colliders
 	);
-	void update(float dt);
-
 };
 
 
 class SpringBoneSystem {
+	Avatar* avatar = nullptr;
 	std::vector<SpringBoneChain> chains;
 
 public:
-
-	void add(const SpringBoneChain& chain) {
-		chains.push_back(chain);
-	}
-
-	void tick(float dt) {
-		for (auto& chain: chains) {
-			chain.update(dt);
-		}
-	}
-
+	void add(SpringBoneChain&& chain);
+	void clear();
+	void tick(float dt);
 };

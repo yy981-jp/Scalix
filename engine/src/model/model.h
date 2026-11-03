@@ -59,7 +59,8 @@ struct Model {
 	VRM vrm;
 
 	void init(const VRM& vrm) {
-		humanoid.init(*this,vrm);
+		this->vrm = vrm;
+		humanoid.init(*this, vrm);
 	}
 
 	// scalix側で用意した仮想的なroot
@@ -69,7 +70,7 @@ struct Model {
 
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
-	
+
 	std::vector<Node> nodes;
 
 	// NodeId to NodeHandle
