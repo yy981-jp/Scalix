@@ -76,8 +76,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 			const NodeHandle handle = model.nodeHandles[joint.node];
 			if (!nodeReg.is_alive(handle)
 				|| nodeReg.getAvatar(handle) != &avatar
-				|| !localJointNodes.insert(handle).second
-				|| usedJointNodes.contains(handle)) {
+				|| !localJointNodes.insert(handle).second) {
 				valid = false;
 				break;
 			}
@@ -89,14 +88,27 @@ void PhysicsSystem::init(Avatar& avatar) {
 			continue;
 		}
 
+		// Include skipped intermediate nodes in ownership checks. For example,
+		// a chain a->c owns the entire path a,b,c even when b is not simulated.
+		std::unordered_set<NodeHandle> chainNodes;
 		for (size_t i = 0; i + 1 < nodes.size(); ++i) {
-			if (detectBonePath(nodes[i], nodes[i + 1]).empty()) {
+			const std::vector<NodeHandle> path = detectBonePath(nodes[i], nodes[i + 1]);
+			if (path.empty()) {
 				valid = false;
 				break;
 			}
+
+			for (NodeHandle pathNode: path) {
+				if (usedJointNodes.contains(pathNode)) {
+					valid = false;
+					break;
+				}
+				chainNodes.insert(pathNode);
+			}
+			if (!valid) break;
 		}
 		if (!valid) {
-			warnSpring(springIndex, "joints do not follow the node hierarchy");
+			warnSpring(springIndex, "joints overlap another spring chain or do not follow the node hierarchy");
 			continue;
 		}
 
@@ -134,7 +146,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 		// no center of its own.
 		bool previousCenterConflict = false;
 		for (NodeHandle previousCenter: usedCenters) {
-			for (NodeHandle joint: nodes) {
+			for (NodeHandle joint: chainNodes) {
 				if (isAncestorOrSelf(joint, previousCenter)) {
 					previousCenterConflict = true;
 					break;
@@ -207,7 +219,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 				center,
 				colliders
 			));
-			usedJointNodes.insert(localJointNodes.begin(), localJointNodes.end());
+			usedJointNodes.insert(chainNodes.begin(), chainNodes.end());
 			if (center.isValid()) usedCenters.push_back(center);
 		} catch (const std::exception& error) {
 			std::fprintf(
