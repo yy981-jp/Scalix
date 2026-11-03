@@ -1,4 +1,4 @@
-#include <gltf/loader.h>
+#include <loader/gltf.h>
 
 #include <tinygltf/tiny_gltf.h>
 #include <bx/math.h>
@@ -788,7 +788,7 @@ void GltfLoader::load() {
 		} catch (const std::exception& e) {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
 		} catch (...) {
-			throw std::runtime_error("unknown error: gltf/loader - image");
+			throw std::runtime_error("unknown error: loader/gltf - image");
 		}
 	}
 

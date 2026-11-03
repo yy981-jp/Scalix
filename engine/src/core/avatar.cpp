@@ -2,7 +2,8 @@
 #include <model/humanoid.h>
 
 #include <anim/loader.h>
-#include <gltf/loader.h>
+#include <loader/gltf.h>
+#include <loader/vrm.h>
 #include <util/cache.h>
 #include <util/math.h>
 #include <util/path.h>
@@ -147,6 +148,7 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 
 	GltfLoader loader(path, type);
 	loader.load();
+	VRMLoader vrml(loader.extensions());
 	loader.procHdl(this);
 	model = loader.get();
 	model.init();
