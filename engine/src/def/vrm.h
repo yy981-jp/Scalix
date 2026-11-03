@@ -3,4 +3,4 @@
 #include <def/json.h>
 #include <VRMC/VRM.h>
 
-using VRM = VRMC_VRM_1_0::Vrm;
+// using VRM = VRMC_VRM_1_0::Vrm;

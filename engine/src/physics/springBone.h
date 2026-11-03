@@ -14,22 +14,26 @@ struct SpringBoneNode {
 	vec3f currPos; // 直前の位置
 };
 
+struct SpringBoneParams {
+	float stiffness;
+	float dragForce;
+	float gravityPower;
+	vec3f gravityDir;
+	float hitRadius;
+};
+
 class SpringBoneChain {
-	std::vector<NodeHandle> boneIndex; // 鎖の基点から末端まで順に並べる
+	std::vector<NodeHandle> nodes; // 鎖の基点から末端まで順に並べる
 	std::vector<SpringBoneNode> bones;
 	std::vector<float> restLengths; // bone間の長さ
 	std::vector<vec3f> restDirections;
-	float stiffness; // 元に戻ろうとする力
-	float drag; // 空気抵抗
-	float gravityPow;
-	vec3f gravityDir;
+
+	std::vector<SpringBoneParams> params;
 
 public:
-
 	SpringBoneChain(
-		const std::vector<NodeHandle>& boneIndex,
-		float stiffness = 0.5f, float drag = 0.5f,
-		float gravityPow = def::gravity, vec3f gravityDir = vec3f{0,1,0}
+		const std::vector<NodeHandle>& nodes,
+		const std::vector<SpringBoneParams>& params
 	);
 	void update(float dt);
 

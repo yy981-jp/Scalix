@@ -15,6 +15,8 @@
 #include <core/nodeRegistry.h>
 
 
+struct VRMLoader;
+
 struct Node {
 	StrHs name;
 
@@ -54,7 +56,7 @@ enum class Status {
 /// @brief 構造そのもの (静的データ)
 struct Model {
 	Humanoid humanoid;
-	RigGraph rig;
+	VRM vrm;
 
 	void init(const VRM& vrm) {
 		humanoid.init(*this,vrm);

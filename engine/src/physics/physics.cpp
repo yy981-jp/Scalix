@@ -17,35 +17,25 @@ struct PNCand {
 
 
 void PhysicsSystem::init(Avatar& avatar) {
-	std::unordered_map<NodeHandle, PNT> nodes;
-
-	// root 検出
-	for (const auto& node: avatar.model.nodes) {
-		if (!node.name.hash) continue;
-		const auto& name = strsv().get(node.name);
-		const auto& tokens = tokenizer(name);
-
-
-		PNT type = PNT::None;
-		bool entry = false;
-		for (const auto& token: tokens) {
-			if (token == "root") entry = true;
-			
-			if (token == "hair") type = PNT::hairRoot;
-			// if (token == "skirt") type = PNT::skirtRoot;
+	const Model& model = avatar.model;
+	for (const auto& spring: model.vrm.springBone.springs) {
+		std::vector<NodeHandle> chain;
+		chain.reserve(spring.joints.size());
+		for (const auto& joint: spring.joints) {
+			chain.push_back(model.nodeHandles[joint.node]);
 		}
 
-		if (entry && type != PNT::None) nodes[avatar.model.nodeHandles[node.id]];
+		// SpringBoneChain chain(chain,);
 	}
 
 
-	for (const auto& [hdl,type]: nodes) {
-		for (const auto& child: nodeReg.get(hdl).children) {
-			const auto& chain = SpringBoneChain(
-				detectBonePath(child),
-				0.5f, 0.5f
-			);
-			springBoneSystem.add(chain);
-		}
-	}
+	// for (const auto& [hdl,type]: nodes) {
+	// 	for (const auto& child: nodeReg.get(hdl).children) {
+	// 		const auto& chain = SpringBoneChain(
+	// 			detectBonePath(child),
+	// 			0.5f, 0.5f
+	// 		);
+	// 		springBoneSystem.add(chain);
+	// 	}
+	// }
 }

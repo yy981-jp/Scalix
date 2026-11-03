@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <array>
 #include <def/vrm.h>
+#include <loader/vrm.h>
 
 // #include <model/model.h>
 

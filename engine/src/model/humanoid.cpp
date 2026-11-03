@@ -148,7 +148,7 @@ static inline void selectHelper(std::span<NodeHandle> to,
 
 
 void Humanoid::init(const Model& model, const VRM& vrm) {
-	const auto& bs = vrm.humanoid.humanBones;
+	const auto& bs = vrm.vrm.humanoid.humanBones;
 
 	#define X(name) {HBT::name, bs.name},
 
@@ -203,7 +203,7 @@ void Humanoid::init(const Model& model) {
 	std::vector<NodeInfo> cands;
 	// 属性をつける
 	for (const auto& node: model.nodes) {
-		if (!node.name.hash) continue; // hash == 0 のnodeはバグのもと
+		if (!node.name.hash) continue; // hash == 0 のnodeなんてのはstrsvに登録されない
 		const auto& words = tokenizer(strsv().get( node.name ));
 		NodeInfo cand;
 		cand.handle = nodeReg.find(sampleHdl,node.id);

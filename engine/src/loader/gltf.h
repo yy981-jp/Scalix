@@ -32,7 +32,6 @@ class GltfLoader {
 
 	Model scalixModel;
 	std::vector<LoadingNode> lnodes;
-	json vrmJson;
 
 	void parse();
 	void parseMesh(NodeId nodeId);
@@ -43,12 +42,12 @@ class GltfLoader {
 public:
 	GltfLoader(const std::string& path, GltfType type);
 	void load();
-	const json& extensions() {
-		const auto it = model.extensions.find("VRMC_vrm");
+	const std::vector<std::string>& getExtensionsUsed() const { return model.extensionsUsed; }
+	json getExtension(const std::string& str) const {
+		const auto it = model.extensions.find(str);
 
-		if (it == model.extensions.end()) throw std::runtime_error("This is not vrm data.");
-		vrmJson = convertToJson(it->second);
-		return vrmJson;
+		if (it == model.extensions.end()) throw std::runtime_error("Not found extension");
+		return convertToJson(it->second);
 	}
 	void procHdl(Avatar* avatar);
 	inline Model get() {

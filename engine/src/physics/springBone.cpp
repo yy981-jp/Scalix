@@ -3,19 +3,17 @@
 
 
 SpringBoneChain::SpringBoneChain(
-	const std::vector<NodeHandle>& boneIndex,
-	float stiffness, float drag,
-	float gravityPow, vec3f gravityDir
+	const std::vector<NodeHandle>& nodes,
+	const std::vector<SpringBoneParams>& params
 ):
-	stiffness(stiffness), drag(drag), gravityPow(gravityPow), gravityDir(gravityDir),
-	boneIndex(boneIndex), bones(boneIndex.size()),
-	restLengths(boneIndex.size() > 1 ? boneIndex.size() - 1 : 0),
+	nodes(nodes), params(params), bones(nodes.size()),
+	restLengths(nodes.size() > 1 ? nodes.size() - 1 : 0),
 	restDirections(restLengths.size()) {
 
 	// Initialize positions from nodes
 	for (size_t i = 0; i < bones.size(); i++) {
-		Avatar* ava = nodeReg.getAvatar(boneIndex[i]);
-		const auto& mtx = ava->globalMtx[nodeReg.getId(boneIndex[i])];
+		Avatar* ava = nodeReg.getAvatar(nodes[i]);
+		const auto& mtx = ava->globalMtx[nodeReg.getId(nodes[i])];
 
 		bones[i].currPos = mtx.pos();
 		bones[i].prevPos = bones[i].currPos;
@@ -36,27 +34,39 @@ void SpringBoneChain::update(float dt) {
 	if (bones.size() < 2) return;
 
 	// Keep the root anchored to its animated world-space position.
-	Avatar* rootAvatar = nodeReg.getAvatar(boneIndex[0]);
-	const auto& rootMtx = rootAvatar->globalMtx[nodeReg.getId(boneIndex[0])];
+	Avatar* rootAvatar = nodeReg.getAvatar(nodes[0]);
+	const auto& rootMtx = rootAvatar->globalMtx[nodeReg.getId(nodes[0])];
 	bones[0].currPos = rootMtx.pos();
 	bones[0].prevPos = bones[0].currPos;
 
 	// 予測: 速度 + 重力
-	for (int i = 1; i < (int)boneIndex.size(); i++) {
-		auto& bone = bones[i];
+	for (size_t i = 1; i < nodes.size(); ++i) {
+		auto& tail = bones[i];
+		const auto& head = bones[i - 1];
+		const auto& param = params[i - 1];
 
-		vec3f vel = (bone.currPos - bone.prevPos) * drag;
-		bone.prevPos = bone.currPos;
-		
-		bone.currPos += vel;
-		bone.currPos -= gravityPow * gravityDir * dt * dt;
+		// 慣性
+		vec3f inertia =
+			(tail.currPos - tail.prevPos) * (1.0f - param.dragForce);
+
+		tail.prevPos = tail.currPos;
+
+		// 初期姿勢に戻ろうとする力
+		// // parentWorldRotation * initialLocalRotation * boneAxis
+		// vec3f restDir = getRestDirectionWorld(head);
+		// vec3f stiffness = restDir * (param.stiffness * dt);
+
+		// 重力
+		vec3f gravity = param.gravityDir * (param.gravityPower * dt);
+
+		// tail.currPos += inertia + stiffness + gravity;
 	}
 
 	// 制約: ボーン長を保つ
 	for (int i = 1; i < (int)bones.size(); ++i) {
 		auto& parent = bones[i - 1];
 		auto& child  = bones[i];
-		NodeHandle h = boneIndex[i];
+		NodeHandle h = nodes[i];
 
 		vec3f dir = child.currPos - parent.currPos;
 		float len = bx::length(dir);
@@ -66,9 +76,9 @@ void SpringBoneChain::update(float dt) {
 		child.currPos = parent.currPos + dir * restLengths[i - 1];
 
 		// Convert the global simulation position back to the parent's local space.
-		Avatar* parentAvatar = nodeReg.getAvatar(boneIndex[i - 1]);
+		Avatar* parentAvatar = nodeReg.getAvatar(nodes[i - 1]);
 		Mtx parentMtx =
-			parentAvatar->globalMtx[nodeReg.getId(boneIndex[i - 1])];
+			parentAvatar->globalMtx[nodeReg.getId(nodes[i - 1])];
 		parentMtx.setPos(parent.currPos);
 
 		Mtx invParentMtx;

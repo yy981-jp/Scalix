@@ -68,7 +68,7 @@ ScalixはUnityやVRChatそのものを再実装するプロジェクトではあ
 - `yaml-cpp`
 - SDL3やOpenCVなどのビルドに必要な、各プラットフォームの開発用依存関係
 
-Windowsでは、MSYS2のMinGW-w64 MINGW64環境を使用します。Windows向けモーションキャプチャバックエンドのビルドには、PythonとBazeliskも必要です。プロジェクトのCIではBazel 7.4.1を使用しています。
+Windowsでは、MSYS2のUcrt64環境を使用します。Windows向けモーションキャプチャバックエンドのビルドには、PythonとBazeliskも必要です。プロジェクトのCIではBazel 7.4.1を使用しています。
 
 プラットフォーム別のパッケージ構成は、[setupCENV](.github/actions/setupCENV/action.yml)を参照してください。
 
@@ -100,7 +100,7 @@ bgfx、SDL3、SDL3_image、OpenCVなどをビルドし、`external/install/`以�
 
 Windowsでは、メインエンジンのビルド前にMediaPipeバックエンドをビルドします。
 
-Bazelisk、Python、MinGW-w64などが利用できるビルド環境を用意したうえで、次のコマンドを実行します。
+Bazelisk、Python、Ucrt64などが利用できるビルド環境を用意したうえで、次のコマンドを実行します。
 
 ```bat
 cd sxmp
