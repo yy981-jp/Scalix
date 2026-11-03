@@ -2,6 +2,7 @@
 #include "def/node.h"
 #include <cstdint>
 #include <array>
+#include <def/vrm.h>
 
 // #include <model/model.h>
 
@@ -48,10 +49,11 @@ struct Model;
 /// @brief 骨格
 struct Humanoid {
 	void init(const Model& model);
+	void init(const Model& model, const VRM& vrm);
 
 	// node handle
 	std::array<NodeHandle,static_cast<size_t>(HBT::Count)> bones;
-	std::vector<NodeHandle> spines;
+	// std::vector<NodeHandle> spines;
 
 	// std::vector<NodeHandle> nodes;
 

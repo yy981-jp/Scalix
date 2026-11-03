@@ -146,6 +146,11 @@ static inline void selectHelper(std::span<NodeHandle> to,
 	to[static_cast<size_t>(target)] = select(from[static_cast<size_t>(target)]);
 }
 
+void Humanoid::init(const Model& model, const VRM& vrm) {
+	// vrm.humanoid.humanBones
+}
+
+
 void Humanoid::init(const Model& model) {
 	NodeHandle sampleHdl = model.root;
 	std::vector<NodeInfo> cands;
@@ -245,9 +250,10 @@ void Humanoid::init(const Model& model) {
 		}
 	}
 	
+	// spineって大体1つらしい
+	// for (const auto& spine: spines_) this->spines.push_back(spine.handle); // spineはすべて使用
+	
 	// 最適解を選択
-	for (const auto& spine: spines_) this->spines.push_back(spine.handle); // spineはすべて使用
-
 	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
 		

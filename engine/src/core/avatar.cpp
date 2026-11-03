@@ -129,6 +129,7 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 	const fs::path base = syspath.userdata / "avatars" / id.hex();
 	std::string path;
 	GltfType type;
+	bool vrm = false;
 
 	if (fs::exists(base / "model")) {
 		for (const auto& e: fs::recursive_directory_iterator(base / "model")) {
@@ -140,6 +141,10 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 		}
 		if (path.empty())
 			throw std::runtime_error("Avatar::Avatar: model dir is exist, but system couldn't find gltf file");
+	} else if (fs::exists(base / "model.vrm")) {
+		path = (base / "model.vrm").string();
+		type = GltfType::binary;
+		vrm = true;
 	} else if (fs::exists(base / "model.glb")) {
 		path = (base / "model.glb").string();
 		type = GltfType::binary;
@@ -148,7 +153,7 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 
 	GltfLoader loader(path, type);
 	loader.load();
-	VRMLoader vrml(loader.extensions());
+	if (vrm) VRMLoader vrml(loader.extensions());
 	loader.procHdl(this);
 	model = loader.get();
 	model.init();
