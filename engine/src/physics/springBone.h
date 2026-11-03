@@ -21,10 +21,16 @@ class SpringBoneChain {
 	std::vector<vec3f> restDirections;
 	float stiffness; // 元に戻ろうとする力
 	float drag; // 空気抵抗
+	float gravityPow;
+	vec3f gravityDir;
 
 public:
 
-	SpringBoneChain(const std::vector<NodeHandle>& boneIndex);
+	SpringBoneChain(
+		const std::vector<NodeHandle>& boneIndex,
+		float stiffness = 0.5f, float drag = 0.5f,
+		float gravityPow = def::gravity, vec3f gravityDir = vec3f{0,1,0}
+	);
 	void update(float dt);
 
 };

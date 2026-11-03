@@ -41,7 +41,10 @@ void PhysicsSystem::init(Avatar& avatar) {
 
 	for (const auto& [hdl,type]: nodes) {
 		for (const auto& child: nodeReg.get(hdl).children) {
-			const auto& chain = SpringBoneChain( detectBonePath(child) );
+			const auto& chain = SpringBoneChain(
+				detectBonePath(child),
+				0.5f, 0.5f
+			);
 			springBoneSystem.add(chain);
 		}
 	}

@@ -2,11 +2,16 @@
 #include <core/avatar.h>
 
 
-SpringBoneChain::SpringBoneChain(const std::vector<NodeHandle>& boneIndex):
-	stiffness(0.5f), drag(0.5f),
+SpringBoneChain::SpringBoneChain(
+	const std::vector<NodeHandle>& boneIndex,
+	float stiffness, float drag,
+	float gravityPow, vec3f gravityDir
+):
+	stiffness(stiffness), drag(drag), gravityPow(gravityPow), gravityDir(gravityDir),
 	boneIndex(boneIndex), bones(boneIndex.size()),
 	restLengths(boneIndex.size() > 1 ? boneIndex.size() - 1 : 0),
 	restDirections(restLengths.size()) {
+
 	// Initialize positions from nodes
 	for (size_t i = 0; i < bones.size(); i++) {
 		Avatar* ava = nodeReg.getAvatar(boneIndex[i]);
@@ -44,7 +49,7 @@ void SpringBoneChain::update(float dt) {
 		bone.prevPos = bone.currPos;
 		
 		bone.currPos += vel;
-		bone.currPos -= def::gravity * dt * dt;
+		bone.currPos -= gravityPow * gravityDir * dt * dt;
 	}
 
 	// 制約: ボーン長を保つ

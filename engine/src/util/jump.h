@@ -4,7 +4,7 @@
 
 class Jump {
 	float velocity = 0.0f, height = 0.0f, groundHeight = 0.0f;
-	static constexpr const float& gravity = def::gravity.y;
+	static constexpr const float& gravity = def::gravity;
 	bool grounded = true;
 
 public:
