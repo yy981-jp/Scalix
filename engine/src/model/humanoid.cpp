@@ -186,7 +186,13 @@ void Humanoid::init(const Model& model, const VRM& vrm) {
 
 
 	for (auto [hbt,vrm_hbt]: dict) {
-		bones[static_cast<size_t>(hbt)] = model.nodeHandles[vrm_hbt.node];
+		auto& bone = bones[static_cast<size_t>(hbt)];
+		bone = model.nodeHandles[vrm_hbt.node];
+
+		// flag
+		if (bone.isValid()) {
+			boneFlag |= HBTFlag(hbt);
+		}
 	}
 
 }

@@ -53,9 +53,6 @@ struct Humanoid {
 
 	// node handle
 	std::array<NodeHandle,static_cast<size_t>(HBT::Count)> bones;
-	// std::vector<NodeHandle> spines;
-
-	// std::vector<NodeHandle> nodes;
 
 	uint64_t boneFlag = 0;
 	
