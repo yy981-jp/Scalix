@@ -5,6 +5,7 @@
 #include <def/node.h>
 #include <def/quat.h>
 #include <def/vec3.h>
+#include <physics/def.h>
 
 
 struct Avatar;
@@ -17,14 +18,9 @@ struct SpringBoneParams {
 	float hitRadius = 0.0f;
 };
 
-enum class SpringBoneColliderShape {
-	Sphere,
-	Capsule
-};
-
 struct SpringBoneCollider {
 	NodeHandle node = NodeHandle::invalid();
-	SpringBoneColliderShape shape = SpringBoneColliderShape::Sphere;
+	ColliderShape shape = ColliderShape::Sphere;
 	vec3f offset{};
 	vec3f tail{};
 	float radius = 0.0f;

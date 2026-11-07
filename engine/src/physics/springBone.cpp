@@ -176,7 +176,7 @@ void resolveCollision(
 	);
 
 	vec3f closestPoint = colliderHead;
-	if (collider.shape == SpringBoneColliderShape::Capsule) {
+	if (collider.shape == ColliderShape::Capsule) {
 		const vec3f colliderTailWorld = collider.tail * colliderMatrix;
 		const vec3f colliderTail = toEvaluationPoint(
 			colliderTailWorld, useCenter, inverseCenter

@@ -125,7 +125,7 @@ void Avatar::draw(Camera& cam) {
 	cam.update(camPos, camPos + lookDir);
 }
 
-Avatar::Avatar(const AvatarId& id): id(id) {
+Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
 	const fs::path base = syspath.userdata / "avatars" / id.hex();
 	std::string path;
 	GltfType type;

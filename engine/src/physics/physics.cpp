@@ -183,12 +183,12 @@ void PhysicsSystem::init(Avatar& avatar) {
 				collider.node = colliderNode;
 
 				if (source.shape.capsule.radius > 0.0f) {
-					collider.shape = SpringBoneColliderShape::Capsule;
+					collider.shape = ColliderShape::Capsule;
 					collider.offset = readVector3(source.shape.capsule.offset, {});
 					collider.tail = readVector3(source.shape.capsule.tail, {});
 					collider.radius = source.shape.capsule.radius;
 				} else if (source.shape.sphere.radius > 0.0f) {
-					collider.shape = SpringBoneColliderShape::Sphere;
+					collider.shape = ColliderShape::Sphere;
 					collider.offset = readVector3(source.shape.sphere.offset, {});
 					collider.radius = source.shape.sphere.radius;
 				} else {
