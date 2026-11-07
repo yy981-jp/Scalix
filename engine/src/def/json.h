@@ -6,4 +6,4 @@ using json = nlohmann::json;
 
 
 json readJson(const std::string& path);
-void writeJson(const json& j, const std::string& path);
+void writeJson(const json& j, const std::string& path,bool indent = false);

@@ -12,7 +12,7 @@
 			],
 			"compilerPath": "C:\\msys64\\mingw64\\bin\\gcc.exe",
 			"intelliSenseMode": "windows-gcc-x64",
-			"compileCommands": "${workspaceFolder}/build/compile_commands.json"
+			"compileCommands": "${workspaceFolder}/engine/build/compile_commands.json"
 		}
 	],
 	"version": 4

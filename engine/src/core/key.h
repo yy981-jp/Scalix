@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <unordered_map>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <def/vec2.h>
 
 

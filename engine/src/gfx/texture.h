@@ -17,7 +17,6 @@ struct Texture {
 	Texture& operator=(Texture&& other) noexcept;
 
 	Texture() = default;
-	// ~Texture() = default;
 	
 	// 画像データから直接作成
 	void createFromRGBA(int w, int h, const uint8_t* rgba_data, size_t size);

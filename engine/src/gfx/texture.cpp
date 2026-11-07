@@ -43,7 +43,7 @@ void Texture::createFromRGB(int w, int h, const uint8_t* rgb_data, size_t size) 
 	}
 
 	// RGB -> RGBA変換
-	std::vector<uint8_t> rgba(w * h * 4);
+	std::vector<uint8_t> rgba((size_t)w * h * 4);
 	for (int i = 0; i < w * h; i++) {
 		rgba[i * 4 + 0] = rgb_data[i * 3 + 0];
 		rgba[i * 4 + 1] = rgb_data[i * 3 + 1];

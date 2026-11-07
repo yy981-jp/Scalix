@@ -1,0 +1,94 @@
+name: Setup C env
+description: setup C env
+
+outputs:
+  msys2-location:
+    description: Absolute path to the MSYS2 installation.
+    value: ${{ steps.setup-msys2.outputs.msys2-location }}
+
+runs:
+  using: composite
+
+  steps:
+    - name: Setup MSYS2
+      id: setup-msys2
+      if: runner.os == 'Windows'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        # The MediaPipe UCRT64 toolchain uses the fixed C:\\msys64 path.
+        # Reuse the runner image's installation instead of installing under D:\\a\\_temp.
+        release: false
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-ninja
+          mingw-w64-ucrt-x86_64-protobuf
+          mingw-w64-ucrt-x86_64-python
+          mingw-w64-ucrt-x86_64-yaml-cpp
+          mingw-w64-ucrt-x86_64-libwebp
+          mingw-w64-ucrt-x86_64-freetype
+          mingw-w64-ucrt-x86_64-cairo
+          perl
+
+    - name: Setup Linux
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          build-essential \
+          ninja-build \
+          libfreetype-dev \
+          libprotobuf-dev \
+          protobuf-compiler \
+          protobuf-compiler-grpc \
+          libyaml-cpp-dev \
+          libwebp-dev \
+          libcairo2 \
+          libx11-dev \
+          libxext-dev \
+          libxrandr-dev \
+          libxcursor-dev \
+          libxi-dev \
+          libxinerama-dev \
+          libxss-dev \
+          libxtst-dev \
+          libwayland-dev \
+          wayland-protocols \
+          libdecor-0-dev \
+          libgl-dev \
+          libopengl-dev \
+          libglx-dev \
+          libegl1-mesa-dev \
+          libdrm-dev \
+          libgbm-dev \
+          libpulse-dev \
+          libasound2-dev \
+          libusb-1.0-0-dev \
+          libudev-dev \
+          libunwind-dev \
+          libfribidi-dev \
+          libthai-dev \
+          libprotobuf-dev
+
+    - name: Setup CMake(Linux)
+      if: runner.os == 'Linux'
+      uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: 4.3.0
+        ninjaVersion: 1.13.2
+
+    - name: Setup macOS
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install \
+          cmake \
+          ninja \
+          protobuf \
+          yaml-cpp \
+          webp \
+          freetype \
+          cairo

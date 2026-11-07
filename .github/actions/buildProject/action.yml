@@ -1,0 +1,36 @@
+name: Build Project
+description: Build Project
+
+runs:
+  using: composite
+
+  steps:
+    - name: Prepare build
+      uses: ./.github/actions/prepareBuild
+
+    - name: Build sxmp backend
+      uses: ./.github/actions/buildSxmpBackend
+
+    - name: Configure
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+    - name: Configure Windows
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      run: |
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        cmake --build build --parallel
+
+    - name: Build Windows
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      run: |
+        cmake --build build --parallel

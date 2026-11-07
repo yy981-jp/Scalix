@@ -1,0 +1,101 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: Whether to create distributable packages after building.
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-24.04
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build Project
+        uses: ./.github/actions/buildProject
+
+      - name: Verify build outputs (Unix)
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
+        run: python3 ci/verify_distribution.py build
+
+      - name: Verify build outputs (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: msys2 {0}
+        run: python3 ci/verify_distribution.py build
+
+      - name: Install NSIS
+        if: ${{ inputs.package && runner.os == 'Windows' }}
+        run: |
+          choco install nsis -y
+          echo "C:\\Program Files (x86)\\NSIS" >> $GITHUB_PATH
+
+      - name: Install Linux packaging tools
+        if: ${{ inputs.package && runner.os == 'Linux' }}
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes patchelf dpkg-dev
+
+      - name: Package
+        if: ${{ inputs.package }}
+        working-directory: build
+        shell: bash
+        run: |
+          cmake --install . --prefix "$PWD/license-check"
+          cmake \
+            "-DLICENSE_INSTALL_ROOT=$PWD/license-check" \
+            "-DEXPECTED_FILES=$PWD/generated/THIRD_PARTY_LICENSES_INSTALL_LIST.txt" \
+            -P ../cmake/verify_third_party_licenses.cmake
+          rm -rf license-check
+          # Download runtime assets before CPack stages the install tree.
+          python3 ../ci/dl.py ../resources
+          cpack --config CPackConfig.cmake
+          rm -rf dist/_CPack_Packages
+
+      - name: Verify package outputs (Unix)
+        if: ${{ inputs.package && runner.os != 'Windows' }}
+        shell: bash
+        run: |
+          python3 ci/verify_distribution.py package
+
+      - name: Verify package outputs (Windows)
+        if: ${{ inputs.package && runner.os == 'Windows' }}
+        shell: msys2 {0}
+        run: |
+          python3 ci/verify_distribution.py package
+
+      - name: Upload build artifact
+        if: ${{ !inputs.package }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ runner.os }}-${{ runner.arch }}
+          path: build/
+          retention-days: 1
+
+      - name: Upload package artifact
+        if: ${{ inputs.package }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ runner.os }}-${{ runner.arch }}
+          path: build/dist/
+          retention-days: 1

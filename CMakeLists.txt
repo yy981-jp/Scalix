@@ -1,12 +1,53 @@
-cmake_minimum_required(VERSION 3.16)
-project(sl) # Scalix
+cmake_minimum_required(VERSION 4.3)
+project(
+	scalix
+	VERSION 0.1.0
+	DESCRIPTION "High-performance 3D engine"
+	LANGUAGES CXX
+)
+
+cmake_policy(SET CMP0207 NEW)
 
 set(CMAKE_CXX_STANDARD 23)
 add_compile_options(-fdiagnostics-color=always)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
+include_directories(
+	${CMAKE_SOURCE_DIR}
+)
+
+# CMake modules
+include(cmake/protobuf.cmake)
+include(cmake/shaders.cmake)
+
+# external
+# add_subdirectory(${CMAKE_SOURCE_DIR}/external/yaml-cpp)
+
+include(GNUInstallDirs)
+
 # Scalix
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(EXTERNAL_INSTALL_PREFIX
+		"${CMAKE_SOURCE_DIR}/external/install/debug"
+	)
+else()
+	set(EXTERNAL_INSTALL_PREFIX
+		"${CMAKE_SOURCE_DIR}/external/install/release"
+	)
+endif()
+
+list(PREPEND CMAKE_PREFIX_PATH
+	"${EXTERNAL_INSTALL_PREFIX}"
+)
+
+add_subdirectory(ui)
 add_subdirectory(engine)
 add_subdirectory(importer)
-add_subdirectory(dev)
+# add_subdirectory(dev)
+
+# Project-wide install and package definitions
+include(cmake/install.cmake)
+include(cmake/cpack.cmake)

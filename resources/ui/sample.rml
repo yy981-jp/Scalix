@@ -1,0 +1,159 @@
+<!--
+	RML = page structure and text (similar to HTML).
+	RCSS = colors, spacing, borders, and layout (similar to CSS).
+-->
+<rml>
+	<head>
+		<title>Scalix UI Sample</title>
+		<link type="text/rcss" href="sample.rcss" />
+	</head>
+	<body>
+		<div id="app">
+			<!-- Left navigation column -->
+			<div id="sidebar">
+				<div class="brand">
+					<div class="brand-mark">S</div>
+					<div>
+						<div class="brand-name">SCALIX</div>
+						<div class="brand-subtitle">ENGINE CONSOLE</div>
+					</div>
+				</div>
+
+				<div class="sidebar-label">WORKSPACE</div>
+				<div class="nav-item active">
+					<div class="nav-number">01</div>
+					<div>Overview</div>
+				</div>
+				<div class="nav-item">
+					<div class="nav-number">02</div>
+					<div>Avatar</div>
+				</div>
+				<div class="nav-item">
+					<div class="nav-number">03</div>
+					<div>Rendering</div>
+				</div>
+				<div class="nav-item">
+					<div class="nav-number">04</div>
+					<div>Input</div>
+				</div>
+
+				<!-- flex: 1 pushes this block to the bottom of the sidebar -->
+				<div class="sidebar-spacer"></div>
+
+				<div class="sidebar-status">
+					<div class="status-line">
+						<div class="status-dot"></div>
+						<div class="status-caption">RUNTIME STATUS</div>
+					</div>
+					<div class="status-detail">UI context initialized</div>
+				</div>
+			</div>
+
+			<!-- Main content column -->
+			<div id="main">
+				<div id="topbar">
+					<div>
+						<div class="breadcrumb">SCALIX / USER INTERFACE</div>
+						<div id="page-title">Control center</div>
+						<div id="page-subtitle">A first look at RML documents and RCSS styling.</div>
+					</div>
+					<div class="sample-badge">SAMPLE PAGE</div>
+				</div>
+
+				<div id="hero">
+					<div class="hero-copy">
+						<div class="eyebrow">WELCOME TO RMLUI</div>
+						<div id="hero-title">A UI that belongs to the engine.</div>
+						<div id="hero-description">
+							RML describes the page structure. RCSS controls the appearance.
+							Edit either file, then restart Scalix to see your changes.
+						</div>
+					</div>
+					<div class="hero-mark">UI</div>
+				</div>
+
+				<!-- Repeated cards are ordinary elements; their layout comes from RCSS. -->
+				<div id="metrics">
+					<div class="metric-card">
+						<div class="metric-label">UI FRAMEWORK</div>
+						<div class="metric-value">RmlUi</div>
+						<div class="metric-note">Document and layout</div>
+					</div>
+					<div class="metric-card">
+						<div class="metric-label">RENDERER</div>
+						<div class="metric-value">bgfx</div>
+						<div class="metric-note">Scalix render backend</div>
+					</div>
+					<div class="metric-card" id="last-metric">
+						<div class="metric-label">STYLESHEET</div>
+						<div class="metric-value">RCSS</div>
+						<div class="metric-note">Colors and spacing</div>
+					</div>
+				</div>
+
+				<div id="lower-grid">
+					<div class="panel" id="status-panel">
+						<div class="panel-title">System snapshot</div>
+						<div class="info-row">
+							<div class="info-name">Document loading</div>
+							<div class="info-value">READY</div>
+						</div>
+						<div class="info-row">
+							<div class="info-name">Input forwarding</div>
+							<div class="info-value">CONNECTED</div>
+						</div>
+						<div class="info-row">
+							<div class="info-name">Data binding</div>
+							<div class="info-value muted">NOT CONNECTED</div>
+						</div>
+						<div class="info-row">
+							<div class="info-name">Button callbacks</div>
+							<div class="info-value muted">STYLE ONLY</div>
+						</div>
+
+						<div class="edit-title">EDITING GUIDE</div>
+						<div class="edit-row">
+							<div class="edit-file">sample.rml</div>
+							<div class="edit-description">Change the text, sections, and elements.</div>
+						</div>
+						<div class="edit-row">
+							<div class="edit-file">sample.rcss</div>
+							<div class="edit-description">Change colors, borders, spacing, and layout.</div>
+						</div>
+					</div>
+
+					<div class="panel">
+						<div class="panel-title">Style playground</div>
+						<div class="button-heading">BUTTON STATES</div>
+						<div class="button-row">
+							<!-- These are visual examples; no C++ callbacks are wired up. -->
+							<button class="primary">Primary button</button>
+							<button>Secondary</button>
+						</div>
+
+						<div class="button-heading">KEYBOARD SHORTCUTS</div>
+						<div id="shortcuts">
+							<div class="shortcut-row">
+								<div class="keycap">U</div>
+								<div class="shortcut-description">Open this UI page</div>
+							</div>
+							<div class="shortcut-row">
+								<div class="keycap">G</div>
+								<div class="shortcut-description">Return to the 3D scene</div>
+							</div>
+							<div class="shortcut-row">
+								<div class="keycap">Q</div>
+								<div class="shortcut-description">Quit Scalix</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div id="footer">
+					<div>SCALIX UI SAMPLE / STATIC CONTENT</div>
+					<div>RML = STRUCTURE | RCSS = APPEARANCE</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</rml>

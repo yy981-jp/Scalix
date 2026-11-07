@@ -1,0 +1,236 @@
+name: Build sxmp backend
+description: Build the MediaPipe-based sxmp backend against Scalix-owned OpenCV.
+
+runs:
+  using: composite
+
+  steps:
+    - name: Initialize MediaPipe submodule
+      shell: bash
+      run: |
+        git submodule update --init --depth 1 sxmp/external/mediapipe
+
+    - name: Verify zlib macOS compatibility patch
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        patch="sxmp/external/mediapipe/third_party/zlib.diff"
+        if ! grep -Fq '+#if defined(MACOS)' "$patch"; then
+          echo "::error::MediaPipe zlib patch is missing the macOS compatibility fix."
+          exit 1
+        fi
+
+    - name: Fix zlib download URL (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        workspace="sxmp/external/mediapipe/WORKSPACE"
+        sed -i 's|http://zlib.net/fossils/zlib-1.2.13.tar.gz|https://zlib.net/fossils/zlib-1.2.13.tar.gz|' "$workspace"
+        grep -F 'https://zlib.net/fossils/zlib-1.2.13.tar.gz' "$workspace"
+
+    - name: Fix zlib download URL (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+
+        workspace = Path("sxmp/external/mediapipe/WORKSPACE")
+        old = "http://zlib.net/fossils/zlib-1.2.13.tar.gz"
+        new = "https://zlib.net/fossils/zlib-1.2.13.tar.gz"
+        content = workspace.read_text()
+        if old in content:
+            workspace.write_text(content.replace(old, new))
+        elif new not in content:
+            raise SystemExit(f"Could not find the expected zlib URL in {workspace}")
+        print(f"Using {new}")
+        PY
+
+    - name: Verify Python (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      run: |
+        command -v python3
+        python3 --version
+
+    - name: Verify Python (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        command -v python3
+        python3 --version
+
+    - name: Setup Bazel
+      uses: bazel-contrib/setup-bazel@0.19.1
+      with:
+        bazelisk-version: 1.29.0
+        bazelisk-cache: true
+        disk-cache: sxmp-backend-${{ runner.os }}-${{ runner.arch }}
+        # Rotate Windows caches because the initial failed run saved an empty cache.
+        cache-version: ${{ runner.os == 'Windows' && '2' || '1' }}
+        external-cache: true
+        # repository-cacheがcacheの容量を食い潰してる疑惑があるため
+        repository-cache: false
+        module-root: sxmp/external/mediapipe
+        output-base: ${{ runner.os == 'Windows' && 'D:/_bazel' || '' }}
+
+    - name: Build sxmp backend (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      working-directory: sxmp
+      env:
+        USE_BAZEL_VERSION: 7.4.1
+      run: |
+        BAZEL_EXE="$(cygpath -w "$RUNNER_TOOL_CACHE")"
+        BAZEL_EXE="${BAZEL_EXE}\\bazelisk\\1.29.0\\x64\\bazel.exe"
+        if [[ ! -f "$(cygpath -u "$BAZEL_EXE")" ]]; then
+          echo "::error::Bazelisk executable not found: $BAZEL_EXE"
+          exit 1
+        fi
+
+        # Keep setup-bazel's cache paths and the Bazel process on the same output base.
+        # Pass it explicitly because MSYS2 may resolve a different HOME/.bazelrc.
+        export BAZEL_EXE
+        export BAZEL_OUTPUT_BASE="D:/_bazel"
+        export BAZEL_DISK_CACHE="D:/_bazel-disk"
+        export BAZEL_REPOSITORY_CACHE="D:/_bazel-repo"
+
+        cmd.exe //c cb.bat
+
+    - name: Verify sxmp backend runtime DLL (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2 {0}
+      working-directory: sxmp/external/mediapipe
+      run: |
+        expected="bazel-bin/external/sxmp/libsxmp_be.dll"
+
+        # Prefer Bazel's public output path. The bazel-out directory is often a
+        # symlink on Windows, so a plain find does not necessarily descend into it.
+        if [[ -f "$expected" ]]; then
+          echo "Using runtime DLL: $expected"
+          exit 0
+        fi
+
+        runtime_dll="$(find -L bazel-out bazel-bin -iname 'libsxmp_be.dll' -type f -print -quit 2>/dev/null || true)"
+        if [[ -z "$runtime_dll" ]]; then
+          echo "::error::Bazel finished without producing libsxmp_be.dll."
+          echo "Bazel's declared output files:"
+          BAZEL="$(cygpath -u "$RUNNER_TOOL_CACHE")/bazelisk/1.29.0/x64/bazel.exe"
+          "$BAZEL" --output_base="D:/_bazel" cquery --output=files @sxmp//:sxmp_be || true
+          echo "Available sxmp backend outputs:"
+          find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
+          exit 1
+        fi
+
+        mkdir -p "$(dirname "$expected")"
+        if [[ ! -e "$expected" || ! "$runtime_dll" -ef "$expected" ]]; then
+          cp -f "$runtime_dll" "$expected"
+        fi
+        test -f "$expected"
+        echo "Using runtime DLL: $expected"
+
+    - name: Build sxmp backend (Linux and macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: sxmp/external/mediapipe
+      env:
+        USE_BAZEL_VERSION: 7.4.1
+      run: |
+        LINK_ARGS=(
+          --copt=-fvisibility=hidden
+        )
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          LINK_ARGS+=(
+            --linkopt=-Wl,--gc-sections
+            --linkopt=-Wl,--exclude-libs,ALL
+          )
+        fi
+
+        bazel build \
+          -c opt \
+          --copt=-O3 \
+          --copt=-fomit-frame-pointer \
+          --copt=-ffunction-sections \
+          --copt=-fdata-sections \
+          "${LINK_ARGS[@]}" \
+          --define MEDIAPIPE_DISABLE_GPU=1 \
+          --repo_env=HERMETIC_PYTHON_VERSION=3.12 \
+          --reuse_sandbox_directories \
+          @sxmp//:sxmp_be
+
+    - name: Verify sxmp backend runtime library (Linux and macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: sxmp/external/mediapipe
+      env:
+        USE_BAZEL_VERSION: 7.4.1
+      run: |
+        case "$RUNNER_OS" in
+          Linux) suffix=so ;;
+          macOS) suffix=dylib ;;
+          *)
+            echo "::error::Unsupported sxmp backend runtime platform: $RUNNER_OS"
+            exit 1
+            ;;
+        esac
+
+        expected="bazel-bin/external/sxmp/libsxmp_be.$suffix"
+        if [[ -f "$expected" ]]; then
+          runtime_library="$expected"
+        else
+          runtime_library="$(find -L bazel-out bazel-bin -iname "libsxmp_be.$suffix" -type f -print -quit 2>/dev/null || true)"
+        fi
+
+        if [[ -z "$runtime_library" ]]; then
+          echo "::error::Bazel finished without producing libsxmp_be.$suffix."
+          echo "Bazel's declared output files:"
+          bazel cquery --output=files @sxmp//:sxmp_be || true
+          echo "Available sxmp backend outputs:"
+          find -L bazel-out bazel-bin -iname '*sxmp_be*' -print 2>/dev/null | head -n 100
+          exit 1
+        fi
+
+        # Protobuf and Abseil are private implementation details of the backend.
+        # They must not leak into the process-wide symbol namespace or be
+        # supplied by the Engine's separately linked Protobuf runtime.
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          exported_symbols="$(nm -D -g --defined-only "$runtime_library")"
+          unresolved_symbols="$(nm -D --undefined-only "$runtime_library")"
+        else
+          exported_symbols="$(nm -gU "$runtime_library")"
+          unresolved_symbols="$(nm -u "$runtime_library")"
+        fi
+
+        if ! grep -q 'SXMocapBackend' <<<"$exported_symbols"; then
+          echo "::error::SXMocapBackend public API symbols are not exported."
+          exit 1
+        fi
+        if grep -Eq 'google.*protobuf|absl' <<<"$exported_symbols"; then
+          echo "::error::Private Protobuf/Abseil symbols are still exported by libsxmp_be."
+          grep -E 'google.*protobuf|absl' <<<"$exported_symbols" | head -n 20
+          exit 1
+        fi
+        if grep -Eq 'google.*protobuf|absl' <<<"$unresolved_symbols"; then
+          echo "::error::libsxmp_be still depends on process-global Protobuf/Abseil symbols."
+          grep -E 'google.*protobuf|absl' <<<"$unresolved_symbols" | head -n 20
+          exit 1
+        fi
+        echo "Verified: SXMocapBackend API exported; Protobuf/Abseil symbols remain private."
+
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          # Stage a copy instead of modifying Bazel's output/cache artifact.
+          # Correct the Bazel-relative dylib ID so the package is relocatable.
+          staged="$GITHUB_WORKSPACE/build/runtime-backend/libsxmp_be.dylib"
+          mkdir -p "$(dirname "$staged")"
+          cp -L "$runtime_library" "$staged"
+          install_name_tool -id "@rpath/libsxmp_be.dylib" "$staged"
+          echo "Staged macOS runtime library: $staged"
+          otool -D "$staged"
+        else
+          mkdir -p "$(dirname "$expected")"
+          if [[ ! -e "$expected" || ! "$runtime_library" -ef "$expected" ]]; then
+            cp -f "$runtime_library" "$expected"
+          fi
+          test -f "$expected"
+          echo "Using runtime library: $expected"
+        fi

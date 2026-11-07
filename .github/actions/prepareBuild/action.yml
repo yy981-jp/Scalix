@@ -1,0 +1,97 @@
+name: Prepare Build
+description: Prepare the project environment and external dependencies
+
+runs:
+  using: composite
+
+  steps:
+    - name: Get submodules
+      uses: ./.github/actions/getSubmodules
+
+    - name: Checkout assets
+      shell: bash
+      run: |
+        git config --global url."https://github.com/".insteadOf "git@github.com:"
+        git submodule update --init --depth 1 assets
+
+    - name: Prepare generated asset directories
+      shell: bash
+      run: |
+        rm -rf assets/dist/assets assets/dist/icons
+
+    - name: Setup env
+      id: setup-env
+      uses: ./.github/actions/setupCENV
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: pip
+        cache-dependency-path: tools/assetgen/requirements.txt
+
+    - name: Install AssetGen dependencies
+      if: runner.os != 'Windows'
+      shell: bash
+      run: python -m pip install --disable-pip-version-check -r tools/assetgen/requirements.txt
+
+    - name: Install AssetGen dependencies (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: python -m pip install --disable-pip-version-check -r tools/assetgen/requirements.txt
+
+    - name: Generate icon assets (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\ucrt64\bin
+      run: |
+        $env:PATH = "$env:PATH;$env:CAIROCFFI_DLL_DIRECTORIES"
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/icons --webp-output-dir assets/dist/assets --name icon
+
+    - name: Generate icon assets (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix cairo)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/icons --webp-output-dir assets/dist/assets --name icon
+
+    - name: Generate icon assets (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        python tools/assetgen/assetgen.py icon --original assets/src/icon.svg --output-dir assets/dist/icons --webp-output-dir assets/dist/assets --name icon
+
+    - name: Generate logo WebP (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        CAIROCFFI_DLL_DIRECTORIES: ${{ steps.setup-env.outputs.msys2-location }}\\ucrt64\\bin
+      run: |
+        $env:PATH = "$env:PATH;$env:CAIROCFFI_DLL_DIRECTORIES"
+        python tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
+
+    - name: Generate logo WebP (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix cairo)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+        python3 tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
+
+    - name: Generate logo WebP (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: python3 tools/assetgen/assetgen.py webp --original assets/src/logo.svg --output-dir assets/dist/assets --name logo
+
+    - name: Set assets (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: python ci/set_assets.py
+
+    - name: Set assets (Unix)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: python3 ci/set_assets.py
+
+    - name: Build external
+      uses: ./.github/actions/buildExternal

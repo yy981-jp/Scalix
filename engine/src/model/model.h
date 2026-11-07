@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-#include <array>
 #include <gfx/mesh.h>
 #include <gfx/texture.h>
 #include <core/gctx.h>
@@ -9,33 +7,36 @@
 #include <def/quat.h>
 #include <def/str.h>
 #include <def/transform.h>
+#include <def/mtx.h>
+#include <model/humanoid.h>
+#include <model/rig.h>
 
 #include <anim/format.h>
 #include <core/nodeRegistry.h>
 
 
+struct VRMLoader;
+
 struct Node {
 	StrHs name;
 
-	NodeId parent = -1;
+	NodeHandle parent;
 	NodeId id = -1;
-	std::vector<NodeId> children;
+	std::vector<NodeHandle> children;
 
 	int skinIndex = -1;
+	int jointIndex = -1;
 
 	int meshStartIndex = -1;   // scalixModel.meshesの開始インデックス
 	int meshCount = 0;		 // 複数primitiveに対応するメッシュ数
+
 	bool visible = true;
 
-	// vec3f pos; // local座標 (多分)
-	// Quat rot;  // identity quaternion
-	// vec3f scale = {1.0f, 1.0f, 1.0f};
-
+	// pos: vec3f -- local座標
+	// rot: Quat  -- identity quaternion
+	// scale: vec3f -- {1,1,1}
 	Transform trs;
-
-	bool hasTranslation = false;
-	bool hasRotation = false;
-	bool hasScale = false;
+	Mtx mtx;
 
 	Node() {
 		trs.scale = {1,1,1};
@@ -44,48 +45,36 @@ struct Node {
 
 struct Skin {
 	std::vector<NodeId> joints; // node index
-	std::vector<std::array<float,16>> invBind;
+	std::vector<Mtx> invBind;
 };
 
 enum class Status {
 	stay, walk,
 };
 
-enum class HBT {
-	head, neck,
-	arm_left_up, arm_left_low,
-	arm_right_up, arm_right_low,
-	leg_left_up, leg_left_low,
-	leg_right_up, leg_right_low,
 
-	Count
-};
-
-constexpr uint64_t HBTFlag(HBT bone) {
-	return 1u << static_cast<uint64_t>(bone);
-}
-
-/// @brief 骨格
-struct Humanoid {
-	void init(const std::vector<Node> nodes, const std::vector<Skin>& skins);
-
-	// node handle
-	NodeHandle bones[static_cast<size_t>(HBT::Count)];
-	std::vector<NodeHandle> spines;
-
-	uint64_t boneFlag = 0;
-	
-	bool has(HBT bone) {
-		return boneFlag & HBTFlag(bone);
-	}
-};
-
-/// @brief 構造そのもの
+/// @brief 構造そのもの (静的データ)
 struct Model {
+	Humanoid humanoid;
+	VRM vrm;
+
+	void init(const VRM& vrm) {
+		this->vrm = vrm;
+		humanoid.init(*this, vrm);
+	}
+
+	// scalix側で用意した仮想的なroot
+	// 元のデータにrootが複数ある場合も単一である場合も、
+	// このnodeの子に配置する
+	NodeHandle root;
+
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
+
 	std::vector<Node> nodes;
+
+	// NodeId to NodeHandle
+	std::vector<NodeHandle> nodeHandles;
 	std::vector<Skin> skins;
 	std::vector<int> materialToImage; // map
 };
-

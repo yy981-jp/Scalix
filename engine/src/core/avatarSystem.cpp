@@ -1,38 +1,39 @@
+#include "def/transform.h"
 #include <core/avatarSystem.h>
 
-#include <gltf/loader.h>
+#include <loader/gltf.h>
 #include <core/key.h>
 #include <core/nodeRegistry.h>
-#include <util/mtxutil.h>
 #include <util/cache.h>
-#include <util/quatutil.h>
+#include <def/mtx.h>
+#include <def/view.h>
+#include <mocap/motionDebug.h>
+#include <mocap/poseSolver.h>
 
 #include <bx/math.h>
-#include <iostream>
 
-
-void AvatarSystem::loadData(const std::vector<std::string> path) {
-	AvatarId id = 0;
-	for (const auto& file: path) {
-		Avatar avatar(file);
-		avatar.id = id++;
-		avatars.push_back(std::move(avatar));
-		
-		// Get a reference to the newly added avatar
-		Avatar& addedAvatar = avatars.back();
-		
-		// Register all nodes in the registry
-		for (NodeId nodeId = 0; nodeId < (NodeId)addedAvatar.model.nodes.size(); nodeId++) {
-			nodeReg.create(&addedAvatar, nodeId);
-		}
-		
-		// Now initialize humanoid with the registered nodes
-		addedAvatar.humanoid.init(addedAvatar.model.nodes, addedAvatar.model.skins);
+namespace {
+void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
+	if (!motionTraceEnabled()) return;
+	for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
+		if (!avatar.model.humanoid.has(bone)) continue;
+		const Quat& q = nodeReg.get(avatar.model.humanoid.bones[(size_t)bone]).trs.rot;
+		printf("MOTION %s bone=%d local=(%.5f,%.5f,%.5f,%.5f)\\n", stage, static_cast<int>(bone), q.x, q.y, q.z, q.w);
 	}
 }
+}
 
-void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
-				const Transform& entityTransform) {
+
+void AvatarSystem::loadData(AvatarId id) {
+	// Avatarのコンストラクタがload処理をやってる
+	avatars.try_emplace(id, id);
+
+	if (!playableAvatar.isValid())
+		playableAvatar = id;
+}
+
+void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
+				Avatar& avatar, const Mtx& entityMtx) {
 	if (idx < 0 || idx >= avatar.model.nodes.size()) {
 		printf("invalid idx: %d\n", idx);
 		return;
@@ -40,61 +41,75 @@ void calcGlobal(int idx, std::vector<bool>& calculated, Avatar& avatar,
 	if (calculated[idx]) return;
 
 	auto& node = avatar.model.nodes[idx];
-	node.trs.rebuildMatrix();
+	node.mtx = Mtx::fromTRS(node.trs);
 
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
-	if (node.parent >= 0) {
-		calcGlobal(node.parent, calculated, avatar, entityTransform);
-		avatar.globalTransforms[idx] = avatar.globalTransforms[node.parent] * node.trs;
+	if (node.parent.isValid()) {
+		NodeId parent = nodeReg.getId(node.parent);
+
+		calcGlobal(parent, calculated, out, avatar, entityMtx);
+
+		out[idx] = out[parent] * node.mtx;
+
 	} else {
-		// bx::mtxMul の従来の積順と合わせ、ルートは local * entity。
-		avatar.globalTransforms[idx] = node.trs * entityTransform;
+		out[idx] = node.mtx * entityMtx;
 	}
 
 	calculated[idx] = true;
 }
 
 
-void AvatarSystem::update(GameContext& ctx, float dt) {
-	
-	for (auto& avatar: avatars) {
+void AvatarSystem::update(GlobalContext& ctx, float dt) {
+	// player以外の制御はしない
+	Avatar& avatar = player();
 
-		// printf("D: avatar.id: %d, playable: %d\n", avatar.id, playableAvatar);
-		if (avatar.id != playableAvatar) continue; // player以外の制御はしない
+	traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
+	// avatar update
+	avatar.update(ctx,dt);
+	traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
-		// avatar update
-		avatar.update(ctx,dt);
+	avatar.globalMtx.resize(avatar.model.nodes.size());
+	avatar.trackingMtx.resize(avatar.model.nodes.size());
 
-		avatar.globalTransforms.resize(avatar.model.nodes.size());
+	Transform entityTransform;
+	entityTransform.pos = avatar.pos;
+	entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
+	entityTransform.scale = avatar.scale;
+	Mtx entityMtx = Mtx::fromTRS(entityTransform);
 
-		Transform entityTransform;
-		entityTransform.pos = avatar.pos;
-		entityTransform.rot.setAxisAngle({0, 1, 0}, avatar.yaw);
-		// glTF座標系からのX軸反転もEntityのTRSとして扱う。
-		entityTransform.scale = {-avatar.scale[0], avatar.scale[1], avatar.scale[2]};
-		entityTransform.rebuildMatrix();
+	// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
+	// スケールは entityTransform と同じにする。
+	// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
+	Transform trackingEntityTransform;
+	trackingEntityTransform.scale = entityTransform.scale;
+	Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
 
-		std::vector<bool> calculated;
-		calculated.resize(avatar.model.nodes.size(), false);
+	std::vector<bool> calculated;
+	calculated.resize(avatar.model.nodes.size(), false);
 
-		for (int i = 0; i < avatar.model.nodes.size(); i++) {
-			calcGlobal(i, calculated, avatar, entityTransform);
-		}
-
-		if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
-
+	for (int i = 0; i < avatar.model.nodes.size(); i++) {
+		calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
 	}
+
+	std::vector<bool> trackingCalculated;
+	trackingCalculated.resize(avatar.model.nodes.size(), false);
+
+	for (int i = 0; i < avatar.model.nodes.size(); i++) {
+		calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
+	}
+
+	if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
 }
 
 
 void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones) {
-	for (auto& avatar: avatars) {
+	for (auto& [id,avatar]: avatars) {
 
 		// 骨構造を持たないavatarは処理しない
 		if (avatar.model.skins.empty()) continue;
 
 
-		std::vector<std::vector<std::array<float,16>>> allJointMtx;
+		std::vector<std::vector<Mtx>> allJointMtx;
 		allJointMtx.resize(avatar.model.skins.size());
 
 		for (int skinIdx = 0; skinIdx < avatar.model.skins.size(); skinIdx++) {
@@ -106,12 +121,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 			for (int i = 0; i < (int)skin.joints.size(); i++) {
 				NodeId nodeIdx = skin.joints[i];
 
-				// 順序検証済み
-				bx::mtxMul(
-					jointMtx[i].data(),
-					skin.invBind[i].data(),
-					avatar.globalTransforms[nodeIdx].mtx.data()
-				);
+				jointMtx[i] = avatar.globalMtx[nodeIdx] * skin.invBind[i];
 			}
 		}
 
@@ -125,13 +135,11 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 			if (node.skinIndex < 0) continue;
 			if (!node.visible) continue;
 
-			// printf("DEBUG: node name: %s\n", std::string(strsv().get(node.name)).c_str());
-
 			for (int i = 0; i < node.meshCount; i++) {
 				const Mesh& mesh = avatar.model.meshes[node.meshStartIndex + i];
 
 				// ===== パレット =====
-				std::vector<std::array<float,16>> palette;
+				std::vector<Mtx> palette;
 				palette.resize(mesh.boneRemapInverse.size());
 
 				for (int i = 0; i < (int)mesh.boneRemapInverse.size(); i++) {
@@ -141,10 +149,10 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 
 				if (mesh.boneRemapInverse.size() > 120) {
 					printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
-					// printf("rem-inv: %d", mesh.boneRemapInverse.size());
-					continue;
+						continue;
 				}
 				
+
 				bgfx::setUniform(u_bones, palette.data(), palette.size());
 
 				// ===== transform =====
@@ -180,11 +188,18 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 				);
 
 				// ===== draw =====
-				bgfx::submit(0, program);
+				bgfx::submit((int)ViewId::game, program);
 
-				// printf("DEBUG: size: %d\n", mesh.boneRemapInverse.size());
 			}
 
 		}
 	}
+}
+
+Avatar& AvatarSystem::player() {
+	return get(playableAvatar);
+}
+
+Avatar& AvatarSystem::get(const AvatarId& id) {
+	return avatars.at(id);
 }

@@ -1,23 +1,25 @@
 #include <core/avatar.h>
+#include <model/humanoid.h>
 
 #include <anim/loader.h>
-#include <gltf/loader.h>
+#include <loader/gltf.h>
+#include <loader/vrm.h>
 #include <util/cache.h>
+#include <util/math.h>
+#include <util/path.h>
 #include <core/key.h>
 #include <core/gctx.h>
-#include <util/quatutil.h>
 #include <physics/springBone.h>
 #include <core/nodeRegistry.h>
 
-#include <cstdio>
 
 
-void Avatar::update(GameContext& ctx, float dt) {
+void Avatar::update(GlobalContext& ctx, float dt) {
 	// --- 移動 ---
 	float fx = -lutsv.getSin(yaw);
 	float fz =  lutsv.getCos(yaw);
 
-	float rx =  fz;   // = cos(yaw)
+	float rx = -fz;   // -cos(yaw)
 	float rz = -fx;   // = sin(yaw)
 
 	bool walking = false;
@@ -27,12 +29,12 @@ void Avatar::update(GameContext& ctx, float dt) {
 
 	if (has(ctx.keyStat, KCode::W)) {
 		walking = true;
-		pos.x += fx * aplSpeed;
+		pos.x -= fx * aplSpeed;
 		pos.z += fz * aplSpeed;
 	}
 	if (has(ctx.keyStat, KCode::S)) {
 		walking = true;
-		pos.x -= fx * aplSpeed;
+		pos.x += fx * aplSpeed;
 		pos.z -= fz * aplSpeed;
 	}
 	if (has(ctx.keyStat, KCode::A)) {
@@ -46,6 +48,12 @@ void Avatar::update(GameContext& ctx, float dt) {
 		pos.z += rz * aplSpeed * rlMove;
 	}
 
+	if ( has(ctx.keyStat, KCode::Space) ) {
+		jump.jump(10);
+	}
+	jump.tick(dt);
+	pos.y = jump.getHeight();
+
 	status = (walking? Status::walk : Status::stay);
 
 	// --- アニメーション ---
@@ -56,71 +64,104 @@ void Avatar::update(GameContext& ctx, float dt) {
 	if (has(ctx.keyStat, KCode::n0)) ctx.cam_type = CameraType::DEBUG;
 	else if (has(ctx.keyStat, KCode::n1)) ctx.cam_type = CameraType::_1;
 
-	head.yaw   += ctx.mStat.relPos.x * sensitivity;
-	head.pitch -= ctx.mStat.relPos.y * sensitivity;
+	const float yawDelta = ctx.mStat.relPos.x * sensitivity;
+	head.yaw   -= yawDelta;
+	head.pitch += ctx.mStat.relPos.y * sensitivity;
 
 	// 制限
 	if (head.pitch >  headPitchLimit) head.pitch =  headPitchLimit;
 	if (head.pitch < -headPitchLimit) head.pitch = -headPitchLimit;
 
-	if (head.yaw >  headYawLimit) {
-		yaw -= head.yaw - headYawLimit; // 体を視点に追従
-		head.yaw =  headYawLimit;
+	float clampedHeadYaw = head.yaw;
+	if (clampedHeadYaw > headYawLimit) {
+		clampedHeadYaw = headYawLimit;
 	}
-	if (head.yaw < -headYawLimit) {
-		yaw += -headYawLimit - head.yaw;
-		head.yaw = -headYawLimit;
+	if (clampedHeadYaw < -headYawLimit) {
+		clampedHeadYaw = -headYawLimit;
+	}
+	if (head.yaw != clampedHeadYaw) {
+		yaw += head.yaw - clampedHeadYaw;
+		head.yaw = clampedHeadYaw;
 	}
 
 	// --- neck (pitch) ---
-	if (humanoid.has(HBT::neck)) {
-		NodeHandle neckHandle = humanoid.bones[(size_t)HBT::neck];
+	if (model.humanoid.has(HBT::neck)) {
+		NodeHandle neckHandle = model.humanoid.bones[(size_t)HBT::neck];
 		auto& neckNode = nodeReg.get(neckHandle);
-		neckNode.hasRotation = true;
 
 		float qPitch[4];
-		neckNode.trs.rot.setAxisAngle({1,0,0}, head.pitch);
+		neckNode.trs.rot = Quat::fromAxisAngle({1,0,0}, head.pitch);
 	}
 
-	if (humanoid.has(HBT::head)) {
+	if (model.humanoid.has(HBT::head)) {
 		// --- head (yaw) ---
-		NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
+		NodeHandle headHandle = model.humanoid.bones[(size_t)HBT::head];
 		auto& headNode = nodeReg.get(headHandle);
-		headNode.hasRotation = true;
 
-		headNode.trs.rot.setAxisAngle({0,1,0}, head.yaw);
+		headNode.trs.rot = Quat::fromAxisAngle({0,1,0}, head.yaw);
 
-		// printf("hn.rot[1]: %g, [2]: %g, [3]: %g, [4]: %g\n", headNode.rot[1], headNode.rot[2], headNode.rot[3], headNode.rot[4]);
 	}
+	
 }
 
 
 void Avatar::draw(Camera& cam) {
-	// if (!humanoid.has(HBT::neck)) return;
 
-	NodeHandle headHandle = humanoid.bones[(size_t)HBT::head];
-	const Node& headNode = nodeReg.get(headHandle);
+	NodeHandle headHandle = model.humanoid.bones[(size_t)HBT::head];
 
 	int headIdx = nodeReg.getId(headHandle);
 	if (headIdx < 0) return;
 
 	// globalTransform のTRS成分は非一様スケール／鏡映を完全には表せないため、
 	// 描画と同じグローバル行列から視点の位置・向きを取得する。
-	const auto& headMtx = globalTransforms[headIdx].mtx;
-	const vec3f headPos{headMtx[12], headMtx[13], headMtx[14]};
+	const auto& headMtx = globalMtx[headIdx];
 	const vec3f lookDir{bx::normalize(bx::mulXyz0({0.0f, 0.0f, 1.0f}, headMtx.data()))};
 
 
-	vec3f camPos = headPos
+	vec3f camPos = headMtx.pos()
 		+ lookDir * 0.1f
 		+ vec3f{0, 0.05f, 0};
 
 	cam.update(camPos, camPos + lookDir);
 }
 
-Avatar::Avatar(const std::string& glTFPath) {
-	model = loadGltf(glTFPath);
-	anim.init("test.sxa",*this);
+Avatar::Avatar(const AvatarId& id): id(id) {
+	const fs::path base = syspath.userdata / "avatars" / id.hex();
+	std::string path;
+	GltfType type;
 
-	// anim.run("Sweater_OFF"_hs);
+	if (fs::exists(base / "model")) {
+		for (const auto& e: fs::recursive_directory_iterator(base / "model")) {
+			if (e.path().extension() == ".gltf") {
+				path = e.path().string();
+				type = GltfType::ascii;
+				break;
+			}
+		}
+		if (path.empty())
+			throw std::runtime_error("Avatar::Avatar: model dir is exist, but system couldn't find gltf file");
+	} else if (fs::exists(base / "model.vrm")) {
+		path = (base / "model.vrm").string();
+		type = GltfType::binary;
+	} else if (fs::exists(base / "model.glb")) {
+		path = (base / "model.glb").string();
+		type = GltfType::binary;
+	} else 
+		throw std::runtime_error("Avatar::Avatar: system couldn't find any format gltf file");
+
+	GltfLoader loader(path, type);
+	loader.load();
+	VRM vrm = VRMLoader(loader);
+	loader.procHdl(this);
+	model = loader.get();
+	model.init(vrm);
+
+	// anim.init("test.sxa",*this);
+
+}
+
+Avatar::~Avatar() {
+	for (const NodeHandle& hdl: model.nodeHandles) {
+		nodeReg.destroy(hdl);
+	}
 }

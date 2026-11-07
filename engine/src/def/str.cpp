@@ -12,6 +12,6 @@ StrHs StrTable::entry(std::string_view str) {
 std::string_view StrTable::get(StrHs hash) {
 	const auto pos = table.find(hash);
 	if (pos == table.end())
-		throw std::runtime_error("StrTable::get: hash not found");
+		throw std::runtime_error("StrTable::get: hash not found: " + std::to_string(hash.hash));
 	return pos->second;
 }

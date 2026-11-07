@@ -1,4 +1,5 @@
 #include <def/vec3.h>
+#include <def/mtx.h>
 
 #include <limits.h>
 
@@ -75,6 +76,10 @@ vec3f vec3f::operator*(const vec3f& other) const {
 	};
 }
 
+vec3f vec3f::operator*(const Mtx& other) const {
+	return bx::mul(*this,other.data());
+}
+
 vec3f operator*(float s, const vec3f& v) {
 	return v * s;
 }
@@ -86,6 +91,16 @@ vec3f vec3f::operator/(float scalar) const {
 		z / scalar
 	};
 }
+
+
+void vec3f::normalize() {
+	*this = bx::normalize(*this);
+}
+
+vec3f vec3f::normalized() const {
+	return bx::normalize(*this);
+}
+
 
 vec3f vec3f::lerp(const vec3f& a, const vec3f& b, float t) {
 	return bx::lerp(a,b,t);

@@ -1,21 +1,56 @@
 [submodule "external/bgfx"]
 	path = external/bgfx
-	url = https://github.com/bkaradzic/bgfx
+	url = https://github.com/bkaradzic/bgfx.git
+
 [submodule "external/bx"]
 	path = external/bx
-	url = https://github.com/bkaradzic/bx
+	url = https://github.com/bkaradzic/bx.git
 [submodule "external/bimg"]
 	path = external/bimg
-	url = https://github.com/bkaradzic/bimg
+	url = https://github.com/bkaradzic/bimg.git
 [submodule "external/bgfx.cmake"]
 	path = external/bgfx.cmake
-	url = https://github.com/bkaradzic/bgfx.cmake
+	url = https://github.com/bkaradzic/bgfx.cmake.git
 [submodule "external/tinygltf"]
 	path = external/tinygltf
-	url = git@github.com:syoyo/tinygltf.git
+	url = https://github.com/yy981-jp/tinygltf.git
+	branch = y9_dev
 [submodule "external/yaml-cpp"]
 	path = external/yaml-cpp
-	url = git@github.com:jbeder/yaml-cpp.git
+	url = https://github.com/jbeder/yaml-cpp.git
 [submodule "external/nlohmann"]
 	path = external/nlohmann
-	url = git@github.com:nlohmann/json.git
+	url = https://github.com/nlohmann/json.git
+[submodule "external/dear-imgui"]
+	path = external/dear-imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "external/y9inc"]
+	path = external/y9inc
+	url = https://github.com/yy981-jp/tools.git
+[submodule "external/asio"]
+	path = external/asio
+	url = https://github.com/chriskohlhoff/asio.git
+[submodule "assets"]
+	path = assets
+	url = https://github.com/yy981-jp/Scalix-Assets.git
+[submodule "external/SDL"]
+	path = external/SDL
+	url = https://github.com/libsdl-org/SDL.git
+[submodule "external/SDL-image"]
+	path = external/SDL-image
+	url = https://github.com/libsdl-org/SDL_image.git
+[submodule "sxmp/external/mediapipe"]
+	path = sxmp/external/mediapipe
+	url = https://github.com/yy981-jp/mediapipe.git
+[submodule "external/opencv"]
+	path = external/opencv
+	url = https://github.com/opencv/opencv.git
+[submodule "external/RmlUi"]
+	path = external/RmlUi
+	url = https://github.com/mikke89/RmlUi.git
+[submodule "external/CLI11"]
+	path = external/CLI11
+	url = https://github.com/CLIUtils/CLI11.git
+[submodule "external/VRM"]
+	path = external/VRM
+	url = https://github.com/infosia/VRM.h.git

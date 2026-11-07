@@ -1,0 +1,337 @@
+#include <core/engine.h>
+
+#include <mocap/mocap.h>
+
+#include <stdexcept>
+#include <string>
+#include <cstring>
+#include <cstdint>
+#include <bx/math.h>
+
+#include <gfx/shader.h>
+#include <debug/debugDraw.h>
+#include <util/path.h>
+#include <core/config.h>
+#include <physics/util.h>
+#include <def/fs.h>
+
+
+Engine::Engine(EngineMode emode): emode(emode) {
+	if (!SDL_Init(SDL_INIT_VIDEO))
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.initialized = true;
+
+	// ===== window 作成 (SDL) =====
+	window = SDL_CreateWindow(
+		"Scalix",
+		T_WIDTH, T_HEIGHT,
+		0
+	);
+	if (!window)
+		throw std::runtime_error(SDL_GetError());
+	sdlRuntime.window = window;
+	SDL_SetWindowFullscreen(window, true);
+
+	// path system
+	syspath.init();
+
+	// logo system
+	LogoRenderer logo(window);
+	logo.draw();
+
+	// get window size
+	SDL_SyncWindow(window);
+	SDL_GetWindowSize(window, &width, &height);
+
+	// ===== bgfx初期化 =====
+	bgfx::PlatformData pd{};
+
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	if (!props)
+		throw std::runtime_error(std::string("Get window properties: ") + SDL_GetError());
+
+	#if defined(_WIN32)
+		pd.nwh = SDL_GetPointerProperty(
+			props,
+			SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+			nullptr
+		);
+	#elif defined(__linux__)
+		const char* videoDriver = SDL_GetCurrentVideoDriver();
+		if (!videoDriver)
+			throw std::runtime_error("Get current SDL video driver");
+
+		if (std::strcmp(videoDriver, "x11") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_X11_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = reinterpret_cast<void*>(static_cast<std::uintptr_t>(
+				SDL_GetNumberProperty(
+					props,
+					SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
+					0
+				)
+			));
+		} else if (std::strcmp(videoDriver, "wayland") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER,
+				nullptr
+			);
+			pd.type = bgfx::NativeWindowHandleType::Wayland;
+		} else {
+			throw std::runtime_error(std::string("Unsupported SDL video driver: ") + videoDriver);
+		}
+
+		if (!pd.ndt || !pd.nwh)
+			throw std::runtime_error(std::string("Get native window handles for SDL video driver: ") + videoDriver);
+	#elif defined(__APPLE__)
+		pd.nwh = SDL_GetPointerProperty(
+			props,
+			SDL_PROP_WINDOW_COCOA_WINDOW_POINTER,
+			nullptr
+		);
+	#endif
+
+	if (!pd.nwh)
+		throw std::runtime_error("Get native window handle");
+
+	bgfx::Init init{};
+	init.type = bgfx::RendererType::Count;
+	init.platformData = pd;
+
+	init.resolution.width = width;
+	init.resolution.height = height;
+	init.resolution.reset = BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4/* | BGFX_RESET_MAXANISOTROPY*/;
+
+	bgfxMan.init(init);
+	
+	// bgfx::setDebug(BGFX_DEBUG_STATS);
+	// bgfx::setDebug(BGFX_DEBUG_TEXT);
+
+	// set mouse mode
+	SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
+	if (emode == EngineMode::uiTest) sceneId = SceneId::ui;
+
+	rml.init(width, height);
+	rml.loadDocument("ui/sample.rml");
+
+	cfg.init((syspath.userdata/"config"/"user.json").string(), (syspath.resource/"config"/"def.json").string());
+	gameInit();
+
+	gctx.poseSolver = poseSolver;
+
+}
+
+Engine::~Engine() = default;
+
+void Engine::tick() {
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_QUIT) {
+            running = false;
+            continue;
+        }
+
+		switch (event.type) {
+			case SDL_EVENT_KEY_DOWN:			onKeyDown(event.key);			break;
+			case SDL_EVENT_KEY_UP:				onKeyUp(event.key);			break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:	onMouseBtDown(event.button);	break;
+			case SDL_EVENT_MOUSE_BUTTON_UP:		onMouseBtUp(event.button);	break;
+			case SDL_EVENT_MOUSE_MOTION:		onMouseMt(event.motion);		break;
+		}
+
+		if (sceneId == SceneId::ui) {
+			rml.processEvent(event);
+		}
+	}
+
+	const float dt = elap.get();
+	if (has(keyStat,KCode::Q)) running = false;
+
+	static float wait = 0;
+	if (wait > 0) wait -= dt;
+
+	if (has(keyStat, KCode::Esc) && wait <= 0) {
+		wait += 0.5;
+		mouseRelMode = !mouseRelMode;
+		SDL_SetWindowRelativeMouseMode(window, mouseRelMode);
+		sceneId = (sceneId == SceneId::game? SceneId::ui : SceneId::game);
+	}
+
+	// global ctx
+	switch (sceneId) {
+		case SceneId::game: {
+			gctx.keyStat = keyStat;
+			gctx.mStat = mStat;
+		}; break;
+		case SceneId::ui: {
+			gctx.keyStat = {};
+			gctx.mStat = {};
+		}
+	}
+
+	// update & draw
+	switch (sceneId) {
+		case SceneId::ui: {
+			rml.update();
+			rml.render();
+		} // ここにbreakがないのは仕様です
+		case SceneId::game: {
+			update(dt);
+			draw();
+		} break;
+	}
+
+	// bgfx::dbgTextClear();
+	// bgfx::dbgTextPrintf(5, 50, 0x4f, "fps: %f", 1/dt);
+
+
+	bgfx::frame();
+
+	frame++;
+	if (emode == EngineMode::smokeTest && frame >= 100) // 数値は適当
+		running = false;
+}
+
+
+void Engine::update(float dt) {
+	// ===== Entityごと =====
+	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
+		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
+	);
+	PoseFrame frame;
+	if (receiver && receiver->tick(frame)) {
+		poseSolver->solve(frame);
+	}
+
+	avatarSystem.update(gctx,dt);
+	physicsSystem.tick(dt);
+
+	mStat.relPos = {0, 0};
+}
+
+
+void Engine::draw() {
+	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)], u_bones);
+	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
+	debug.render(shaders[static_cast<size_t>(ShaderId::grid)]);
+}
+
+void Engine::gameInit() {
+	mStat.relMode = mouseRelMode;
+
+	// set camera
+	camId = CameraType::_1;
+	cam0.init(width,height,0.03);
+
+	grid.init(50,10, 0xffd6d661);
+
+	// ===== view =====
+	bgfx::setViewClear(0,
+		BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
+		0x303030ff, 1.0f, 0);
+	bgfx::setViewRect(0, 0, 0, width, height);
+
+	// ===== load glTF ====
+	// nodeReg.setAvatarSystemPtr(&avatarSystem);
+	const auto& avaIdNode = cfg.get()["avatar"]["id"];
+	AvatarId avaId;
+	if (!avaIdNode.is_null()) {
+		avaId = UUID::fromString(avaIdNode.get<std::string>());
+	} else {
+		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.glb";
+		if (!fs::exists(dest)) {
+			const auto& orig = syspath.resource / "avatars" / "init.glb";
+			const auto& dest_parent = dest.parent_path();
+			if (!fs::exists(dest_parent))
+				fs::create_directories(dest_parent);
+			fs::copy(orig,dest);
+		}
+		avaId = UUID{0,0};
+	}
+	avatarSystem.loadData(avaId);
+
+
+	// ===== load Shader =====
+	const auto shaderDirectory = getRuntimeShaderDirectory(syspath.resource);
+	shaders[static_cast<size_t>(ShaderId::tex)] = loadProgram(
+		(shaderDirectory / "vs_tex.bin").string(),
+		(shaderDirectory / "fs_tex.bin").string()
+	);
+	shaders[static_cast<size_t>(ShaderId::grid)] = loadProgram(
+		(shaderDirectory / "vs_grid.bin").string(),
+		(shaderDirectory / "fs_grid.bin").string()
+	);
+	
+	debug.init();
+
+	// const bgfx::Caps* caps = bgfx::getCaps();
+	// int maxMat4 = caps->limits.maxUniforms / 4;
+	// usingUni = maxMat4 * 0.8;
+	// std::cout << "using uniform: " << usingUni << "\n";
+
+	u_bones = bgfx::createUniform("u_boneMatrices", bgfx::UniformType::Mat4, 120);
+
+	elap.init();
+
+
+	avatarSystem.update(gctx,elap.get());
+
+
+	poseSolver = new PoseSolver{avatarSystem.player()};
+
+	physicsSystem.init(avatarSystem.player());
+
+	if (cfg.get()["mocap"].get<bool>()) {
+		receiver = std::make_unique<Recv>();
+		mocapThr = std::jthread(mocapWorker);
+	}
+}
+
+void Engine::onKeyDown(const SDL_KeyboardEvent& e) {
+	if (e.repeat) return;
+	auto it = keyMap.find(e.key);
+	if (it != keyMap.end())
+		keyStat |= static_cast<KCodes>(it->second);
+}
+
+void Engine::onKeyUp(const SDL_KeyboardEvent& e) {
+	auto it = keyMap.find(e.key);
+	if (it != keyMap.end())
+		keyStat &= ~static_cast<KCodes>(it->second);
+}
+
+void Engine::onMouseBtDown(const SDL_MouseButtonEvent& e) {
+	auto it = mMap.find(e.button);
+	if (it != mMap.end())
+		mStat.codes |= static_cast<MCodes>(it->second);
+}
+
+void Engine::onMouseBtUp(const SDL_MouseButtonEvent& e) {
+	auto it = mMap.find(e.button);
+	if (it != mMap.end())
+		mStat.codes &= ~static_cast<MCodes>(it->second);
+}
+
+// void Engine::onWindowEve(const SDL_WindowEvent& e) {
+// /*
+// 	if (e.event == SDL_EVENT_WINDOW_FOCUS_LOST) {
+// 		// windowがfocusを失ったとき入力を初期化 ...した方がいいのか? TODO:
+// 	}
+// */
+// }
+
+void Engine::onMouseMt(const SDL_MouseMotionEvent& e) {
+	mStat.absPos.x = e.x;
+	mStat.absPos.y = e.y;
+	mStat.relPos.x = e.xrel;
+	mStat.relPos.y = e.yrel;
+}

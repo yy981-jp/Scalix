@@ -1,0 +1,76 @@
+# For most projects, this workflow file will not need changing; you simply need
+# to commit it to your repository.
+#
+name: "CodeQL Advanced"
+
+on:
+  push:
+    branches: [ "main", "develop", "ci/github-actions", "fix/security" ]
+  pull_request:
+    branches: [ "main", "develop", "ci/github-actions", "fix/security" ]
+  schedule:
+    - cron: '44 13 * * 5'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-24.04' }}
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - language: actions
+          build-mode: none
+        - language: c-cpp
+          build-mode: manual
+        - language: python
+          build-mode: none
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 1
+
+    # Build external libraries before initializing CodeQL so their source files
+    # are not collected as part of the Scalix C/C++ build trace.
+    - name: Prepare external dependencies for CodeQL
+      if: matrix.language == 'c-cpp'
+      uses: ./.github/actions/prepareBuild
+
+    # Build the required sxmp shared library before CodeQL starts tracing.
+    # This keeps the MediaPipe/Bazel build out of the Scalix C/C++ database.
+    - name: Build sxmp backend for CodeQL
+      if: matrix.language == 'c-cpp'
+      uses: ./.github/actions/buildSxmpBackend
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+
+    # Only the Scalix project build is traced by CodeQL. External dependencies
+    # have already been built and installed by the preparation step above.
+    - name: Configure Scalix for CodeQL
+      if: matrix.language == 'c-cpp'
+      shell: bash
+      run: |
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build Scalix for CodeQL
+      if: matrix.language == 'c-cpp'
+      shell: bash
+      run: |
+        cmake --build build --parallel
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{ matrix.language }}"
