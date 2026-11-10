@@ -9,7 +9,7 @@
 
 #include <core/bgfx.h>
 #include <gfx/shader.h>
-#include <gltf/loader.h>
+#include <loader/gltf.h>
 #include <core/key.h>
 #include <core/camera.h>
 #include <core/gctx.h>

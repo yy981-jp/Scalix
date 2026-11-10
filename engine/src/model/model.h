@@ -15,6 +15,8 @@
 #include <core/nodeRegistry.h>
 
 
+struct VRMLoader;
+
 struct Node {
 	StrHs name;
 
@@ -54,11 +56,11 @@ enum class Status {
 /// @brief 構造そのもの (静的データ)
 struct Model {
 	Humanoid humanoid;
-	RigGraph rig;
+	VRM vrm;
 
-	void init() {
-		humanoid.init(*this);
-		// physics.init(*this);
+	void init(const VRM& vrm) {
+		this->vrm = vrm;
+		humanoid.init(*this, vrm);
 	}
 
 	// scalix側で用意した仮想的なroot
@@ -68,7 +70,7 @@ struct Model {
 
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
-	
+
 	std::vector<Node> nodes;
 
 	// NodeId to NodeHandle

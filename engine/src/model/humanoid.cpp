@@ -146,12 +146,64 @@ static inline void selectHelper(std::span<NodeHandle> to,
 	to[static_cast<size_t>(target)] = select(from[static_cast<size_t>(target)]);
 }
 
+
+void Humanoid::init(const Model& model, const VRM& vrm) {
+	const auto& bs = vrm.vrm.humanoid.humanBones;
+
+	#define X(name) {HBT::name, bs.name},
+
+	std::vector<std::pair<HBT, VRMC_VRM_1_0::HumanBone>> dict {
+		X(hips)
+
+		X(spine)
+		X(chest)
+		X(upperChest)
+		X(neck)
+		X(head)
+
+		X(leftShoulder)
+		X(leftUpperArm)
+		X(leftLowerArm)
+		X(leftHand)
+
+		X(rightShoulder)
+		X(rightUpperArm)
+		X(rightLowerArm)
+		X(rightHand)
+
+		X(leftUpperLeg)
+		X(leftLowerLeg)
+		X(leftFoot)
+		X(leftToes)
+
+		X(rightUpperLeg)
+		X(rightLowerLeg)
+		X(rightFoot)
+		X(rightToes)
+	};
+
+	#undef X
+
+
+	for (auto [hbt,vrm_hbt]: dict) {
+		auto& bone = bones[static_cast<size_t>(hbt)];
+		bone = model.nodeHandles[vrm_hbt.node];
+
+		// flag
+		if (bone.isValid()) {
+			boneFlag |= HBTFlag(hbt);
+		}
+	}
+
+}
+
+
 void Humanoid::init(const Model& model) {
 	NodeHandle sampleHdl = model.root;
 	std::vector<NodeInfo> cands;
 	// 属性をつける
 	for (const auto& node: model.nodes) {
-		if (!node.name.hash) continue; // hash == 0 のnodeはバグのもと
+		if (!node.name.hash) continue; // hash == 0 のnodeなんてのはstrsvに登録されない
 		const auto& words = tokenizer(strsv().get( node.name ));
 		NodeInfo cand;
 		cand.handle = nodeReg.find(sampleHdl,node.id);
@@ -245,9 +297,10 @@ void Humanoid::init(const Model& model) {
 		}
 	}
 	
+	// spineって大体1つらしい
+	// for (const auto& spine: spines_) this->spines.push_back(spine.handle); // spineはすべて使用
+	
 	// 最適解を選択
-	for (const auto& spine: spines_) this->spines.push_back(spine.handle); // spineはすべて使用
-
 	for (int i = 0; i < static_cast<size_t>(HBT::Count); i++) {
 		selectHelper(bones, bones_init, static_cast<HBT>(i));
 		

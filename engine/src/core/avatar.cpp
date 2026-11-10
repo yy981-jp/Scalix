@@ -2,7 +2,8 @@
 #include <model/humanoid.h>
 
 #include <anim/loader.h>
-#include <gltf/loader.h>
+#include <loader/gltf.h>
+#include <loader/vrm.h>
 #include <util/cache.h>
 #include <util/math.h>
 #include <util/path.h>
@@ -124,7 +125,7 @@ void Avatar::draw(Camera& cam) {
 	cam.update(camPos, camPos + lookDir);
 }
 
-Avatar::Avatar(const AvatarId& id): id(id) {
+Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
 	const fs::path base = syspath.userdata / "avatars" / id.hex();
 	std::string path;
 	GltfType type;
@@ -139,6 +140,9 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 		}
 		if (path.empty())
 			throw std::runtime_error("Avatar::Avatar: model dir is exist, but system couldn't find gltf file");
+	} else if (fs::exists(base / "model.vrm")) {
+		path = (base / "model.vrm").string();
+		type = GltfType::binary;
 	} else if (fs::exists(base / "model.glb")) {
 		path = (base / "model.glb").string();
 		type = GltfType::binary;
@@ -147,9 +151,10 @@ Avatar::Avatar(const AvatarId& id): id(id) {
 
 	GltfLoader loader(path, type);
 	loader.load();
+	VRM vrm = VRMLoader(loader);
 	loader.procHdl(this);
 	model = loader.get();
-	model.init();
+	model.init(vrm);
 
 	// anim.init("test.sxa",*this);
 

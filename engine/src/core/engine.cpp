@@ -207,14 +207,13 @@ void Engine::update(float dt) {
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
 		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
 	);
-	physicsSystem.tick(dt);
-
 	PoseFrame frame;
 	if (receiver && receiver->tick(frame)) {
 		poseSolver->solve(frame);
 	}
 
 	avatarSystem.update(gctx,dt);
+	physicsSystem.tick(dt);
 
 	mStat.relPos = {0, 0};
 }
