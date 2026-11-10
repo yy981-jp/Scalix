@@ -163,6 +163,7 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 
 
 %%%%%%%%%% TODO %%%%%%%%%%
+trsを必要な箇所だけに留め、mtxを中心にする
 
 Engine::u_bonesはavatarSystemの責務か? ほかにも整理していきたい
 mesh::submit()使われてなくない? 使われてないコードをいつか一斉に整理したい
