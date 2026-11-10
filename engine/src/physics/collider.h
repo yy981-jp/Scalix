@@ -2,95 +2,102 @@
 #include <cstdint>
 #include <vector>
 
+#include <def/id.h>
+#include <def/vec3.h>
 
-/*
+
+class Collidertag {};
+using ColliderId = Id<Collidertag>;
+using ColliderGen = uint32_t;
+struct ColliderHandle {
+	ColliderId id;
+	ColliderGen gen;
+};
+
+
+struct Collider {
+	
+};
+
+
 class ColliderSystem {
-public:
-    struct Entry {
-        uint32_t nextFree;
-        uint32_t gen;
-    };
+	struct Entry {
+		ColliderId nextFree;
+		uint32_t gen;
+	};
 
-private:
-    static constexpr ColliderID INVALID = UINT32_MAX;
+	
+	// ↓ 頭が混乱しそうなので詳しく書いとく
 
-    // ----- SoA -----
-    // 共通
-    std::vector<ColliderType> type;
-    std::vector<vec2f> pos;        // center (circle) / center (rect)
-    std::vector<CollisionLayer> layer;
-    std::vector<uint8_t> mask;
+	// 有効なColliderのId
+	std::vector<ColliderId> alive;
+	// aliveの順序をColiderIdから追跡するため
+	std::vector<ColliderId> aliveIndex;
+	// 各スロットの世代を保持し、空きの連結リストにも使う
+	std::vector<Entry> records;
+	// 空きスロットの連結リストの終端
+	ColliderId freeHead = ColliderId::invalid();
 
-    // Circle専用
-    std::vector<float> radius;
+	// 再利用可能なデータ領域
+	std::vector<Collider> colliders;
 
-    // Rect専用
-    std::vector<vec2f> rectMin, rectMax;
-
-    // AABB (broadcheck用 大雑把な当たり判定)
-    std::vector<vec2f> aabbMin, aabbMax;
-    
-    std::vector<EntityHandle> owner;
-
-    std::vector<ColliderID> alive;
-    std::vector<uint32_t> aliveIndex;
-    std::vector<Entry> records;
-    ColliderID freeHead = INVALID;
-
-    // ptr
-    std::vector<ICollidable*> ptr_collidable;
-    std::vector<ColPtrSet> ptr_set;
-
-    // ----- Func -----
-    bool hitCircleCircle(EntityID a, EntityID b);
-    bool hitRectCircle(EntityID r, EntityID c);
-    bool hitCircleRect(EntityID c, EntityID r);
-    bool hitRectRect(EntityID a, EntityID b);
-    using HitFunc = bool (ColliderSystem::*)(EntityID, EntityID);
-    HitFunc hitTable[2][2] = {
-        { &ColliderSystem::hitCircleCircle, &ColliderSystem::hitCircleRect },
-        { &ColliderSystem::hitRectCircle,   &ColliderSystem::hitRectRect }
-    };
-
-    void updateAABB(EntityID id);
-    bool aabbOverlap(EntityID a, EntityID b);
-    bool shouldCollide(EntityID a, EntityID b);
-    HitEvent genHitInfo(EntityID a, EntityID b);
 
 public:
-    ICollidable* getColPtr(const ColliderHandle& h) const {
-        if (!isAlive(h)) return {};
-        return ptr_collidable[h.id];
-    }
 
-    ColPtrSet getPtr(const ColliderHandle& h) const {
-        if (!isAlive(h)) return {};
-        return ptr_set[h.id];
-    }
+	ColliderHandle add(const Collider& collider) {
+		ColliderId id;
+		if (freeHead != ColliderId::invalid()) {
+			// 再利用
+			id = freeHead;
+			freeHead = records[id].nextFree;
+		} else {
+			// 新規確保
+			id = records.size();
+			records.emplace_back();
+			aliveIndex.resize(records.size());
+		}
+		aliveIndex[id] = alive.size();
+		alive.push_back(id);
 
-    void draw(const Renderer* r);
+		colliders[id] = collider;
 
-    ColliderHandle add(const Collider& c);
 
-    void setColPtr(ColliderHandle h, ICollidable* ptr) {
-        if (!isAlive(h)) return;
-        ptr_collidable[h.id] = ptr;
-    }
+		ColliderGen gen = records[id].gen;
+		return {
+			.id = id,
+			.gen = gen
+		};
+	};
 
-    void setPtr(ColliderHandle h, const ColPtrSet& ptrSet) {
-        if (!isAlive(h)) return;
-        ptr_set[h.id] = ptrSet;
-    }
 
-    // 判定ループ（circle only broadphase）
-    void step(GCMS& gcm);
+	void destroy(const ColliderHandle& hdl) {
+		if (!isAlive(hdl)) return;
 
-    void setPos(ColliderHandle h, vec2f p) {
-        pos[h.id] = p;
-    }
+		const ColliderId& idx  = aliveIndex[hdl.id];
+		const ColliderId& last = alive.back();
 
-    void destroy(ColliderHandle h);
-    bool isAlive(ColliderHandle h) const;
+		// 効率的に削除
+		alive[idx] = last;
+		aliveIndex[last] = idx;
+		alive.pop_back();
+
+		// 再利用できるようにするための処理
+		records[hdl.id].gen++;
+		records[hdl.id].nextFree = freeHead;
+		freeHead = hdl.id;
+	}
+
+
+	bool isAlive(const ColliderHandle& hdl) {
+		
+	}
+
+	
+	void tick() {
+	};
+
+
+
 };
 
 
@@ -102,7 +109,3 @@ struct Contact {
 	vec3f normal;
 	float penetration;
 };
-
-
-class ColliderSystem
-*/
