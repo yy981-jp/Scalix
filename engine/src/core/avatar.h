@@ -40,7 +40,7 @@ struct Avatar {
 	AnimSystem anim;
 
 	Status status = Status::stay;
-	float speed = 7;
+	float speed;
 
 	AvatarId id;
 

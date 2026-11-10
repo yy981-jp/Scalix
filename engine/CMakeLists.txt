@@ -266,6 +266,7 @@ target_include_directories(${EXE_NAME} SYSTEM PRIVATE
 	${CMAKE_SOURCE_DIR}/external/asio/include
 	${CMAKE_SOURCE_DIR}/external/opencv/include
 	${CMAKE_SOURCE_DIR}/external/CLI11/include
+	${CMAKE_SOURCE_DIR}/external/VRM/include
 	${EXTERNAL_INSTALL_PREFIX}/include
 	${EXTERNAL_INSTALL_PREFIX}/include/opencv5
 )

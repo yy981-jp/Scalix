@@ -3,5 +3,11 @@
 
 
 namespace def {
-	constexpr vec3f gravity{0,9.8,0};
+	constexpr float gravity = 9.8;
 }
+
+enum class ColliderShape {
+	Sphere,
+	Capsule
+};
+

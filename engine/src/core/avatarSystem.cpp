@@ -1,7 +1,7 @@
 #include "def/transform.h"
 #include <core/avatarSystem.h>
 
-#include <gltf/loader.h>
+#include <loader/gltf.h>
 #include <core/key.h>
 #include <core/nodeRegistry.h>
 #include <util/cache.h>

@@ -11,7 +11,6 @@ class PhysicsSystem {
 public:
 	void init(Avatar& avatar);
 
-
 	void tick(float dt) {
 		springBoneSystem.tick(dt);
 	}
