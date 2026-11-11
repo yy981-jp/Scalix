@@ -49,7 +49,7 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
 		// 子ボーンの向き)。実際のスキニングパイプラインが使う値そのもの。
 		bones[(size_t)cnct.bone].childLocalDir =
-			nodeReg.get(childHdl).trs.pos.normalized();
+			nodeReg.get(childHdl).mtx.pos().normalized();
 	}
 
 

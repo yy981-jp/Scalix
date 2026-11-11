@@ -20,9 +20,10 @@ public:
 	Mtx operator*(const Mtx& other);
 
 	void setPos(const vec3f& pos);
-	void setScale(const vec3f& scale);
 	vec3f pos();
 	const vec3f pos() const;
+	
+	void setScale(const vec3f& scale);
 
 	// 行列から回転成分を抽出する。PoseSolver など、回転だけを必要とする処理で使う。
 	Quat rot() const;
