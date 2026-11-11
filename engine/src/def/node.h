@@ -11,6 +11,9 @@ using NodeEntryId = uint32_t; // NodeRegistry内のentryを指すId
 using NodeGen = uint16_t;
 
 struct NodeHandle {
+	NodeHandle() { *this = invalid(); };
+	NodeHandle(const NodeId& id, const NodeGen& gen): id(id), gen(gen) {}
+
 	NodeEntryId id;
 	NodeGen gen;
 
