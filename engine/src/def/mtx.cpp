@@ -149,7 +149,10 @@ Quat Mtx::rot() const {
 	bx::Vec3 scale{1.0f, 1.0f, 1.0f};
 	bx::Quaternion rotation{0.0f, 0.0f, 0.0f, 1.0f};
 	decomposeRotScale(m_data.data(), scale, rotation);
-	return Quat(rotation);
+
+	Quat result(rotation);
+	result.normalize();
+	return result;
 }
 
 vec3f Mtx::scale() const {
@@ -167,6 +170,7 @@ Transform Mtx::toTransform() const {
 	Transform t;
 	t.pos = pos();
 	t.rot = Quat(rotation);
+	t.rot.normalize();
 	t.scale = {scale.x, scale.y, scale.z};
 	return t;
 }
