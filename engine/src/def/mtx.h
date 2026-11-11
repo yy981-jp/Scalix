@@ -20,6 +20,8 @@ public:
 	Mtx operator*(const Mtx& other);
 
 	vec3f pos() const;
+
+	// rot / scale は TRS 分解による取得。shear を含む行列では近似値になる。
 	Quat rot() const;
 	vec3f scale() const;
 
