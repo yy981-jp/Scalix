@@ -1,7 +1,9 @@
 #include <def/mtx.h>
 
 
-Mtx::Mtx() {}
+Mtx::Mtx() {
+	bx::mtxIdentity(m_data.data());
+}
 
 float* Mtx::data() { return m_data.data(); }
 const float* Mtx::data() const { return m_data.data(); }

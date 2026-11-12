@@ -15,8 +15,6 @@
 #include <core/nodeRegistry.h>
 
 
-struct VRMLoader;
-
 struct Node {
 	StrHs name;
 
