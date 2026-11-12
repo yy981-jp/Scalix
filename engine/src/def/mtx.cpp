@@ -1,8 +1,7 @@
 #include <def/mtx.h>
 
 
-Mtx::Mtx() {
-}
+Mtx::Mtx() {}
 
 float* Mtx::data() { return m_data.data(); }
 const float* Mtx::data() const { return m_data.data(); }

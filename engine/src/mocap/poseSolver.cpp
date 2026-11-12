@@ -107,7 +107,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		// 親の回転で挟み込む(サンドイッチする)方式だと式が成立しない。
 		Quat parentGlobalRotInv = Quat::inverse(parentGlobalRot);
 
-		node.trs.rot = parentGlobalRotInv * newGlobalRot;
+		node.mtx.setRot( parentGlobalRotInv * newGlobalRot );
 		bone.lastTargetDir = currentDir;
 		bone.lastSolvedGlobalRot = newGlobalRot;
 		bone.wasSolved = true;

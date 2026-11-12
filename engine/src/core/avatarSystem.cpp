@@ -1,6 +1,7 @@
-#include "def/transform.h"
-#include <core/avatarSystem.h>
+#include <bx/math.h>
 
+#include <def/transform.h>
+#include <core/avatarSystem.h>
 #include <loader/gltf.h>
 #include <core/key.h>
 #include <core/nodeRegistry.h>
@@ -9,19 +10,6 @@
 #include <def/view.h>
 #include <mocap/motionDebug.h>
 #include <mocap/poseSolver.h>
-
-#include <bx/math.h>
-
-namespace {
-void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
-	if (!motionTraceEnabled()) return;
-	for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
-		if (!avatar.model.humanoid.has(bone)) continue;
-		const Quat& q = nodeReg.get(avatar.model.humanoid.bones[(size_t)bone]).trs.rot;
-		printf("MOTION %s bone=%d local=(%.5f,%.5f,%.5f,%.5f)\\n", stage, static_cast<int>(bone), q.x, q.y, q.z, q.w);
-	}
-}
-}
 
 
 void AvatarSystem::loadData(AvatarId id) {
@@ -41,7 +29,7 @@ void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
 	if (calculated[idx]) return;
 
 	auto& node = avatar.model.nodes[idx];
-	node.mtx = Mtx::fromTRS(node.trs);
+	// node.mtx = Mtx::fromTRS(node.trs);
 
 	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
 	if (node.parent.isValid()) {
@@ -63,10 +51,8 @@ void AvatarSystem::update(GlobalContext& ctx, float dt) {
 	// player以外の制御はしない
 	Avatar& avatar = player();
 
-	traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
 	// avatar update
 	avatar.update(ctx,dt);
-	traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
 	avatar.globalMtx.resize(avatar.model.nodes.size());
 	avatar.trackingMtx.resize(avatar.model.nodes.size());
