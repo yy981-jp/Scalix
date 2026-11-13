@@ -8,7 +8,7 @@
 std::vector<NodeHandle> detectBonePath(NodeHandle begin, NodeHandle end) {
 	std::vector<NodeHandle> path;
 
-	if (!nodeReg.is_alive(begin) || !nodeReg.is_alive(end))
+	if (!nodeReg.isAlive(begin) || !nodeReg.isAlive(end))
 		return path;
 
 	if (nodeReg.getAvatar(begin) != nodeReg.getAvatar(end))
@@ -16,7 +16,7 @@ std::vector<NodeHandle> detectBonePath(NodeHandle begin, NodeHandle end) {
 
 	std::unordered_set<NodeHandle> visited;
 
-	for (NodeHandle cur = end; nodeReg.is_alive(cur); ) {
+	for (NodeHandle cur = end; nodeReg.isAlive(cur); ) {
 		if (!visited.insert(cur).second)
 			return {};
 
@@ -38,13 +38,13 @@ std::vector<NodeHandle> detectBonePath(NodeHandle begin, NodeHandle end) {
 std::vector<NodeHandle> detectBonePath(NodeHandle begin) {
 	std::vector<NodeHandle> path;
 
-	if (!nodeReg.is_alive(begin))
+	if (!nodeReg.isAlive(begin))
 		return path;
 
 
 	NodeHandle cur = begin;
 
-	while (nodeReg.is_alive(cur)) {
+	while (nodeReg.isAlive(cur)) {
 		path.push_back(cur);
 
 		const Node& node = nodeReg.get(cur);

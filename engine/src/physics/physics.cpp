@@ -9,7 +9,7 @@ namespace {
 
 bool isAncestorOrSelf(NodeHandle ancestor, NodeHandle node) {
 	std::unordered_set<NodeHandle> visited;
-	for (NodeHandle current = node; nodeReg.is_alive(current); ) {
+	for (NodeHandle current = node; nodeReg.isAlive(current); ) {
 		if (!visited.insert(current).second) return false;
 		if (current == ancestor) return true;
 
@@ -51,7 +51,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 	// The synthetic root added by GltfLoader is not a source glTF node and
 	// must not be addressable from VRMC_springBone indices.
 	size_t sourceNodeCount = model.nodeHandles.size();
-	if (nodeReg.is_alive(model.root)) {
+	if (nodeReg.isAlive(model.root)) {
 		sourceNodeCount = static_cast<size_t>(nodeReg.getId(model.root));
 	}
 
@@ -74,7 +74,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 			}
 
 			const NodeHandle handle = model.nodeHandles[joint.node];
-			if (!nodeReg.is_alive(handle)
+			if (!nodeReg.isAlive(handle)
 				|| nodeReg.getAvatar(handle) != &avatar
 				|| !localJointNodes.insert(handle).second
 				|| usedJointNodes.contains(handle)) {
@@ -110,7 +110,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 			}
 
 			center = model.nodeHandles[centerNode];
-			if (!nodeReg.is_alive(center) || !isAncestorOrSelf(center, nodes.front())) {
+			if (!nodeReg.isAlive(center) || !isAncestorOrSelf(center, nodes.front())) {
 				warnSpring(springIndex, "center must be the first joint or one of its ancestors");
 				continue;
 			}
@@ -177,7 +177,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 				if (source.node >= sourceNodeCount) continue;
 
 				const NodeHandle colliderNode = model.nodeHandles[source.node];
-				if (!nodeReg.is_alive(colliderNode)) continue;
+				if (!nodeReg.isAlive(colliderNode)) continue;
 
 				SpringBoneCollider collider;
 				collider.node = colliderNode;

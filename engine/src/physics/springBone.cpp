@@ -103,7 +103,7 @@ void resolveCollision(
 	float centerScale,
 	const vec3f& fallbackDirection
 ) {
-	if (!nodeReg.is_alive(collider.node) || collider.radius <= 0.0f) return;
+	if (!nodeReg.isAlive(collider.node) || collider.radius <= 0.0f) return;
 
 	const int colliderIndex = static_cast<int>(nodeReg.getId(collider.node));
 	if (colliderIndex < 0 || colliderIndex >= static_cast<int>(avatar.globalMtx.size())) return;
@@ -174,19 +174,19 @@ SpringBoneChain::SpringBoneChain(
 	}
 
 	for (NodeHandle handle: nodes) {
-		if (!nodeReg.is_alive(handle) || nodeReg.getAvatar(handle) != &avatar) {
+		if (!nodeReg.isAlive(handle) || nodeReg.getAvatar(handle) != &avatar) {
 			throw std::invalid_argument("SpringBoneChain contains an invalid or foreign node");
 		}
 	}
 
 	if (hasCenter) {
-		if (!nodeReg.is_alive(center) || nodeReg.getAvatar(center) != &avatar) {
+		if (!nodeReg.isAlive(center) || nodeReg.getAvatar(center) != &avatar) {
 			throw std::invalid_argument("SpringBone center is invalid or belongs to another avatar");
 		}
 
 		bool isAncestor = false;
 		std::unordered_set<NodeHandle> visited;
-		for (NodeHandle current = nodes.front(); nodeReg.is_alive(current); ) {
+		for (NodeHandle current = nodes.front(); nodeReg.isAlive(current); ) {
 			if (!visited.insert(current).second) break;
 			if (current == center) {
 				isAncestor = true;
@@ -213,7 +213,7 @@ SpringBoneChain::SpringBoneChain(
 	for (size_t i = 0; i + 1 < nodes.size(); ++i) {
 		bool isAncestor = false;
 		std::unordered_set<NodeHandle> visited;
-		for (NodeHandle current = nodes[i + 1]; nodeReg.is_alive(current); ) {
+		for (NodeHandle current = nodes[i + 1]; nodeReg.isAlive(current); ) {
 			if (!visited.insert(current).second) break;
 			if (current == nodes[i]) {
 				isAncestor = true;
@@ -275,7 +275,7 @@ SpringBoneChain::SpringBoneChain(
 	// A smaller depth means a joint closer to the model root. The system
 	// sorts chains by this value so parent chains are evaluated first.
 	std::unordered_set<NodeHandle> ancestors;
-	for (NodeHandle current = nodes.front(); nodeReg.is_alive(current); ) {
+	for (NodeHandle current = nodes.front(); nodeReg.isAlive(current); ) {
 		if (!ancestors.insert(current).second) break;
 		++rootDepth;
 		const NodeHandle parent = nodeReg.get(current).parent;
@@ -287,7 +287,7 @@ SpringBoneChain::SpringBoneChain(
 
 void SpringBoneChain::prepareFrame() {
 	for (JointState& state: joints) {
-		if (!nodeReg.is_alive(state.head)) continue;
+		if (!nodeReg.isAlive(state.head)) continue;
 		Node& node = nodeReg.get(state.head);
 
 		// If an animator changed this joint since the previous physics tick,
@@ -322,7 +322,7 @@ void SpringBoneChain::update(float dt) {
 	}
 
 	for (JointState& state: joints) {
-		if (!nodeReg.is_alive(state.head)) continue;
+		if (!nodeReg.isAlive(state.head)) continue;
 
 		const int headIndex = static_cast<int>(nodeReg.getId(state.head));
 		if (headIndex < 0 || headIndex >= static_cast<int>(avatar->globalMtx.size())) continue;

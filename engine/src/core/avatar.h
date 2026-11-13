@@ -63,7 +63,7 @@ struct Avatar {
 
 	void refreshSubtree(NodeHandle handle = NodeHandle::invalid(), bool isSameloop = false) {
 		if (!handle.isValid()) handle = model.root;
-		if (!nodeReg.is_alive(handle)) return;
+		if (!nodeReg.isAlive(handle)) return;
 
 
 		if (!isSameloop) refreshSubtreeLoop++;
@@ -75,7 +75,7 @@ struct Avatar {
 		vis_ent = refreshSubtreeLoop;
 
 
-		if (nodeReg.is_alive(node.parent)) {
+		if (nodeReg.isAlive(node.parent)) {
 			const auto& parentIndex = nodeReg.getId(node.parent);
 			globalMtx[index] = globalMtx[parentIndex] * node.mtx;
 		} else {
