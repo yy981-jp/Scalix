@@ -4,6 +4,8 @@
 NodeHandle NodeRegistry::create(Avatar* avatar, NodeId nodeid) {
 	++aliveCount;
 	NodeEntryId id;
+	
+	assert(avatar);
 
 	if (freeHead != INVALID) {
 		// フリースロットを再利用
@@ -41,7 +43,7 @@ void NodeRegistry::destroy(NodeHandle h) {
 }
 
 bool NodeRegistry::is_alive(NodeHandle h) const {
-	return h.id < records.size() && records[h.id].avatar != nullptr && records[h.id].gen == h.gen;
+	return h.isValid() && h.id < records.size() && records[h.id].gen == h.gen;
 }
 
 uint32_t NodeRegistry::size() const {

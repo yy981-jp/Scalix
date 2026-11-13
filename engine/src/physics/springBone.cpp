@@ -40,58 +40,11 @@ Mtx makeEntityMatrix(const Avatar& avatar) {
 	return Mtx::fromTRS(transform);
 }
 
-void refreshSubtree(
-	Avatar& avatar,
-	NodeHandle handle,
-	const Mtx& entityMatrix,
-	std::vector<bool>& visited
-) {
-	if (!nodeReg.is_alive(handle)) return;
-
-	const int index = static_cast<int>(nodeReg.getId(handle));
-	if (index < 0 || index >= static_cast<int>(avatar.model.nodes.size())) return;
-	if (visited[static_cast<size_t>(index)]) return;
-	visited[static_cast<size_t>(index)] = true;
-
-	Node& node = nodeReg.get(handle);
-	// node.mtx = Mtx::fromTRS(node.trs);
-
-	if (node.parent.isValid() && nodeReg.is_alive(node.parent)) {
-		const int parentIndex = static_cast<int>(nodeReg.getId(node.parent));
-		if (parentIndex >= 0 && parentIndex < static_cast<int>(avatar.globalMtx.size())) {
-			avatar.globalMtx[index] = avatar.globalMtx[parentIndex] * node.mtx;
-		} else {
-			avatar.globalMtx[index] = node.mtx * entityMatrix;
-		}
-	} else {
-		avatar.globalMtx[index] = node.mtx * entityMatrix;
-	}
-
-	for (NodeHandle child: node.children) {
-		refreshSubtree(avatar, child, entityMatrix, visited);
-	}
-}
 
 void refreshAvatarTransforms(Avatar& avatar) {
-	avatar.globalMtx.resize(avatar.model.nodes.size());
-	std::vector<bool> visited(avatar.model.nodes.size(), false);
-	const Mtx entityMatrix = makeEntityMatrix(avatar);
+	// avatar.globalMtx.resize(avatar.model.nodes.size());
 
-	if (nodeReg.is_alive(avatar.model.root)) {
-		refreshSubtree(avatar, avatar.model.root, entityMatrix, visited);
-	}
-
-	// The loader normally attaches every source node to the synthetic root.
-	// Keep disconnected nodes usable as well, rather than leaving stale matrices.
-	for (NodeHandle handle: avatar.model.nodeHandles) {
-		if (!nodeReg.is_alive(handle)) continue;
-
-		const int index = static_cast<int>(nodeReg.getId(handle));
-		if (index < 0 || index >= static_cast<int>(visited.size())) continue;
-		if (!visited[static_cast<size_t>(index)]) {
-			refreshSubtree(avatar, handle, entityMatrix, visited);
-		}
-	}
+	avatar.refreshSubtree();
 }
 
 vec3f toEvaluationPoint(
@@ -442,7 +395,7 @@ void SpringBoneChain::update(float dt) {
 		state.lastAppliedRotation = headNode.mtx.rot();
 
 		std::vector<bool> visited(avatar->model.nodes.size(), false);
-		refreshSubtree(*avatar, state.head, entityMatrix, visited);
+		avatar->refreshSubtree(state.head);
 	}
 }
 

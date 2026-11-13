@@ -28,6 +28,7 @@ struct Avatar {
 	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float yaw = 0.0f;
 	vec3f scale = {1.0f, 1.0f, 1.0f};
+	Mtx avatarMtx;
 
 	Jump jump;
 	const float floor_y = 0;
@@ -54,4 +55,35 @@ struct Avatar {
 	Avatar& operator=(const Avatar&) = delete;
 
 	Avatar(Avatar&&) noexcept = default;
+
+	// cache
+	std::vector<uint32_t> visited;
+
+	uint32_t refreshSubtreeLoop = 0;
+
+	void refreshSubtree(NodeHandle handle = NodeHandle::invalid(), bool isSameloop = false) {
+		if (!handle.isValid()) handle = model.root;
+		if (!nodeReg.is_alive(handle)) return;
+
+
+		if (!isSameloop) refreshSubtreeLoop++;
+		const Node& node = nodeReg.get(handle);
+		const auto& index = node.id;
+
+		auto& vis_ent = visited[index];
+		if (vis_ent == refreshSubtreeLoop) return;
+		vis_ent = refreshSubtreeLoop;
+
+
+		if (nodeReg.is_alive(node.parent)) {
+			const auto& parentIndex = nodeReg.getId(node.parent);
+			globalMtx[index] = globalMtx[parentIndex] * node.mtx;
+		} else {
+			globalMtx[index] = node.mtx * avatarMtx;
+		}
+
+		for (NodeHandle child: node.children) {
+			refreshSubtree(child, true);
+		}
+	}
 };

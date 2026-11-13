@@ -57,24 +57,17 @@ void AvatarSystem::update(GlobalContext& ctx, float dt) {
 	avatar.globalMtx.resize(avatar.model.nodes.size());
 	avatar.trackingMtx.resize(avatar.model.nodes.size());
 
-	Transform entityTransform;
-	entityTransform.pos = avatar.pos;
-	entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
-	entityTransform.scale = avatar.scale;
-	Mtx entityMtx = Mtx::fromTRS(entityTransform);
-
 	// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
 	// スケールは entityTransform と同じにする。
 	// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
-	Transform trackingEntityTransform;
-	trackingEntityTransform.scale = entityTransform.scale;
-	Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
+	Mtx trackingEntityMtx;
+	trackingEntityMtx.setScale(avatar.avatarMtx.scale());
 
 	std::vector<bool> calculated;
 	calculated.resize(avatar.model.nodes.size(), false);
 
 	for (int i = 0; i < avatar.model.nodes.size(); i++) {
-		calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
+		calcGlobal(i, calculated, avatar.globalMtx, avatar, avatar.avatarMtx);
 	}
 
 	std::vector<bool> trackingCalculated;

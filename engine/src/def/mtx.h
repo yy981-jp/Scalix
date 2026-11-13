@@ -17,7 +17,7 @@ public:
 	float* data();
 	const float* data() const;
 
-	Mtx operator*(const Mtx& other);
+	Mtx operator*(const Mtx& other) const;
 
 	vec3f pos() const;
 

@@ -163,7 +163,7 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 
 
 %%%%%%%%%% TODO %%%%%%%%%%
-trsを必要な箇所だけに留め、mtxを中心にする
+rename NodeReg::is_alive() -> isAlive()
 
 refreshSubtreeとavatarsystemの更新処理が内容被ってないか?
 

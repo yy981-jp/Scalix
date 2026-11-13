@@ -8,7 +8,7 @@ Mtx::Mtx() {
 float* Mtx::data() { return m_data.data(); }
 const float* Mtx::data() const { return m_data.data(); }
 
-Mtx Mtx::operator*(const Mtx& other) {
+Mtx Mtx::operator*(const Mtx& other) const {
 	Mtx res;
 	bx::mtxMul(res.data(), other.data(), data());
 	return res;

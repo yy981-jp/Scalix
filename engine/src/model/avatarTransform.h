@@ -1,3 +1,7 @@
+#pragma once
+#include <model/avatarDef.h>
+#include <core/avatar.h>
+#include <def/mtx.h>
 
 
 namespace AvatarTransform {

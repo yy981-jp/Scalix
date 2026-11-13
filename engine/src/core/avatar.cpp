@@ -49,7 +49,7 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	}
 
 	if ( has(ctx.keyStat, KCode::Space) ) {
-		jump.jump(10);
+		jump.jump(4);
 	}
 	jump.tick(dt);
 	pos.y = jump.getHeight();
@@ -100,7 +100,11 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 
 		headNode.mtx.setRot( Quat::fromAxisAngle({0,1,0}, head.yaw) );
 	}
-	
+
+
+	avatarMtx.setPos(pos);
+	avatarMtx.setRot(Quat::fromAxisAngle({0,1,0}, yaw));
+	avatarMtx.setScale(scale);
 }
 
 
@@ -154,6 +158,8 @@ Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
 	loader.procHdl(this);
 	model = loader.get();
 	model.init(vrm);
+
+	visited.resize(model.nodes.size(), 0);
 
 	// anim.init("test.sxa",*this);
 
