@@ -1,8 +1,8 @@
 #include <bx/math.h>
 #include <def/quat.h>
-
 #include <util/cache.h>
 #include <def/vec3.h>
+#include <physics/def.h>
 
 
 Quat::operator bx::Quaternion() const {
@@ -163,4 +163,25 @@ Quat Quat::inverse(const Quat& target) {
 		-target.z,
 		target.w
 	};
+}
+
+
+bool Quat::isSameRotation(const Quat& a, const Quat& b) {
+	const float dot = a.x * b.x + a.y * b.y
+		+ a.z * b.z + a.w * b.w;
+
+	const float lengthSqA = a.x * a.x + a.y * a.y
+		+ a.z * a.z + a.w * a.w;
+
+	const float lengthSqB = b.x * b.x + b.y * b.y
+		+ b.z * b.z + b.w * b.w;
+
+	if (lengthSqA <= def::epsilon * def::epsilon
+		|| lengthSqB <= def::epsilon * def::epsilon) {
+		return false;
+	}
+
+	constexpr float threshold = 1.0f - 1.0e-5f;
+
+	return dot * dot >= threshold * threshold * lengthSqA * lengthSqB;
 }

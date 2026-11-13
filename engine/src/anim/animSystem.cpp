@@ -35,6 +35,7 @@ void AnimSystem::tick(Avatar& avatar, float dt) {
 
 
 void AnimSystem::apply(Avatar& avatar) {
+/*
 	size_t blendIdx = 0;
 
 	for (size_t playIdx = 0; playIdx < playing.size();) {
@@ -88,6 +89,7 @@ void AnimSystem::apply(Avatar& avatar) {
 			playIdx++;
 		}
 	}
+*/
 }
 
 

@@ -2,10 +2,11 @@
 
 
 Mtx::Mtx() {
+	bx::mtxIdentity(m_data.data());
 }
 
-float* Mtx::data() {return m_data.data(); }
-const float* Mtx::data() const {return m_data.data(); }
+float* Mtx::data() { return m_data.data(); }
+const float* Mtx::data() const { return m_data.data(); }
 
 Mtx Mtx::operator*(const Mtx& other) {
 	Mtx res;
@@ -13,18 +14,48 @@ Mtx Mtx::operator*(const Mtx& other) {
 	return res;
 }
 
+vec3f Mtx::pos() const {
+	return {m_data[12], m_data[13], m_data[14]};
+}
+
 void Mtx::setPos(const vec3f& pos) {
 	m_data[12] = pos.x;
 	m_data[13] = pos.y;
 	m_data[14] = pos.z;
 }
-void Mtx::setScale(const vec3f& scale) {
-	m_data[0] = scale.x;
-	m_data[5] = scale.y;
-	m_data[10] = scale.z;
+
+void Mtx::setRot(const Quat& rot) {
+	Transform trs = toTransform();
+	trs.rot = rot;
+	trs.rot.normalize();
+	*this = fromTRS(trs);
 }
-vec3f Mtx::pos() { return {m_data[12], m_data[13], m_data[14]}; }
-const vec3f Mtx::pos() const { return {m_data[12], m_data[13], m_data[14]}; }
+
+void Mtx::setScale(const vec3f& scale) {
+	Transform trs = toTransform();
+	trs.scale = scale;
+	*this = fromTRS(trs);
+}
+
+void Mtx::translate(const vec3f& offset) {
+	setPos(pos() + rot() * offset);
+}
+
+void Mtx::rotate(const Quat& rot) {
+	Transform trs = toTransform();
+	Quat delta = rot;
+	delta.normalize();
+
+	trs.rot *= delta;
+	trs.rot.normalize();
+	*this = fromTRS(trs);
+}
+
+void Mtx::scaleBy(const vec3f& scale) {
+	Transform trs = toTransform();
+	trs.scale = trs.scale * scale;
+	*this = fromTRS(trs);
+}
 
 namespace {
 
@@ -119,7 +150,10 @@ Quat Mtx::rot() const {
 	bx::Vec3 scale{1.0f, 1.0f, 1.0f};
 	bx::Quaternion rotation{0.0f, 0.0f, 0.0f, 1.0f};
 	decomposeRotScale(m_data.data(), scale, rotation);
-	return Quat(rotation);
+
+	Quat result(rotation);
+	result.normalize();
+	return result;
 }
 
 vec3f Mtx::scale() const {
@@ -137,34 +171,35 @@ Transform Mtx::toTransform() const {
 	Transform t;
 	t.pos = pos();
 	t.rot = Quat(rotation);
+	t.rot.normalize();
 	t.scale = {scale.x, scale.y, scale.z};
 	return t;
 }
 
 Mtx Mtx::fromTRS(const Transform& trs) {
-    float t[16], r[16], s[16], tmp[16];
+	float t[16], r[16], s[16], tmp[16];
 
-    bx::mtxIdentity(t);
-    bx::mtxIdentity(r);
-    bx::mtxIdentity(s);
+	bx::mtxIdentity(t);
+	bx::mtxIdentity(r);
+	bx::mtxIdentity(s);
 
-    t[12] = trs.pos.x;
-    t[13] = trs.pos.y;
-    t[14] = trs.pos.z;
+	t[12] = trs.pos.x;
+	t[13] = trs.pos.y;
+	t[14] = trs.pos.z;
 
-    Quat q = Quat::inverse(trs.rot);
+	Quat q = Quat::inverse(trs.rot);
 
-    bx::mtxFromQuaternion(r, q);
+	bx::mtxFromQuaternion(r, q);
 
-    s[0] = trs.scale.x;
-    s[5] = trs.scale.y;
-    s[10] = trs.scale.z;
+	s[0] = trs.scale.x;
+	s[5] = trs.scale.y;
+	s[10] = trs.scale.z;
 
-    Mtx mtx;
-    bx::mtxMul(tmp, s, r);
-    bx::mtxMul(mtx.data(), tmp, t);
+	Mtx mtx;
+	bx::mtxMul(tmp, s, r);
+	bx::mtxMul(mtx.data(), tmp, t);
 
-    return mtx;
+	return mtx;
 }
 
 Mtx Mtx::inverse(const Mtx& target) {

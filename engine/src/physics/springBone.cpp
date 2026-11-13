@@ -15,7 +15,6 @@
 
 namespace {
 
-constexpr float epsilon = 1.0e-6f;
 
 float maxAbsComponent(const vec3f& value) {
 	return std::max({
@@ -55,7 +54,7 @@ void refreshSubtree(
 	visited[static_cast<size_t>(index)] = true;
 
 	Node& node = nodeReg.get(handle);
-	node.mtx = Mtx::fromTRS(node.trs);
+	// node.mtx = Mtx::fromTRS(node.trs);
 
 	if (node.parent.isValid() && nodeReg.is_alive(node.parent)) {
 		const int parentIndex = static_cast<int>(nodeReg.getId(node.parent));
@@ -95,19 +94,6 @@ void refreshAvatarTransforms(Avatar& avatar) {
 	}
 }
 
-bool isSameRotation(const Quat& a, const Quat& b) {
-	const float lengthA = std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
-	const float lengthB = std::sqrt(b.x * b.x + b.y * b.y + b.z * b.z + b.w * b.w);
-	if (lengthA <= epsilon || lengthB <= epsilon) return false;
-
-	const float dot = (
-		a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
-	) / (lengthA * lengthB);
-
-	// q and -q represent the same rotation.
-	return std::abs(dot) >= 1.0f - 1.0e-5f;
-}
-
 vec3f toEvaluationPoint(
 	const vec3f& worldPoint,
 	bool useCenter,
@@ -143,12 +129,12 @@ void constrainLength(
 	vec3f direction = tail - head;
 	float currentLength = length(direction);
 
-	if (currentLength <= epsilon) {
+	if (currentLength <= def::epsilon) {
 		direction = fallbackDirection;
 		currentLength = length(direction);
 	}
 
-	if (currentLength <= epsilon || boneLength <= epsilon) return;
+	if (currentLength <= def::epsilon || boneLength <= def::epsilon) return;
 	tail = head + direction * (boneLength / currentLength);
 }
 
@@ -184,7 +170,7 @@ void resolveCollision(
 		const vec3f segment = colliderTail - colliderHead;
 		const float segmentLengthSquared = bx::dot(segment, segment);
 
-		if (segmentLengthSquared > epsilon) {
+		if (segmentLengthSquared > def::epsilon) {
 			const float t = std::clamp(
 				bx::dot(tail - colliderHead, segment) / segmentLengthSquared,
 				0.0f,
@@ -195,15 +181,15 @@ void resolveCollision(
 	}
 
 	const float colliderScale = maxAbsComponent(colliderMatrix.scale())
-		/ std::max(centerScale, epsilon);
+		/ std::max(centerScale, def::epsilon);
 	const float radius = collider.radius * colliderScale + hitRadius;
 	const vec3f delta = tail - closestPoint;
 	const float distance = length(delta);
 
 	if (distance >= radius) return;
 
-	vec3f normal = distance > epsilon ? delta / distance : fallbackDirection;
-	if (length(normal) <= epsilon) normal = {0.0f, 1.0f, 0.0f};
+	vec3f normal = distance > def::epsilon ? delta / distance : fallbackDirection;
+	if (length(normal) <= def::epsilon) normal = {0.0f, 1.0f, 0.0f};
 	else normal.normalize();
 
 	tail = closestPoint + normal * radius;
@@ -304,7 +290,7 @@ SpringBoneChain::SpringBoneChain(
 		const Mtx inverseHead = Mtx::inverse(headMatrix);
 		vec3f boneAxis = tailPosition * inverseHead;
 		const float axisLength = length(boneAxis);
-		if (axisLength <= epsilon) {
+		if (axisLength <= def::epsilon) {
 			throw std::invalid_argument("SpringBone joint pair has zero length");
 		}
 		boneAxis = boneAxis / axisLength;
@@ -316,7 +302,7 @@ SpringBoneChain::SpringBoneChain(
 			tailPosition, hasCenter, inverseCenter
 		);
 		const float boneLength = length(tailEvaluation - headEvaluation);
-		if (boneLength <= epsilon) {
+		if (boneLength <= def::epsilon) {
 			throw std::invalid_argument("SpringBone joint pair has zero length in its evaluation space");
 		}
 
@@ -327,8 +313,8 @@ SpringBoneChain::SpringBoneChain(
 		state.currTail = tailEvaluation;
 		state.boneAxis = boneAxis;
 		state.boneLength = boneLength;
-		state.baseRotation = headNode.trs.rot;
-		state.lastAppliedRotation = headNode.trs.rot;
+		state.baseRotation = headNode.mtx.rot();
+		state.lastAppliedRotation = headNode.mtx.rot();
 		state.params = params[i];
 		joints.push_back(state);
 	}
@@ -354,11 +340,11 @@ void SpringBoneChain::prepareFrame() {
 		// If an animator changed this joint since the previous physics tick,
 		// use that new pose as the spring's base pose. Otherwise undo only
 		// the rotation written by the previous spring update.
-		if (!isSameRotation(node.trs.rot, state.lastAppliedRotation)) {
-			state.baseRotation = node.trs.rot;
+		if (!Quat::isSameRotation(node.mtx.rot(), state.lastAppliedRotation)) {
+			state.baseRotation = node.mtx.rot();
 		}
 
-		node.trs.rot = state.baseRotation;
+		node.mtx.setRot(state.baseRotation);
 		state.lastAppliedRotation = state.baseRotation;
 	}
 }
@@ -378,7 +364,7 @@ void SpringBoneChain::update(float dt) {
 
 		centerMatrix = avatar->globalMtx[centerIndex];
 		centerScale = maxAbsComponent(centerMatrix.scale());
-		if (centerScale <= epsilon) return;
+		if (centerScale <= def::epsilon) return;
 		inverseCenter = Mtx::inverse(centerMatrix);
 	}
 
@@ -399,7 +385,7 @@ void SpringBoneChain::update(float dt) {
 		restDirection = toEvaluationVector(
 			restDirection, hasCenter, inverseCenter
 		);
-		if (length(restDirection) <= epsilon) restDirection = {0.0f, -1.0f, 0.0f};
+		if (length(restDirection) <= def::epsilon) restDirection = {0.0f, -1.0f, 0.0f};
 		else restDirection.normalize();
 
 		const float drag = std::clamp(state.params.dragForce, 0.0f, 1.0f);
@@ -422,7 +408,7 @@ void SpringBoneChain::update(float dt) {
 		constrainLength(nextTail, headPosition, state.boneLength, restDirection);
 
 		const float jointScale = maxAbsComponent(headMatrix.scale())
-			/ std::max(centerScale, epsilon);
+			/ std::max(centerScale, def::epsilon);
 		const float hitRadius = std::max(0.0f, state.params.hitRadius) * jointScale;
 
 		for (const SpringBoneCollider& collider: colliders) {
@@ -447,13 +433,13 @@ void SpringBoneChain::update(float dt) {
 		);
 		const Mtx inverseHead = Mtx::inverse(headMatrix);
 		vec3f targetDirection = nextTailWorld * inverseHead;
-		if (length(targetDirection) <= epsilon) continue;
+		if (length(targetDirection) <= def::epsilon) continue;
 		targetDirection.normalize();
 
 		Node& headNode = nodeReg.get(state.head);
-		headNode.trs.rot = state.baseRotation
-			* Quat::fromTo(state.boneAxis, targetDirection);
-		state.lastAppliedRotation = headNode.trs.rot;
+		headNode.mtx.setRot( state.baseRotation
+			* Quat::fromTo(state.boneAxis, targetDirection) );
+		state.lastAppliedRotation = headNode.mtx.rot();
 
 		std::vector<bool> visited(avatar->model.nodes.size(), false);
 		refreshSubtree(*avatar, state.head, entityMatrix, visited);

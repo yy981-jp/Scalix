@@ -49,7 +49,7 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
 		// 子ボーンの向き)。実際のスキニングパイプラインが使う値そのもの。
 		bones[(size_t)cnct.bone].childLocalDir =
-			nodeReg.get(childHdl).trs.pos.normalized();
+			nodeReg.get(childHdl).mtx.pos().normalized();
 	}
 
 
@@ -107,7 +107,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		// 親の回転で挟み込む(サンドイッチする)方式だと式が成立しない。
 		Quat parentGlobalRotInv = Quat::inverse(parentGlobalRot);
 
-		node.trs.rot = parentGlobalRotInv * newGlobalRot;
+		node.mtx.setRot( parentGlobalRotInv * newGlobalRot );
 		bone.lastTargetDir = currentDir;
 		bone.lastSolvedGlobalRot = newGlobalRot;
 		bone.wasSolved = true;

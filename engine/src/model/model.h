@@ -15,8 +15,6 @@
 #include <core/nodeRegistry.h>
 
 
-struct VRMLoader;
-
 struct Node {
 	StrHs name;
 
@@ -32,15 +30,7 @@ struct Node {
 
 	bool visible = true;
 
-	// pos: vec3f -- local座標
-	// rot: Quat  -- identity quaternion
-	// scale: vec3f -- {1,1,1}
-	Transform trs;
 	Mtx mtx;
-
-	Node() {
-		trs.scale = {1,1,1};
-	}
 };
 
 struct Skin {

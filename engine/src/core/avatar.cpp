@@ -90,7 +90,7 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 		auto& neckNode = nodeReg.get(neckHandle);
 
 		float qPitch[4];
-		neckNode.trs.rot = Quat::fromAxisAngle({1,0,0}, head.pitch);
+		neckNode.mtx.setRot( Quat::fromAxisAngle({1,0,0}, head.pitch) );
 	}
 
 	if (model.humanoid.has(HBT::head)) {
@@ -98,8 +98,7 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 		NodeHandle headHandle = model.humanoid.bones[(size_t)HBT::head];
 		auto& headNode = nodeReg.get(headHandle);
 
-		headNode.trs.rot = Quat::fromAxisAngle({0,1,0}, head.yaw);
-
+		headNode.mtx.setRot( Quat::fromAxisAngle({0,1,0}, head.yaw) );
 	}
 	
 }
