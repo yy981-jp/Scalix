@@ -16,35 +16,12 @@
 namespace {
 
 
-float maxAbsComponent(const vec3f& value) {
-	return std::max({
-		std::abs(value.x),
-		std::abs(value.y),
-		std::abs(value.z)
-	});
-}
-
 float length(const vec3f& value) {
 	return bx::length(value);
 }
 
 vec3f transformVector(const vec3f& value, const Mtx& matrix) {
 	return bx::mulXyz0(value, matrix.data());
-}
-
-Mtx makeEntityMatrix(const Avatar& avatar) {
-	Transform transform;
-	transform.pos = avatar.pos;
-	transform.rot = Quat::fromAxisAngle({0.0f, 1.0f, 0.0f}, avatar.yaw);
-	transform.scale = avatar.scale;
-	return Mtx::fromTRS(transform);
-}
-
-
-void refreshAvatarTransforms(Avatar& avatar) {
-	// avatar.globalMtx.resize(avatar.model.nodes.size());
-
-	avatar.refreshSubtree();
 }
 
 vec3f toEvaluationPoint(
@@ -133,7 +110,7 @@ void resolveCollision(
 		}
 	}
 
-	const float colliderScale = maxAbsComponent(colliderMatrix.scale())
+	const float colliderScale = colliderMatrix.scale().maxAbsComponent()
 		/ std::max(centerScale, def::epsilon);
 	const float radius = collider.radius * colliderScale + hitRadius;
 	const vec3f delta = tail - closestPoint;
@@ -306,7 +283,6 @@ void SpringBoneChain::prepareFrame() {
 void SpringBoneChain::update(float dt) {
 	if (!avatar || joints.empty()) return;
 
-	const Mtx entityMatrix = makeEntityMatrix(*avatar);
 	Mtx centerMatrix = Mtx::fromTRS(Transform{});
 	Mtx inverseCenter = Mtx::fromTRS(Transform{});
 	float centerScale = 1.0f;
@@ -316,7 +292,7 @@ void SpringBoneChain::update(float dt) {
 		if (centerIndex < 0 || centerIndex >= static_cast<int>(avatar->globalMtx.size())) return;
 
 		centerMatrix = avatar->globalMtx[centerIndex];
-		centerScale = maxAbsComponent(centerMatrix.scale());
+		centerScale = centerMatrix.scale().maxAbsComponent();
 		if (centerScale <= def::epsilon) return;
 		inverseCenter = Mtx::inverse(centerMatrix);
 	}
@@ -360,7 +336,7 @@ void SpringBoneChain::update(float dt) {
 
 		constrainLength(nextTail, headPosition, state.boneLength, restDirection);
 
-		const float jointScale = maxAbsComponent(headMatrix.scale())
+		const float jointScale = headMatrix.scale().maxAbsComponent()
 			/ std::max(centerScale, def::epsilon);
 		const float hitRadius = std::max(0.0f, state.params.hitRadius) * jointScale;
 
@@ -432,7 +408,7 @@ void SpringBoneSystem::tick(float dt) {
 	for (SpringBoneChain& chain: chains) {
 		chain.prepareFrame();
 	}
-	refreshAvatarTransforms(*avatar);
+	avatar->refreshSubtree();
 
 	// Chains are ordered from ancestors to descendants. A solved parent
 	// refreshes its subtree before a dependent child chain is evaluated.

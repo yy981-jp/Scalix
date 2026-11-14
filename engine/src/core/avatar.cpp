@@ -146,3 +146,27 @@ Avatar::~Avatar() {
 		nodeReg.destroy(hdl);
 	}
 }
+
+
+void Avatar::refreshSubtreeImpl(const NodeHandle& handle, std::vector<Mtx>& tMtx, const Mtx& tMtxRt) {
+	if (!nodeReg.isAlive(handle)) return;
+
+	const Node& node = nodeReg.get(handle);
+	const auto& index = node.id;
+
+	auto& vis_ent = visited[index];
+	if (vis_ent == refreshSubtreeLoop) return;
+	vis_ent = refreshSubtreeLoop;
+
+
+	if (nodeReg.isAlive(node.parent)) {
+		const auto& parentIndex = nodeReg.getId(node.parent);
+		tMtx[index] = tMtx[parentIndex] * node.mtx;
+	} else {
+		tMtx[index] = node.mtx * tMtxRt;
+	}
+
+	for (NodeHandle child: node.children) {
+		refreshSubtreeImpl(child,tMtx,tMtxRt);
+	}
+}

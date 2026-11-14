@@ -170,6 +170,7 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 Humanoid::init(): VRM.h(external)の修正が必要そう
 	-> VRM10.hとして新しく作る
 
+SpringBone.cppの例外処理は必要なんだろうか? VRM10.hの責務では?
 
 Collider周辺の整備を次の大きな目標とする
 
