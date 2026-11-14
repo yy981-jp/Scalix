@@ -122,37 +122,37 @@ Quat Quat::fromAxisAngle(const vec3f& axis, float rad) {
 }
 
 Quat Quat::fromTo(vec3f from, vec3f to) {
-    from = bx::normalize(from);
-    to   = bx::normalize(to);
+	from = bx::normalize(from);
+	to   = bx::normalize(to);
 
-    float dot = bx::dot(from, to);
+	float dot = bx::dot(from, to);
 
-    if (dot > 0.9999f)
-        return {0, 0, 0, 1};
+	if (dot > 0.9999f)
+		return {0, 0, 0, 1};
 
-    if (dot < -0.9999f) {
-        vec3f axis = bx::cross({1, 0, 0}, from);
+	if (dot < -0.9999f) {
+		vec3f axis = bx::cross({1, 0, 0}, from);
 
-        if (bx::length(axis) < 0.0001f)
-            axis = bx::cross({0, 1, 0}, from);
+		if (bx::length(axis) < 0.0001f)
+			axis = bx::cross({0, 1, 0}, from);
 
-        axis = bx::normalize(axis);
-        return fromAxisAngle(axis, bx::kPi);
-    }
+		axis = bx::normalize(axis);
+		return fromAxisAngle(axis, bx::kPi);
+	}
 
-    vec3f axis = bx::cross(from, to);
+	vec3f axis = bx::cross(from, to);
 
-    float s = sqrtf(2.0f * (1.0f + dot));
+	float s = sqrtf(2.0f * (1.0f + dot));
 
-    Quat res{
-        axis.x / s,
-        axis.y / s,
-        axis.z / s,
-        s * 0.5f
-    };
+	Quat res{
+		axis.x / s,
+		axis.y / s,
+		axis.z / s,
+		s * 0.5f
+	};
 
-    res.normalize();
-    return res;
+	res.normalize();
+	return res;
 }
 
 

@@ -29,23 +29,23 @@ struct StringHash {
 
 
 enum class BoneType : uint8_t {
-    unknown,
+	unknown,
 
-    head,
-    neck,
+	head,
+	neck,
 
-    spine,
-    chest,
-    hips,
+	spine,
+	chest,
+	hips,
 
-    shoulder,
-    arm,
+	shoulder,
+	arm,
 
-    hand,
+	hand,
 
-    leg,
-    foot,
-    toes,
+	leg,
+	foot,
+	toes,
 };
 
 enum class Side: uint8_t {
@@ -56,12 +56,12 @@ enum class Side: uint8_t {
 };
 
 enum class Level : uint8_t {
-    unknown,
+	unknown,
 
-    upper,
-    lower,
+	upper,
+	lower,
 
-    middle,
+	middle,
 };
 
 struct NodeInfo {
@@ -79,37 +79,37 @@ struct NodeInfo {
 
 
 static const std::unordered_map<std::string, BoneType, StringHash, std::equal_to<>> wordMap = {
-    {"head", BoneType::head},
+	{"head", BoneType::head},
 
-    {"neck", BoneType::neck},
+	{"neck", BoneType::neck},
 
-    {"spine", BoneType::spine},
-    {"chest", BoneType::chest},
+	{"spine", BoneType::spine},
+	{"chest", BoneType::chest},
 
-    {"hips", BoneType::hips},
-    {"hip", BoneType::hips},
-    {"pelvis", BoneType::hips},
+	{"hips", BoneType::hips},
+	{"hip", BoneType::hips},
+	{"pelvis", BoneType::hips},
 
-    {"shoulder", BoneType::shoulder},
-    {"clavicle", BoneType::shoulder},
-    {"collar", BoneType::shoulder},
+	{"shoulder", BoneType::shoulder},
+	{"clavicle", BoneType::shoulder},
+	{"collar", BoneType::shoulder},
 
-    {"arm", BoneType::arm},
-    {"forearm", BoneType::arm},
+	{"arm", BoneType::arm},
+	{"forearm", BoneType::arm},
 
-    {"hand", BoneType::hand},
-    {"wrist", BoneType::hand},
+	{"hand", BoneType::hand},
+	{"wrist", BoneType::hand},
 
-    {"leg", BoneType::leg},
-    {"thigh", BoneType::leg},
-    {"calf", BoneType::leg},
-    {"shin", BoneType::leg},
+	{"leg", BoneType::leg},
+	{"thigh", BoneType::leg},
+	{"calf", BoneType::leg},
+	{"shin", BoneType::leg},
 
-    {"foot", BoneType::foot},
-    {"ankle", BoneType::foot},
+	{"foot", BoneType::foot},
+	{"ankle", BoneType::foot},
 
-    {"toe", BoneType::toes},
-    {"toes", BoneType::toes},
+	{"toe", BoneType::toes},
+	{"toes", BoneType::toes},
 };
 
 static const std::unordered_map<std::string, Side, StringHash, std::equal_to<>> sideMap = {

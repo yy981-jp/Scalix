@@ -16,7 +16,7 @@ namespace PoseSolverMode {
 
 
 struct BoneState {
-    vec3f restDir;
+	vec3f restDir;
 
 	// このボーン自身の「バインドポーズでのグローバル回転」(トラッキング空間)。
 	// PoseSolver構築時に一度だけ avatar.trackingMtx から取得する。

@@ -56,17 +56,21 @@ struct Avatar {
 
 	Avatar(Avatar&&) noexcept = default;
 
-	// cache
-	std::vector<uint32_t> visited;
 
+	void refreshSubtree(NodeHandle handle = NodeHandle::invalid()) {
+		if (!handle.isValid()) handle = model.root;
+		refreshSubtreeLoop++;
+		refreshSubtreeImpl(handle);
+	}
+
+
+private:
+	std::vector<uint32_t> visited;
 	uint32_t refreshSubtreeLoop = 0;
 
-	void refreshSubtree(NodeHandle handle = NodeHandle::invalid(), bool isSameloop = false) {
-		if (!handle.isValid()) handle = model.root;
+	void refreshSubtreeImpl(const NodeHandle& handle) {
 		if (!nodeReg.isAlive(handle)) return;
 
-
-		if (!isSameloop) refreshSubtreeLoop++;
 		const Node& node = nodeReg.get(handle);
 		const auto& index = node.id;
 
@@ -83,7 +87,8 @@ struct Avatar {
 		}
 
 		for (NodeHandle child: node.children) {
-			refreshSubtree(child, true);
+			refreshSubtreeImpl(child);
 		}
 	}
+
 };

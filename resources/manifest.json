@@ -7,9 +7,9 @@
 	"files": [
 		{
 			"origin": "ghrel",
-			"remote": "init.glb",
-			"local":  "avatars/init.glb",
-			"sha256": "71c68c6f94e34ce5bbe93d9091736e1914fcfb07a609f12bbe474217e651bf4b"
+			"remote": "init.vrm",
+			"local":  "avatars/init.vrm",
+			"sha256": "0f7b8ea9204592b5757eafa271d351981cbda9ff9f907b23b49065f6eedef0ca"
 		},
 		{
 			"origin": "model",

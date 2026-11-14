@@ -57,7 +57,7 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 
 
 void PoseSolver::solve(const PoseFrame& frame) {
-    debug_(frame);
+	debug_(frame);
 	for (auto& bone : bones) bone.wasSolved = false;
 
 	// このフレームで新たに計算したボーンのグローバル回転(トラッキング空間)を
