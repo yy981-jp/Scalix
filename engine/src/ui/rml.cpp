@@ -324,10 +324,10 @@ Rml::Input::KeyIdentifier toRmlKey(SDL_Scancode key) {
 
 class NoLogSystemInterface : public Rml::SystemInterface {
 public:
-    // LogMessageをオーバーライドして何もしないようにする
-    bool LogMessage(Rml::Log::Type type, const Rml::String& message) override {
-        return true;
-    }
+	// LogMessageをオーバーライドして何もしないようにする
+	bool LogMessage(Rml::Log::Type type, const Rml::String& message) override {
+		return true;
+	}
 };
 
 

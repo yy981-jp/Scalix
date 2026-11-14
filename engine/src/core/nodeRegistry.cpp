@@ -4,6 +4,8 @@
 NodeHandle NodeRegistry::create(Avatar* avatar, NodeId nodeid) {
 	++aliveCount;
 	NodeEntryId id;
+	
+	assert(avatar);
 
 	if (freeHead != INVALID) {
 		// フリースロットを再利用
@@ -40,8 +42,8 @@ void NodeRegistry::destroy(NodeHandle h) {
 	freeHead = h.id;
 }
 
-bool NodeRegistry::is_alive(NodeHandle h) const {
-	return h.id < records.size() && records[h.id].avatar != nullptr && records[h.id].gen == h.gen;
+bool NodeRegistry::isAlive(NodeHandle h) const {
+	return h.isValid() && h.id < records.size() && records[h.id].gen == h.gen;
 }
 
 uint32_t NodeRegistry::size() const {
@@ -49,7 +51,7 @@ uint32_t NodeRegistry::size() const {
 }
 
 Node& NodeRegistry::get(NodeHandle h) {
-	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::get(): is not allive");
+	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::get(): is not allive");
 
 	Entry& entry = records[h.id];
 	Node& node = entry.avatar->model.nodes[entry.node];
@@ -58,21 +60,21 @@ Node& NodeRegistry::get(NodeHandle h) {
 }
 
 NodeId NodeRegistry::getId(NodeHandle h) {
-	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
+	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
 
 	Entry& entry = records[h.id];
 	return entry.node;
 }
 
 Avatar* NodeRegistry::getAvatar(NodeHandle h) {
-	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
+	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
 
 	Entry& entry = records[h.id];
 	return entry.avatar;
 }
 
 const NodeRegistry::Entry& NodeRegistry::getEntry(NodeHandle h) const {
-	if (!is_alive(h)) throw std::runtime_error("NodeRegistry::getId():: is no allive");
+	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::getId():: is no allive");
 	return records[h.id];
 }
 
@@ -89,7 +91,7 @@ NodeHandle NodeRegistry::findFromAvaId(AvatarId avatarId, NodeId nodeId) const {
 	for (uint32_t i = 0; i < records.size(); ++i) {
 		NodeHandle h{i, records[i].gen};
 
-		if (!is_alive(h))
+		if (!isAlive(h))
 			continue;
 
 		const Entry& e = records[i];

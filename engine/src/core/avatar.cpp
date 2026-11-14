@@ -49,7 +49,7 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	}
 
 	if ( has(ctx.keyStat, KCode::Space) ) {
-		jump.jump(10);
+		jump.jump(4);
 	}
 	jump.tick(dt);
 	pos.y = jump.getHeight();
@@ -57,7 +57,7 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	status = (walking? Status::walk : Status::stay);
 
 	// --- アニメーション ---
-	anim.tick(*this,dt);
+	// anim.tick(*this,dt);
 
 
 	// --- 視点 ---
@@ -85,23 +85,20 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	}
 
 	// --- neck (pitch) ---
-	if (model.humanoid.has(HBT::neck)) {
-		NodeHandle neckHandle = model.humanoid.bones[(size_t)HBT::neck];
-		auto& neckNode = nodeReg.get(neckHandle);
+	const NodeHandle& neckHandle = model.humanoid.bones[(size_t)HBT::neck];
+	auto& neckNode = nodeReg.get(neckHandle);
+	neckNode.mtx.setRot( Quat::fromAxisAngle({1,0,0}, head.pitch) );
 
-		float qPitch[4];
-		neckNode.trs.rot = Quat::fromAxisAngle({1,0,0}, head.pitch);
-	}
+	// --- head (yaw) ---
+	const NodeHandle& headHandle = model.humanoid.bones[(size_t)HBT::head];
+	auto& headNode = nodeReg.get(headHandle);
+	headNode.mtx.setRot( Quat::fromAxisAngle({0,1,0}, head.yaw) );
 
-	if (model.humanoid.has(HBT::head)) {
-		// --- head (yaw) ---
-		NodeHandle headHandle = model.humanoid.bones[(size_t)HBT::head];
-		auto& headNode = nodeReg.get(headHandle);
 
-		headNode.trs.rot = Quat::fromAxisAngle({0,1,0}, head.yaw);
-
-	}
-	
+	// update avatar mtx
+	avatarMtx.setPos(pos);
+	avatarMtx.setRot(Quat::fromAxisAngle({0,1,0}, yaw));
+	avatarMtx.setScale(scale);
 }
 
 
@@ -115,7 +112,8 @@ void Avatar::draw(Camera& cam) {
 	// globalTransform のTRS成分は非一様スケール／鏡映を完全には表せないため、
 	// 描画と同じグローバル行列から視点の位置・向きを取得する。
 	const auto& headMtx = globalMtx[headIdx];
-	const vec3f lookDir{bx::normalize(bx::mulXyz0({0.0f, 0.0f, 1.0f}, headMtx.data()))};
+	vec3f lookDir = bx::mulXyz0({0.0f, 0.0f, 1.0f}, headMtx.data());
+	lookDir.normalize();
 
 
 	vec3f camPos = headMtx.pos()
@@ -127,27 +125,8 @@ void Avatar::draw(Camera& cam) {
 
 Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
 	const fs::path base = syspath.userdata / "avatars" / id.hex();
-	std::string path;
-	GltfType type;
-
-	if (fs::exists(base / "model")) {
-		for (const auto& e: fs::recursive_directory_iterator(base / "model")) {
-			if (e.path().extension() == ".gltf") {
-				path = e.path().string();
-				type = GltfType::ascii;
-				break;
-			}
-		}
-		if (path.empty())
-			throw std::runtime_error("Avatar::Avatar: model dir is exist, but system couldn't find gltf file");
-	} else if (fs::exists(base / "model.vrm")) {
-		path = (base / "model.vrm").string();
-		type = GltfType::binary;
-	} else if (fs::exists(base / "model.glb")) {
-		path = (base / "model.glb").string();
-		type = GltfType::binary;
-	} else 
-		throw std::runtime_error("Avatar::Avatar: system couldn't find any format gltf file");
+	GltfType type = GltfType::binary;
+	std::string path = (base / "model.vrm").string();
 
 	GltfLoader loader(path, type);
 	loader.load();
@@ -155,6 +134,8 @@ Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
 	loader.procHdl(this);
 	model = loader.get();
 	model.init(vrm);
+
+	visited.resize(model.nodes.size(), 0);
 
 	// anim.init("test.sxa",*this);
 

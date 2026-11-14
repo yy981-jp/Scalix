@@ -19,7 +19,7 @@ struct SpringBoneParams {
 };
 
 struct SpringBoneCollider {
-	NodeHandle node = NodeHandle::invalid();
+	NodeHandle node;
 	ColliderShape shape = ColliderShape::Sphere;
 	vec3f offset{};
 	vec3f tail{};
@@ -28,8 +28,8 @@ struct SpringBoneCollider {
 
 class SpringBoneChain {
 	struct JointState {
-		NodeHandle head = NodeHandle::invalid();
-		NodeHandle tail = NodeHandle::invalid();
+		NodeHandle head;
+		NodeHandle tail;
 
 		vec3f prevTail{};
 		vec3f currTail{};
@@ -42,7 +42,7 @@ class SpringBoneChain {
 	};
 
 	Avatar* avatar = nullptr;
-	NodeHandle center = NodeHandle::invalid();
+	NodeHandle center;
 	bool hasCenter = false;
 	uint32_t rootDepth = 0;
 

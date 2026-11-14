@@ -8,15 +8,15 @@
 
 
 #if defined(_WIN32)
-    #if defined(SXMP_BACKEND_BUILD)
-        #define SXMP_API __declspec(dllexport)
-    #else
-        #define SXMP_API __declspec(dllimport)
-    #endif
+	#if defined(SXMP_BACKEND_BUILD)
+		#define SXMP_API __declspec(dllexport)
+	#else
+		#define SXMP_API __declspec(dllimport)
+	#endif
 #elif defined(__GNUC__) || defined(__clang__)
-    #define SXMP_API __attribute__((visibility("default")))
+	#define SXMP_API __attribute__((visibility("default")))
 #else
-    #define SXMP_API
+	#define SXMP_API
 #endif
 
 
