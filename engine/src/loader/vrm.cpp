@@ -65,7 +65,14 @@ struct VRMLoaderImpl {
 			featureNameMap[featureId] = ext;
 		}
 
-		vrm10::parseVrm(getExt(ModelFeature::VRMC_vrm));
+		{
+			auto result = vrm10::parseVrm(getExt(ModelFeature::VRMC_vrm));
+			if (!result.hasValue()) throw std::runtime_error(
+			std::format("Failed to parse VRMC_vrm: {} in \"{}\"",
+				result.error().message,result.error().path)
+			);
+			ld.vrm.vrm = result.value();
+		}
 		loadSpringBone();
 	}
 };
