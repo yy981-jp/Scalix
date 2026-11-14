@@ -88,8 +88,9 @@ public:
 	}
 
 
-	bool isAlive(const ColliderHandle& hdl) {
-		
+	bool isAlive(const ColliderHandle& hdl) const {
+		return hdl.id < records.size()
+				&& records[hdl.id].gen == hdl.gen;
 	}
 
 	

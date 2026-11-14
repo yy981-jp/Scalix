@@ -37,8 +37,8 @@ Mocap::Mocap():
 	socket(io, asio::ip::udp::v4()),
 	endpoint(asio::ip::make_address("127.0.0.1"), 51801)
 {
-    int camCount = 0;
-    SDL_CameraID *cameras = SDL_GetCameras(&camCount);
+	int camCount = 0;
+	SDL_CameraID *cameras = SDL_GetCameras(&camCount);
 	SDL_free(cameras);
 	// if (!camCount) // TODO: どうする loggerでも作るか?
 

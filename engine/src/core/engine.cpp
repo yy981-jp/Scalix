@@ -135,10 +135,10 @@ Engine::~Engine() = default;
 void Engine::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_EVENT_QUIT) {
-            running = false;
-            continue;
-        }
+		if (event.type == SDL_EVENT_QUIT) {
+			running = false;
+			continue;
+		}
 
 		switch (event.type) {
 			case SDL_EVENT_KEY_DOWN:			onKeyDown(event.key);			break;
@@ -247,9 +247,9 @@ void Engine::gameInit() {
 	if (!avaIdNode.is_null()) {
 		avaId = UUID::fromString(avaIdNode.get<std::string>());
 	} else {
-		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.glb";
+		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.vrm";
 		if (!fs::exists(dest)) {
-			const auto& orig = syspath.resource / "avatars" / "init.glb";
+			const auto& orig = syspath.resource / "avatars" / "init.vrm";
 			const auto& dest_parent = dest.parent_path();
 			if (!fs::exists(dest_parent))
 				fs::create_directories(dest_parent);

@@ -1,6 +1,7 @@
-#include "def/transform.h"
-#include <core/avatarSystem.h>
+#include <bx/math.h>
 
+#include <def/transform.h>
+#include <core/avatarSystem.h>
 #include <loader/gltf.h>
 #include <core/key.h>
 #include <core/nodeRegistry.h>
@@ -9,19 +10,6 @@
 #include <def/view.h>
 #include <mocap/motionDebug.h>
 #include <mocap/poseSolver.h>
-
-#include <bx/math.h>
-
-namespace {
-void traceSolverLocalRotations(Avatar& avatar, const char* stage) {
-	if (!motionTraceEnabled()) return;
-	for (HBT bone : {HBT::leftUpperArm, HBT::leftLowerArm, HBT::rightUpperArm, HBT::rightLowerArm}) {
-		if (!avatar.model.humanoid.has(bone)) continue;
-		const Quat& q = nodeReg.get(avatar.model.humanoid.bones[(size_t)bone]).trs.rot;
-		printf("MOTION %s bone=%d local=(%.5f,%.5f,%.5f,%.5f)\\n", stage, static_cast<int>(bone), q.x, q.y, q.z, q.w);
-	}
-}
-}
 
 
 void AvatarSystem::loadData(AvatarId id) {
@@ -32,70 +20,27 @@ void AvatarSystem::loadData(AvatarId id) {
 		playableAvatar = id;
 }
 
-void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
-				Avatar& avatar, const Mtx& entityMtx) {
-	if (idx < 0 || idx >= avatar.model.nodes.size()) {
-		printf("invalid idx: %d\n", idx);
-		return;
-	}
-	if (calculated[idx]) return;
-
-	auto& node = avatar.model.nodes[idx];
-	node.mtx = Mtx::fromTRS(node.trs);
-
-	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
-	if (node.parent.isValid()) {
-		NodeId parent = nodeReg.getId(node.parent);
-
-		calcGlobal(parent, calculated, out, avatar, entityMtx);
-
-		out[idx] = out[parent] * node.mtx;
-
-	} else {
-		out[idx] = node.mtx * entityMtx;
-	}
-
-	calculated[idx] = true;
-}
-
 
 void AvatarSystem::update(GlobalContext& ctx, float dt) {
 	// player以外の制御はしない
 	Avatar& avatar = player();
 
-	traceSolverLocalRotations(avatar, "beforeAvatarUpdate");
 	// avatar update
 	avatar.update(ctx,dt);
-	traceSolverLocalRotations(avatar, "afterAvatarUpdate");
 
 	avatar.globalMtx.resize(avatar.model.nodes.size());
-	avatar.trackingMtx.resize(avatar.model.nodes.size());
+	avatar.avatarSpaceMtx.resize(avatar.model.nodes.size());
 
-	Transform entityTransform;
-	entityTransform.pos = avatar.pos;
-	entityTransform.rot = Quat::fromAxisAngle({0, 1, 0}, avatar.yaw);
-	entityTransform.scale = avatar.scale;
-	Mtx entityMtx = Mtx::fromTRS(entityTransform);
+	Mtx trackingEntityMtx;
+	trackingEntityMtx.setScale(avatar.avatarMtx.scale());
 
-	// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
-	// スケールは entityTransform と同じにする。
-	// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
-	Transform trackingEntityTransform;
-	trackingEntityTransform.scale = entityTransform.scale;
-	Mtx trackingEntityMtx = Mtx::fromTRS(trackingEntityTransform);
+	avatar.refreshSubtreeFor(avatar.avatarSpaceMtx,trackingEntityMtx);
 
-	std::vector<bool> calculated;
-	calculated.resize(avatar.model.nodes.size(), false);
+	Mtx trackingToGlobal =
+		avatar.avatarMtx * Mtx::inverse(trackingEntityMtx);
 
-	for (int i = 0; i < avatar.model.nodes.size(); i++) {
-		calcGlobal(i, calculated, avatar.globalMtx, avatar, entityMtx);
-	}
-
-	std::vector<bool> trackingCalculated;
-	trackingCalculated.resize(avatar.model.nodes.size(), false);
-
-	for (int i = 0; i < avatar.model.nodes.size(); i++) {
-		calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
+	for (size_t i = 0; i < avatar.model.nodes.size(); i++) {
+		avatar.globalMtx[i] = trackingToGlobal * avatar.avatarSpaceMtx[i];
 	}
 
 	if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
