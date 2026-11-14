@@ -7,8 +7,8 @@
 #include <vector>
 
 #include <def/json.h>
-#include <def/vrm.h>
 #include <def/fs.h>
+#include <loader/def.h>
 
 
 using ModelFeatureFlag = uint8_t;
@@ -38,17 +38,7 @@ inline bool has(ModelFeatureFlag flag, ModelFeature target) {
 	return flag & 1u << static_cast<ModelFeatureFlag>(target);
 }
 
-struct VRM {
-	vrm10::Vrm vrm;
-	vrm10::SpringBone springBone;
-
-	// VRM.h stores an omitted Spring::center as index 0. Preserve whether
-	// the field was actually present so node 0 remains a valid center.
-	std::vector<std::optional<uint32_t>> springCenters;
-};
-
-
 struct VRMLoaderImpl;
 class GltfLoader;
 
-VRM VRMLoader(const GltfLoader& gltfloader);
+void VRMLoader(LoadData& ld, const GltfLoader& gltfloader);

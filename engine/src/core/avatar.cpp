@@ -4,6 +4,7 @@
 #include <anim/loader.h>
 #include <loader/gltf.h>
 #include <loader/vrm.h>
+#include <loader/data.h>
 #include <util/cache.h>
 #include <util/math.h>
 #include <util/path.h>
@@ -128,12 +129,13 @@ Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
 	GltfType type = GltfType::binary;
 	std::string path = (base / "model.vrm").string();
 
+	LoadData ld;
 	GltfLoader loader(path, type);
 	loader.load();
-	VRM vrm = VRMLoader(loader);
+	VRMLoader(ld,loader);
 	loader.procHdl(this);
 	model = loader.get();
-	model.init(vrm);
+	model.init(ld);
 
 	visited.resize(model.nodes.size(), 0);
 

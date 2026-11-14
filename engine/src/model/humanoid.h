@@ -2,10 +2,7 @@
 #include "def/node.h"
 #include <cstdint>
 #include <array>
-#include <def/vrm.h>
-#include <loader/vrm.h>
-
-// #include <model/model.h>
+#include <loader/def.h>
 
 
 enum class HBT {
@@ -50,7 +47,7 @@ struct Model;
 /// @brief 骨格
 struct Humanoid {
 	void init(const Model& model);
-	void init(const Model& model, const VRM& vrm);
+	void init(const Model& model, const LoadData& vrm);
 
 	// node handle
 	std::array<NodeHandle,static_cast<size_t>(HBT::Count)> bones;

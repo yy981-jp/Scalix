@@ -1,10 +1,11 @@
 #include <loader/vrm.h>
+#include <loader/data.h>
 #include <loader/gltf.h>
 
 
 
 struct VRMLoaderImpl {
-	VRM loaded;
+	LoadData ld;
 
 	std::unordered_map<ModelFeatureFlag, std::string> featureNameMap;
 
@@ -30,20 +31,23 @@ struct VRMLoaderImpl {
 	void loadSpringBone() {
 		if (!has(flag, ModelFeature::VRMC_springBone)) return;
 
-		const std::string& name = featureNameMap.at(
-			static_cast<ModelFeatureFlag>(ModelFeature::VRMC_springBone)
+		// printf("%s", getExt(ModelFeature::VRMC_springBone).dump(4).c_str());
+		auto result = vrm10::parseSpringBone(getExt(ModelFeature::VRMC_springBone));
+		if (!result.hasValue()) throw std::runtime_error(
+			std::format("Failed to parse VRMC_springBone: {} in \"{}\"",
+				result.error().message,result.error().path)
 		);
-		const json extension = gltfloader.getExtension(name);
-		auto res_opt = vrm10::parseSpringBone(getExt(ModelFeature::VRMC_springBone));
-		if (!res_opt.hasValue()) throw std::runtime_error("tmp"); // TODO: fix message
-		const auto& res = res_opt.value();
-		loaded.springCenters.reserve(res.springs.size());
+		const auto& res = result.value();
+		ld.vrm.springBone = res;
+
+
+		ld.springCenters.reserve(res.springs.size());
 
 		for (const auto& spring: res.springs) {
 			if (spring.center) {
-				loaded.springCenters.emplace_back(spring.center->value);
+				ld.springCenters.emplace_back(spring.center->value);
 			} else {
-				loaded.springCenters.emplace_back(std::nullopt);
+				ld.springCenters.emplace_back(std::nullopt);
 			}
 		}
 	}
@@ -67,7 +71,7 @@ struct VRMLoaderImpl {
 };
 
 
-VRM VRMLoader(const GltfLoader& gltfloader) {
+void VRMLoader(LoadData& ld, const GltfLoader& gltfloader) {
 	VRMLoaderImpl impl(gltfloader);
-	return impl.loaded;
+	ld = std::move(impl.ld);
 }
