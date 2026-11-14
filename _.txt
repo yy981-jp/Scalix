@@ -167,10 +167,8 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 
 
 %%%%%%%%%% TODO %%%%%%%%%%
-refreshSubtreeとavatarsystemの更新処理が内容被ってないか?
-	-> 整備中
-
 Humanoid::init(): VRM.h(external)の修正が必要そう
+	-> VRM10.hとして新しく作る
 
 
 Collider周辺の整備を次の大きな目標とする

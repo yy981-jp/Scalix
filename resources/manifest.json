@@ -9,7 +9,7 @@
 			"origin": "ghrel",
 			"remote": "init.vrm",
 			"local":  "avatars/init.vrm",
-			"sha256": "0f7b8ea9204592b5757eafa271d351981cbda9ff9f907b23b49065f6eedef0ca"
+			"sha256": "f6049be486b6406d469388164305d34c1af1c53043f3c9cb05db80df72b507b7"
 		},
 		{
 			"origin": "model",
