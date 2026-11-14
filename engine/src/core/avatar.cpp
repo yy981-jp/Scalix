@@ -124,12 +124,11 @@ void Avatar::draw(Camera& cam) {
 	cam.update(camPos, camPos + lookDir);
 }
 
-Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
+Avatar::Avatar(const AvatarId& id, LoadData& ld): id(id), speed(3) {
 	const fs::path base = syspath.userdata / "avatars" / id.hex();
 	GltfType type = GltfType::binary;
 	std::string path = (base / "model.vrm").string();
 
-	LoadData ld;
 	GltfLoader loader(path, type);
 	loader.load();
 	VRMLoader(ld,loader);
@@ -140,7 +139,6 @@ Avatar::Avatar(const AvatarId& id): id(id), speed(3) {
 	visited.resize(model.nodes.size(), 0);
 
 	// anim.init("test.sxa",*this);
-
 }
 
 Avatar::~Avatar() {

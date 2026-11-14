@@ -3,7 +3,9 @@
 #include <def/transform.h>
 #include <core/avatarSystem.h>
 #include <loader/gltf.h>
+#include <loader/data.h>
 #include <core/key.h>
+#include <core/engine.h>
 #include <core/nodeRegistry.h>
 #include <util/cache.h>
 #include <def/mtx.h>
@@ -12,9 +14,12 @@
 #include <mocap/poseSolver.h>
 
 
-void AvatarSystem::loadData(AvatarId id) {
+void AvatarSystem::loadData(AvatarId id, PhysicsSystem& physicsSystem) {
 	// Avatarのコンストラクタがload処理をやってる
-	avatars.try_emplace(id, id);
+	LoadData ld;
+	Avatar avatar(id,ld);
+	const auto res = avatars.try_emplace(id,std::move(avatar));
+	physicsSystem.init(res.first->second,ld);
 
 	if (!playableAvatar.isValid())
 		playableAvatar = id;
