@@ -1,7 +1,5 @@
 #include <physics/util.h>
-
 #include <core/avatar.h>
-
 #include <unordered_set>
 
 

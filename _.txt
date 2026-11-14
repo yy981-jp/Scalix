@@ -170,6 +170,9 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 refreshSubtreeとavatarsystemの更新処理が内容被ってないか?
 	-> 整備中
 
+Humanoid::init(): VRM.h(external)の修正が必要そう
+
+
 Collider周辺の整備を次の大きな目標とする
 
 Engine::u_bonesはavatarSystemの責務か? ほかにも整理していきたい

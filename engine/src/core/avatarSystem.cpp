@@ -20,32 +20,6 @@ void AvatarSystem::loadData(AvatarId id) {
 		playableAvatar = id;
 }
 
-void calcGlobal(int idx, std::vector<bool>& calculated, std::vector<Mtx>& out,
-				Avatar& avatar, const Mtx& entityMtx) {
-	if (idx < 0 || idx >= avatar.model.nodes.size()) {
-		printf("invalid idx: %d\n", idx);
-		return;
-	}
-	if (calculated[idx]) return;
-
-	auto& node = avatar.model.nodes[idx];
-	// node.mtx = Mtx::fromTRS(node.trs);
-
-	// 親のグローバルTRSを先に確定し、ローカルTRSを合成する。
-	if (node.parent.isValid()) {
-		NodeId parent = nodeReg.getId(node.parent);
-
-		calcGlobal(parent, calculated, out, avatar, entityMtx);
-
-		out[idx] = out[parent] * node.mtx;
-
-	} else {
-		out[idx] = node.mtx * entityMtx;
-	}
-
-	calculated[idx] = true;
-}
-
 
 void AvatarSystem::update(GlobalContext& ctx, float dt) {
 	// player以外の制御はしない
@@ -55,26 +29,18 @@ void AvatarSystem::update(GlobalContext& ctx, float dt) {
 	avatar.update(ctx,dt);
 
 	avatar.globalMtx.resize(avatar.model.nodes.size());
-	avatar.trackingMtx.resize(avatar.model.nodes.size());
+	avatar.avatarSpaceMtx.resize(avatar.model.nodes.size());
 
-	// PoseSolver 用の階層行列。アバターのワールド位置と yaw を含めず、
-	// スケールは entityTransform と同じにする。
-	// トラッキング入力の基準がアバターの位置・向きに引きずられないようにする。
 	Mtx trackingEntityMtx;
 	trackingEntityMtx.setScale(avatar.avatarMtx.scale());
 
-	std::vector<bool> calculated;
-	calculated.resize(avatar.model.nodes.size(), false);
+	avatar.refreshSubtreeFor(avatar.avatarSpaceMtx,trackingEntityMtx);
 
-	for (int i = 0; i < avatar.model.nodes.size(); i++) {
-		calcGlobal(i, calculated, avatar.globalMtx, avatar, avatar.avatarMtx);
-	}
+	Mtx trackingToGlobal =
+		avatar.avatarMtx * Mtx::inverse(trackingEntityMtx);
 
-	std::vector<bool> trackingCalculated;
-	trackingCalculated.resize(avatar.model.nodes.size(), false);
-
-	for (int i = 0; i < avatar.model.nodes.size(); i++) {
-		calcGlobal(i, trackingCalculated, avatar.trackingMtx, avatar, trackingEntityMtx);
+	for (size_t i = 0; i < avatar.model.nodes.size(); i++) {
+		avatar.globalMtx[i] = trackingToGlobal * avatar.avatarSpaceMtx[i];
 	}
 
 	if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称

@@ -36,14 +36,14 @@ PoseSolver::PoseSolver(Avatar& avatar): avatar(avatar) {
 		const NodeHandle& childHdl = avatar.model.humanoid.bones[(size_t)childBone];
 
 		bones[(size_t)cnct.bone].restDir =
-			( avatar.trackingMtx[nodeReg.getId(childHdl)].pos()
-			- avatar.trackingMtx[nodeReg.getId(nodeHdl)].pos()
+			( avatar.avatarSpaceMtx[nodeReg.getId(childHdl)].pos()
+			- avatar.avatarSpaceMtx[nodeReg.getId(nodeHdl)].pos()
 			).normalized();
 
 		// このボーン自身のバインドポーズでのグローバル回転をそのまま保存する。
-		// trackingMtx は calcGlobal() で親→子の順にローカルTRSを合成した
+		// avatarSpaceMtx は calcGlobal() で親→子の順にローカルTRSを合成した
 		// 結果なので、.rot() にはこのボーンまでの回転がすべて含まれている。
-		Quat rot = avatar.trackingMtx[nodeReg.getId(nodeHdl)].rot();
+		Quat rot = avatar.avatarSpaceMtx[nodeReg.getId(nodeHdl)].rot();
 		bones[(size_t)cnct.bone].globalBindRot = rot;
 
 		// 子ノードの「ローカル」位置オフセット(= このボーンの局所空間内での
@@ -63,7 +63,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 	// このフレームで新たに計算したボーンのグローバル回転(トラッキング空間)を
 	// キャッシュしておく。leftLowerArm の親は leftUpperArm であり、
 	// upperBody_list は親→子の順で並んでいるため、子を解く時点では
-	// avatar.trackingMtx はまだ「前フレーム」の値のまま(このsolve()の後で
+	// avatar.avatarSpaceMtx はまだ「前フレーム」の値のまま(このsolve()の後で
 	// avatarSystem.update()が再計算する)。stale な値を親の回転として使うと
 	// 特に手首側でズレ・破綻が起きるため、直前に計算した値を優先して使う。
 	std::array<Quat, static_cast<size_t>(HBT::Count)> solvedGlobalRot{};
@@ -88,7 +88,7 @@ void PoseSolver::solve(const PoseFrame& frame) {
 		Quat parentGlobalRot =
 			hasSolvedGlobalRot[(size_t)parentBone]
 				? solvedGlobalRot[(size_t)parentBone]
-				: avatar.trackingMtx[nodeReg.getId(parentHdl)].rot();
+				: avatar.avatarSpaceMtx[nodeReg.getId(parentHdl)].rot();
 
 		// restDir/currentDir はどちらもワールド(トラッキング)空間のベクトルなので、
 		// fromTo() で得られる差分回転もワールド空間の回転になる。
