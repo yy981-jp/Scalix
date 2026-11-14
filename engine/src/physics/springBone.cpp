@@ -1,9 +1,3 @@
-#include <physics/springBone.h>
-
-#include <core/avatar.h>
-#include <core/nodeRegistry.h>
-#include <def/mtx.h>
-
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -12,39 +6,18 @@
 
 #include <bx/math.h>
 
+#include <physics/springBone.h>
+#include <core/avatar.h>
+#include <core/nodeRegistry.h>
+#include <def/mtx.h>
+#include <util/math.h>
+
 
 namespace {
 
 
-float maxAbsComponent(const vec3f& value) {
-	return std::max({
-		std::abs(value.x),
-		std::abs(value.y),
-		std::abs(value.z)
-	});
-}
-
-float length(const vec3f& value) {
-	return bx::length(value);
-}
-
 vec3f transformVector(const vec3f& value, const Mtx& matrix) {
 	return bx::mulXyz0(value, matrix.data());
-}
-
-Mtx makeEntityMatrix(const Avatar& avatar) {
-	Transform transform;
-	transform.pos = avatar.pos;
-	transform.rot = Quat::fromAxisAngle({0.0f, 1.0f, 0.0f}, avatar.yaw);
-	transform.scale = avatar.scale;
-	return Mtx::fromTRS(transform);
-}
-
-
-void refreshAvatarTransforms(Avatar& avatar) {
-	// avatar.globalMtx.resize(avatar.model.nodes.size());
-
-	avatar.refreshSubtree();
 }
 
 vec3f toEvaluationPoint(
@@ -306,7 +279,6 @@ void SpringBoneChain::prepareFrame() {
 void SpringBoneChain::update(float dt) {
 	if (!avatar || joints.empty()) return;
 
-	const Mtx entityMatrix = makeEntityMatrix(*avatar);
 	Mtx centerMatrix = Mtx::fromTRS(Transform{});
 	Mtx inverseCenter = Mtx::fromTRS(Transform{});
 	float centerScale = 1.0f;
@@ -432,7 +404,7 @@ void SpringBoneSystem::tick(float dt) {
 	for (SpringBoneChain& chain: chains) {
 		chain.prepareFrame();
 	}
-	refreshAvatarTransforms(*avatar);
+	avatar->refreshSubtree();
 
 	// Chains are ordered from ancestors to descendants. A solved parent
 	// refreshes its subtree before a dependent child chain is evaluated.

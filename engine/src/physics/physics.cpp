@@ -33,7 +33,7 @@ void warnSpring(size_t index, const char* reason) {
 
 
 void PhysicsSystem::init(Avatar& avatar) {
-	springBoneSystem.clear();
+	springBoneSys.clear();
 
 	const Model& model = avatar.model;
 	const auto& springBone = model.vrm.springBone;
@@ -200,7 +200,7 @@ void PhysicsSystem::init(Avatar& avatar) {
 		}
 
 		try {
-			springBoneSystem.add(SpringBoneChain(
+			springBoneSys.add(SpringBoneChain(
 				avatar,
 				nodes,
 				params,
