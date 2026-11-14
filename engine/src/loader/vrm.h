@@ -39,8 +39,8 @@ inline bool has(ModelFeatureFlag flag, ModelFeature target) {
 }
 
 struct VRM {
-	VRMC_VRM_1_0::Vrm vrm;
-	VRMC_VRM_1_0::SpringBone springBone;
+	vrm10::Vrm vrm;
+	vrm10::SpringBone springBone;
 
 	// VRM.h stores an omitted Spring::center as index 0. Preserve whether
 	// the field was actually present so node 0 remains a valid center.

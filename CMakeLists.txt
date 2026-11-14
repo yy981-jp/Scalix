@@ -43,6 +43,8 @@ list(PREPEND CMAKE_PREFIX_PATH
 	"${EXTERNAL_INSTALL_PREFIX}"
 )
 
+add_subdirectory(external/VRM10)
+
 add_subdirectory(ui)
 add_subdirectory(engine)
 add_subdirectory(importer)

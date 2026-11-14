@@ -4,11 +4,19 @@
 
 
 struct VRMLoaderImpl {
-	VRM res;
+	VRM loaded;
 
 	std::unordered_map<ModelFeatureFlag, std::string> featureNameMap;
 
 	const GltfLoader& gltfloader;
+
+	json getExt(const ModelFeature& target) {
+		const std::string& name = featureNameMap.at(
+			static_cast<ModelFeatureFlag>(target)
+		);
+		return gltfloader.getExtension(name);
+	}
+
 
 	template<typename T>
 	void loadCore(ModelFeature target, T& out) {
@@ -17,7 +25,6 @@ struct VRMLoaderImpl {
 		const std::string& name = featureNameMap.at(
 			static_cast<ModelFeatureFlag>(target)
 		);
-		VRMC_VRM_1_0::from_json(gltfloader.getExtension(name), out);
 	}
 
 	void loadSpringBone() {
@@ -27,18 +34,16 @@ struct VRMLoaderImpl {
 			static_cast<ModelFeatureFlag>(ModelFeature::VRMC_springBone)
 		);
 		const json extension = gltfloader.getExtension(name);
-		VRMC_VRM_1_0::from_json(extension, res.springBone);
+		auto res_opt = vrm10::parseSpringBone(getExt(ModelFeature::VRMC_springBone));
+		if (!res_opt.hasValue()) throw std::runtime_error("tmp"); // TODO: fix message
+		const auto& res = res_opt.value();
+		loaded.springCenters.reserve(res.springs.size());
 
-		const auto springs = extension.find("springs");
-		if (springs == extension.end() || !springs->is_array()) return;
-
-		res.springCenters.reserve(springs->size());
-		for (const auto& spring: *springs) {
-			const auto center = spring.find("center");
-			if (center == spring.end() || center->is_null()) {
-				res.springCenters.emplace_back(std::nullopt);
+		for (const auto& spring: res.springs) {
+			if (spring.center) {
+				loaded.springCenters.emplace_back(spring.center->value);
 			} else {
-				res.springCenters.emplace_back(center->get<uint32_t>());
+				loaded.springCenters.emplace_back(std::nullopt);
 			}
 		}
 	}
@@ -56,7 +61,7 @@ struct VRMLoaderImpl {
 			featureNameMap[featureId] = ext;
 		}
 
-		loadCore(ModelFeature::VRMC_vrm, res.vrm);
+		vrm10::parseVrm(getExt(ModelFeature::VRMC_vrm));
 		loadSpringBone();
 	}
 };
@@ -64,5 +69,5 @@ struct VRMLoaderImpl {
 
 VRM VRMLoader(const GltfLoader& gltfloader) {
 	VRMLoaderImpl impl(gltfloader);
-	return impl.res;
+	return impl.loaded;
 }

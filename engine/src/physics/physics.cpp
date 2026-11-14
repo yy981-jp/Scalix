@@ -33,6 +33,13 @@ void warnSpring(size_t index, const char* reason) {
 
 
 void PhysicsSystem::init(Avatar& avatar) {
+	
+}
+
+
+
+/*
+void PhysicsSystem::init(Avatar& avatar) {
 	springBoneSys.clear();
 
 	const Model& model = avatar.model;
@@ -219,3 +226,4 @@ void PhysicsSystem::init(Avatar& avatar) {
 		}
 	}
 }
+*/
