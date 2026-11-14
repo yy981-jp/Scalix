@@ -134,6 +134,8 @@ avatarIdはmodelではなくavatarに一意なIDとする 同じmodelを使っ�
 avatarは基本vrmのみとする
 1プロセス内での複数Engineの同時起動はサポートしない
 
+init.vrm -> TonaThas
+
 
 
 entityMtx

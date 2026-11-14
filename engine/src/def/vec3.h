@@ -37,17 +37,6 @@ struct vec3f {
 	vec3f normalized() const;
 
 
-	float maxAbsComponent() const {
-		return std::max({
-			std::abs(x),
-			std::abs(y),
-			std::abs(z)
-		});
-	}
-
-
-
-
 	static vec3f lerp(const vec3f& a, const vec3f& b, float t);
 	static vec3f cross(const vec3f& a, const vec3f& b);
 };

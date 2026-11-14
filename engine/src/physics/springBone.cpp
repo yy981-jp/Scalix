@@ -1,9 +1,3 @@
-#include <physics/springBone.h>
-
-#include <core/avatar.h>
-#include <core/nodeRegistry.h>
-#include <def/mtx.h>
-
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -12,13 +6,15 @@
 
 #include <bx/math.h>
 
+#include <physics/springBone.h>
+#include <core/avatar.h>
+#include <core/nodeRegistry.h>
+#include <def/mtx.h>
+#include <util/math.h>
+
 
 namespace {
 
-
-float length(const vec3f& value) {
-	return bx::length(value);
-}
 
 vec3f transformVector(const vec3f& value, const Mtx& matrix) {
 	return bx::mulXyz0(value, matrix.data());
@@ -110,7 +106,7 @@ void resolveCollision(
 		}
 	}
 
-	const float colliderScale = colliderMatrix.scale().maxAbsComponent()
+	const float colliderScale = maxAbsComponent(colliderMatrix.scale())
 		/ std::max(centerScale, def::epsilon);
 	const float radius = collider.radius * colliderScale + hitRadius;
 	const vec3f delta = tail - closestPoint;
@@ -292,7 +288,7 @@ void SpringBoneChain::update(float dt) {
 		if (centerIndex < 0 || centerIndex >= static_cast<int>(avatar->globalMtx.size())) return;
 
 		centerMatrix = avatar->globalMtx[centerIndex];
-		centerScale = centerMatrix.scale().maxAbsComponent();
+		centerScale = maxAbsComponent(centerMatrix.scale());
 		if (centerScale <= def::epsilon) return;
 		inverseCenter = Mtx::inverse(centerMatrix);
 	}
@@ -336,7 +332,7 @@ void SpringBoneChain::update(float dt) {
 
 		constrainLength(nextTail, headPosition, state.boneLength, restDirection);
 
-		const float jointScale = headMatrix.scale().maxAbsComponent()
+		const float jointScale = maxAbsComponent(headMatrix.scale())
 			/ std::max(centerScale, def::epsilon);
 		const float hitRadius = std::max(0.0f, state.params.hitRadius) * jointScale;
 

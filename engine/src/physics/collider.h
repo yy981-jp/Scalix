@@ -19,8 +19,14 @@ struct Collider {
 	
 };
 
+struct CollisionInfo {
+
+};
+
 
 class ColliderSystem {
+	std::vector<CollisionInfo> info;
+
 	struct Entry {
 		ColliderId nextFree;
 		uint32_t gen;
@@ -43,6 +49,7 @@ class ColliderSystem {
 
 
 public:
+	std::vector<CollisionInfo> getCollisionInfo() const { return info; }
 
 	ColliderHandle add(const Collider& collider) {
 		ColliderId id;
