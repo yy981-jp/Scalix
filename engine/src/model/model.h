@@ -9,8 +9,7 @@
 #include <def/transform.h>
 #include <def/mtx.h>
 #include <model/humanoid.h>
-#include <model/rig.h>
-
+#include <loader/def.h>
 #include <anim/format.h>
 #include <core/nodeRegistry.h>
 
@@ -46,11 +45,9 @@ enum class Status {
 /// @brief 構造そのもの (静的データ)
 struct Model {
 	Humanoid humanoid;
-	VRM vrm;
 
-	void init(const VRM& vrm) {
-		this->vrm = vrm;
-		humanoid.init(*this, vrm);
+	void init(const LoadData& ld) {
+		humanoid.init(*this, ld);
 	}
 
 	// scalix側で用意した仮想的なroot

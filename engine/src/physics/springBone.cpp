@@ -1,9 +1,3 @@
-#include <physics/springBone.h>
-
-#include <core/avatar.h>
-#include <core/nodeRegistry.h>
-#include <def/mtx.h>
-
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -12,39 +6,18 @@
 
 #include <bx/math.h>
 
+#include <physics/springBone.h>
+#include <core/avatar.h>
+#include <core/nodeRegistry.h>
+#include <def/mtx.h>
+#include <util/math.h>
+
 
 namespace {
 
 
-float maxAbsComponent(const vec3f& value) {
-	return std::max({
-		std::abs(value.x),
-		std::abs(value.y),
-		std::abs(value.z)
-	});
-}
-
-float length(const vec3f& value) {
-	return bx::length(value);
-}
-
 vec3f transformVector(const vec3f& value, const Mtx& matrix) {
 	return bx::mulXyz0(value, matrix.data());
-}
-
-Mtx makeEntityMatrix(const Avatar& avatar) {
-	Transform transform;
-	transform.pos = avatar.pos;
-	transform.rot = Quat::fromAxisAngle({0.0f, 1.0f, 0.0f}, avatar.yaw);
-	transform.scale = avatar.scale;
-	return Mtx::fromTRS(transform);
-}
-
-
-void refreshAvatarTransforms(Avatar& avatar) {
-	// avatar.globalMtx.resize(avatar.model.nodes.size());
-
-	avatar.refreshSubtree();
 }
 
 vec3f toEvaluationPoint(
@@ -166,67 +139,11 @@ SpringBoneChain::SpringBoneChain(
 	hasCenter(center.isValid()),
 	colliders(colliders) {
 
-	if (nodes.size() < 2) {
-		throw std::invalid_argument("SpringBoneChain requires at least two joints");
-	}
-	if (params.size() != nodes.size() - 1) {
-		throw std::invalid_argument("SpringBoneChain parameter count does not match joint pairs");
-	}
-
-	for (NodeHandle handle: nodes) {
-		if (!nodeReg.isAlive(handle) || nodeReg.getAvatar(handle) != &avatar) {
-			throw std::invalid_argument("SpringBoneChain contains an invalid or foreign node");
-		}
-	}
-
-	if (hasCenter) {
-		if (!nodeReg.isAlive(center) || nodeReg.getAvatar(center) != &avatar) {
-			throw std::invalid_argument("SpringBone center is invalid or belongs to another avatar");
-		}
-
-		bool isAncestor = false;
-		std::unordered_set<NodeHandle> visited;
-		for (NodeHandle current = nodes.front(); nodeReg.isAlive(current); ) {
-			if (!visited.insert(current).second) break;
-			if (current == center) {
-				isAncestor = true;
-				break;
-			}
-			const NodeHandle parent = nodeReg.get(current).parent;
-			if (!parent.isValid()) break;
-			current = parent;
-		}
-		if (!isAncestor) {
-			throw std::invalid_argument("SpringBone center must be the first joint or one of its ancestors");
-		}
-	}
-
-	Mtx inverseCenter = Mtx::fromTRS(Transform{});
-	if (hasCenter) {
-		const int centerIndex = static_cast<int>(nodeReg.getId(center));
-		if (centerIndex < 0 || centerIndex >= static_cast<int>(avatar.globalMtx.size())) {
-			throw std::invalid_argument("SpringBone center has no global transform");
-		}
-		inverseCenter = Mtx::inverse(avatar.globalMtx[centerIndex]);
-	}
+	Mtx inverseCenter;
+	if (hasCenter)
+		inverseCenter = Mtx::inverse(avatar.globalMtx[static_cast<int>(nodeReg.getId(center))]);
 
 	for (size_t i = 0; i + 1 < nodes.size(); ++i) {
-		bool isAncestor = false;
-		std::unordered_set<NodeHandle> visited;
-		for (NodeHandle current = nodes[i + 1]; nodeReg.isAlive(current); ) {
-			if (!visited.insert(current).second) break;
-			if (current == nodes[i]) {
-				isAncestor = true;
-				break;
-			}
-			const NodeHandle parent = nodeReg.get(current).parent;
-			if (!parent.isValid()) break;
-			current = parent;
-		}
-		if (!isAncestor) {
-			throw std::invalid_argument("SpringBone joints must follow the node hierarchy");
-		}
-
 		const int headIndex = static_cast<int>(nodeReg.getId(nodes[i]));
 		const int tailIndex = static_cast<int>(nodeReg.getId(nodes[i + 1]));
 		if (headIndex < 0 || tailIndex < 0
@@ -306,7 +223,6 @@ void SpringBoneChain::prepareFrame() {
 void SpringBoneChain::update(float dt) {
 	if (!avatar || joints.empty()) return;
 
-	const Mtx entityMatrix = makeEntityMatrix(*avatar);
 	Mtx centerMatrix = Mtx::fromTRS(Transform{});
 	Mtx inverseCenter = Mtx::fromTRS(Transform{});
 	float centerScale = 1.0f;
@@ -432,7 +348,7 @@ void SpringBoneSystem::tick(float dt) {
 	for (SpringBoneChain& chain: chains) {
 		chain.prepareFrame();
 	}
-	refreshAvatarTransforms(*avatar);
+	avatar->refreshSubtree();
 
 	// Chains are ordered from ancestors to descendants. A solved parent
 	// refreshes its subtree before a dependent child chain is evaluated.

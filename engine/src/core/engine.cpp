@@ -257,7 +257,7 @@ void Engine::gameInit() {
 		}
 		avaId = UUID{0,0};
 	}
-	avatarSystem.loadData(avaId);
+	avatarSystem.loadData(avaId,physicsSystem);
 
 
 	// ===== load Shader =====
@@ -282,13 +282,9 @@ void Engine::gameInit() {
 
 	elap.init();
 
-
 	avatarSystem.update(gctx,elap.get());
 
-
 	poseSolver = new PoseSolver{avatarSystem.player()};
-
-	physicsSystem.init(avatarSystem.player());
 
 	if (cfg.get()["mocap"].get<bool>()) {
 		receiver = std::make_unique<Recv>();

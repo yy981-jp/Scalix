@@ -101,6 +101,7 @@ pose_world_landmark使用
 
 
 // ===== その他 =====
+5.1ch対応とか楽しそう
 avatarに対する操作をavatarデータ側ではなくsystem側で腕を動かせたりするような機能を充実させる
 worldのデータについては課題が残るが、機能についての実装も検討する必要がある ただ、現段階では現実的ではない
 	-> lua系のスクリプトを活用することで、動的な世界を作れるかも?
@@ -133,6 +134,8 @@ avatarIdはmodelではなくavatarに一意なIDとする 同じmodelを使っ�
 基本的にtransformで状態を扱う mtxは描画システムが使う
 avatarは基本vrmのみとする
 1プロセス内での複数Engineの同時起動はサポートしない
+
+init.vrm -> TonaThas
 
 
 
@@ -170,6 +173,10 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 Humanoid::init(): VRM.h(external)の修正が必要そう
 	-> VRM10.hとして新しく作る
 
+logを出力する仕組みが必要だ
+
+SpringBone.cppの例外処理は必要なんだろうか? VRM10.hの責務では?
+	-> おそらく対処済み 確認がめんどいから後の自分頼んだ
 
 Collider周辺の整備を次の大きな目標とする
 
