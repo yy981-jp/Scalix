@@ -1,14 +1,23 @@
 #include <loader/vrm.h>
+#include <loader/data.h>
 #include <loader/gltf.h>
 
 
 
 struct VRMLoaderImpl {
-	VRM res;
+	LoadData ld;
 
 	std::unordered_map<ModelFeatureFlag, std::string> featureNameMap;
 
 	const GltfLoader& gltfloader;
+
+	json getExt(const ModelFeature& target) {
+		const std::string& name = featureNameMap.at(
+			static_cast<ModelFeatureFlag>(target)
+		);
+		return gltfloader.getExtension(name);
+	}
+
 
 	template<typename T>
 	void loadCore(ModelFeature target, T& out) {
@@ -17,28 +26,28 @@ struct VRMLoaderImpl {
 		const std::string& name = featureNameMap.at(
 			static_cast<ModelFeatureFlag>(target)
 		);
-		VRMC_VRM_1_0::from_json(gltfloader.getExtension(name), out);
 	}
 
 	void loadSpringBone() {
 		if (!has(flag, ModelFeature::VRMC_springBone)) return;
 
-		const std::string& name = featureNameMap.at(
-			static_cast<ModelFeatureFlag>(ModelFeature::VRMC_springBone)
+		// printf("%s", getExt(ModelFeature::VRMC_springBone).dump(4).c_str());
+		auto result = vrm10::parseSpringBone(getExt(ModelFeature::VRMC_springBone));
+		if (!result.hasValue()) throw std::runtime_error(
+			std::format("Failed to parse VRMC_springBone: {} in \"{}\"",
+				result.error().message,result.error().path)
 		);
-		const json extension = gltfloader.getExtension(name);
-		VRMC_VRM_1_0::from_json(extension, res.springBone);
+		const auto& res = result.value();
+		ld.vrm.springBone = res;
 
-		const auto springs = extension.find("springs");
-		if (springs == extension.end() || !springs->is_array()) return;
 
-		res.springCenters.reserve(springs->size());
-		for (const auto& spring: *springs) {
-			const auto center = spring.find("center");
-			if (center == spring.end() || center->is_null()) {
-				res.springCenters.emplace_back(std::nullopt);
+		ld.springCenters.reserve(res.springs.size());
+
+		for (const auto& spring: res.springs) {
+			if (spring.center) {
+				ld.springCenters.emplace_back(spring.center->value);
 			} else {
-				res.springCenters.emplace_back(center->get<uint32_t>());
+				ld.springCenters.emplace_back(std::nullopt);
 			}
 		}
 	}
@@ -56,13 +65,40 @@ struct VRMLoaderImpl {
 			featureNameMap[featureId] = ext;
 		}
 
-		loadCore(ModelFeature::VRMC_vrm, res.vrm);
+		{
+			auto result = vrm10::parseVrm(getExt(ModelFeature::VRMC_vrm));
+			if (!result.hasValue()) throw std::runtime_error(
+			std::format("Failed to parse VRMC_vrm: {} in \"{}\"",
+				result.error().message,result.error().path)
+			);
+			ld.vrm.vrm = result.value();
+		}
 		loadSpringBone();
+		const auto& gltf = gltfloader.getGltf();
+		vrm10::ValidationReport report;
+
+		auto append = [&](vrm10::ValidationReport result) {
+			report.issues.insert(
+				report.issues.end(),
+				result.issues.begin(),
+				result.issues.end()
+			);
+		};
+
+		append(vrm10::validate(ld.vrm.vrm, gltf));
+		append(vrm10::validate(ld.vrm.springBone, gltf));
+
+		for (const auto& issue : report.issues) {
+			throw std::runtime_error(
+				issue.code + ": " + issue.path + ": " + issue.message + '\n'
+			); // TODO: logシステムができたら治したい
+		}
+
 	}
 };
 
 
-VRM VRMLoader(const GltfLoader& gltfloader) {
+void VRMLoader(LoadData& ld, const GltfLoader& gltfloader) {
 	VRMLoaderImpl impl(gltfloader);
-	return impl.res;
+	ld = std::move(impl.ld);
 }

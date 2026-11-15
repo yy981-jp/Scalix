@@ -11,9 +11,12 @@ class PhysicsSystem {
 
 
 public:
-	void init(Avatar& avatar);
+	void init(Avatar& avatar, const LoadData& ld);
 
 	void tick(float dt) {
 		springBoneSys.tick(dt);
 	}
 };
+
+
+extern PhysicsSystem phSys;
