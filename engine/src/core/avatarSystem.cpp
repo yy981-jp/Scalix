@@ -17,8 +17,7 @@
 void AvatarSystem::loadData(AvatarId id, PhysicsSystem& physicsSystem) {
 	// Avatarのコンストラクタがload処理をやってる
 	LoadData ld;
-	Avatar avatar(id,ld);
-	const auto res = avatars.try_emplace(id,std::move(avatar));
+	const auto res = avatars.try_emplace(id,id,ld);
 	physicsSystem.init(res.first->second,ld);
 
 	if (!playableAvatar.isValid())

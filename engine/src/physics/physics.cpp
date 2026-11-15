@@ -33,7 +33,7 @@ void PhysicsSystem::init(Avatar& avatar, const LoadData& ld) {
 			param.hitRadius = joint.hitRadius;
 			params.push_back(param);
 		}
-
+/*
 		// ColliderGroup -> Physics Collider
 		auto colliders = resolveColliders(avatar, springBone, spring);
 
@@ -45,7 +45,7 @@ void PhysicsSystem::init(Avatar& avatar, const LoadData& ld) {
 			resolveCenter(avatar, spring),
 			colliders
 		));
-	}
+*/	}
 }
 
 
