@@ -8,13 +8,15 @@
 #include <core/avatar.h>
 
 
+class PhysicsSystem;
+
 /// @brief avatar 全体管理&描画システム
 class AvatarSystem {
 	std::unordered_map<AvatarId, Avatar> avatars;
 	AvatarId playableAvatar = AvatarId::invalid();
 
 public:
-	void loadData(AvatarId id);
+	void loadData(AvatarId id, PhysicsSystem& physicsSystem);
 	void update(GlobalContext& gctx, float dt);
 	void draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones);
 

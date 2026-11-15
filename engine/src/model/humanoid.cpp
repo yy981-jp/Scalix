@@ -1,6 +1,8 @@
 #include <model/model.h>
 #include <model/humanoid.h>
 #include <util/fmutil.h>
+#include <loader/data.h>
+#include <loader/vrm.h>
 #include <core/nodeRegistry.h>
 #include <unordered_map>
 #include <algorithm>
@@ -147,12 +149,12 @@ static inline void selectHelper(std::span<NodeHandle> to,
 }
 
 
-void Humanoid::init(const Model& model, const VRM& vrm) {
-	const auto& bs = vrm.vrm.humanoid.humanBones;
+void Humanoid::init(const Model& model, const LoadData& ld) {
+	const auto& hm = ld.vrm.vrm.humanoid;
 
-	#define X(name) {HBT::name, bs.name},
+	#define X(name) {HBT::name, hm[vrm10::HumanBone::name]},
 
-	std::vector<std::pair<HBT, VRMC_VRM_1_0::HumanBone>> dict {
+	std::vector<std::pair<HBT,std::optional<vrm10::NodeIndex>>> dict {
 		X(hips)
 
 		X(spine)
@@ -187,7 +189,8 @@ void Humanoid::init(const Model& model, const VRM& vrm) {
 
 	for (auto [hbt,vrm_hbt]: dict) {
 		auto& bone = bones[static_cast<size_t>(hbt)];
-		bone = model.nodeHandles[vrm_hbt.node];
+		if (!vrm_hbt.has_value()) continue;
+		bone = model.nodeHandles[vrm_hbt->value];
 
 		// flag
 		if (bone.isValid()) {
@@ -198,6 +201,7 @@ void Humanoid::init(const Model& model, const VRM& vrm) {
 }
 
 
+/*
 void Humanoid::init(const Model& model) {
 	NodeHandle sampleHdl = model.root;
 	std::vector<NodeInfo> cands;
@@ -312,3 +316,4 @@ void Humanoid::init(const Model& model) {
 
 
 }
+*/
