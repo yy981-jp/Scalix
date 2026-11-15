@@ -1,5 +1,6 @@
 #pragma once
 #include <utility>
+#include <sstream>
 
 #include <tinygltf/tiny_gltf.h>
 
