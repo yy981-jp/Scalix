@@ -74,6 +74,26 @@ struct VRMLoaderImpl {
 			ld.vrm.vrm = result.value();
 		}
 		loadSpringBone();
+		const auto& gltf = gltfloader.getGltf();
+		vrm10::ValidationReport report;
+
+		auto append = [&](vrm10::ValidationReport result) {
+			report.issues.insert(
+				report.issues.end(),
+				result.issues.begin(),
+				result.issues.end()
+			);
+		};
+
+		append(vrm10::validate(ld.vrm.vrm, gltf));
+		append(vrm10::validate(ld.vrm.springBone, gltf));
+
+		for (const auto& issue : report.issues) {
+			throw std::runtime_error(
+				issue.code + ": " + issue.path + ": " + issue.message + '\n'
+			); // TODO: logシステムができたら治したい
+		}
+
 	}
 };
 

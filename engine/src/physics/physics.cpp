@@ -1,7 +1,3 @@
-#include <algorithm>
-#include <cstdio>
-#include <unordered_set>
-
 #include <physics/physics.h>
 #include <loader/data.h>
 

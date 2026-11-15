@@ -49,6 +49,22 @@ public:
 		if (it == model.extensions.end()) throw std::runtime_error("Not found extension");
 		return convertToJson(it->second);
 	}
+	json getGltf() const {
+		tinygltf::TinyGLTF writer;
+		std::ostringstream stream;
+
+		if (!writer.WriteGltfSceneToStream(
+			&model,
+			stream,
+			false,
+			false
+		)) {
+			throw std::runtime_error("Failed to serialize glTF");
+		}
+
+		return json::parse(stream.str());
+
+	}
 	void procHdl(Avatar* avatar);
 	inline Model get() {
 		if (!handleSolved) throw std::runtime_error("Do not get data before solving handle.");

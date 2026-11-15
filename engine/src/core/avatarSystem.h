@@ -1,8 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <deque>
-
 #include <model/model.h>
 #include <core/gctx.h>
 #include <core/avatar.h>
