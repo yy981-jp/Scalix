@@ -18,7 +18,9 @@ void AvatarSystem::loadData(AvatarId id, PhysicsSystem& physicsSystem) {
 	// Avatarのコンストラクタがload処理をやってる
 	LoadData ld;
 	const auto res = avatars.try_emplace(id,id,ld);
-	physicsSystem.init(res.first->second,ld);
+	auto& avatar = res.first->second;
+	avatar.refreshTransforms();
+	physicsSystem.init(avatar,ld);
 
 	if (!playableAvatar.isValid())
 		playableAvatar = id;
@@ -31,21 +33,6 @@ void AvatarSystem::update(GlobalContext& ctx, float dt) {
 
 	// avatar update
 	avatar.update(ctx,dt);
-
-	avatar.globalMtx.resize(avatar.model.nodes.size());
-	avatar.avatarSpaceMtx.resize(avatar.model.nodes.size());
-
-	Mtx trackingEntityMtx;
-	trackingEntityMtx.setScale(avatar.avatarMtx.scale());
-
-	avatar.refreshSubtreeFor(avatar.avatarSpaceMtx,trackingEntityMtx);
-
-	Mtx trackingToGlobal =
-		avatar.avatarMtx * Mtx::inverse(trackingEntityMtx);
-
-	for (size_t i = 0; i < avatar.model.nodes.size(); i++) {
-		avatar.globalMtx[i] = trackingToGlobal * avatar.avatarSpaceMtx[i];
-	}
 
 	if (ctx.cam_type == CameraType::_1) avatar.draw(ctx.cam); // 一人称
 }
@@ -96,7 +83,7 @@ void AvatarSystem::draw(bgfx::ProgramHandle program, bgfx::UniformHandle u_bones
 					palette[i] = allJointMtx[node.skinIndex][orig];
 				}
 
-				if (mesh.boneRemapInverse.size() > 120) {
+				if (mesh.boneRemapInverse.size() > 120) { // TODO: なんとなくで決めた定数を使い続けるべきではないと思う
 					printf("ERROR: boneRemap too big: %zu\n", mesh.boneRemap.size());
 						continue;
 				}

@@ -45,6 +45,7 @@ struct Avatar {
 
 	AvatarId id;
 
+	void refreshTransforms();
 	void update(GlobalContext& keyStat, float dt);
 	void draw(Camera& cam);
 	

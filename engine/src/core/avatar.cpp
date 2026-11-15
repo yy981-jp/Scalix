@@ -14,8 +14,27 @@
 #include <core/nodeRegistry.h>
 
 
+void Avatar::refreshTransforms() {
+	globalMtx.resize(model.nodes.size());
+	avatarSpaceMtx.resize(model.nodes.size());
+
+	Mtx trackingEntityMtx;
+	trackingEntityMtx.setScale(avatarMtx.scale());
+
+	refreshSubtreeFor(avatarSpaceMtx,trackingEntityMtx);
+
+	Mtx trackingToGlobal =
+		avatarMtx * Mtx::inverse(trackingEntityMtx);
+
+	for (size_t i = 0; i < model.nodes.size(); i++) {
+		globalMtx[i] = trackingToGlobal * avatarSpaceMtx[i];
+	}
+}
+
 
 void Avatar::update(GlobalContext& ctx, float dt) {
+	refreshTransforms();
+
 	// --- 移動 ---
 	float fx = -lutsv.getSin(yaw);
 	float fz =  lutsv.getCos(yaw);

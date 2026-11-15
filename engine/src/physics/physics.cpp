@@ -33,20 +33,57 @@ void PhysicsSystem::init(Avatar& avatar, const LoadData& ld) {
 			param.hitRadius = joint.hitRadius;
 			params.push_back(param);
 		}
-/*
+
 		// ColliderGroup -> Physics Collider
-		auto colliders = resolveColliders(avatar, springBone, spring);
+		std::vector<SpringBoneCollider> colliders;
+		for (const auto& grIdx: spring.colliderGroups) {
+			const auto& group = springBone.colliderGroups[grIdx.value];
+
+			for (const auto& colIdx: group.colliders) {
+				const auto& source = springBone.colliders[colIdx.value];
+
+				SpringBoneCollider col;
+				col.node = avatar.model.nodeHandles[source.node.value];
+
+				std::visit([&](const auto& shape) {
+					using T = std::decay_t<decltype(shape)>;
+
+					col.offset = {
+						shape.offset[0],
+						shape.offset[1],
+						shape.offset[2]
+					};
+					col.radius = shape.radius;
+
+					if constexpr (std::is_same_v<T, vrm10::CapsuleCollider>) {
+						col.shape = ColliderShape::Capsule;
+						col.tail = {
+							shape.tail[0],
+							shape.tail[1],
+							shape.tail[2]
+						};
+					} else {
+						col.shape = ColliderShape::Sphere;
+					}
+				}, source.shape);
+
+				colliders.push_back(col);
+			}
+		}
+
+
+		NodeHandle center = spring.center.has_value()? 
+			avatar.model.nodeHandles[spring.center->value] : 
+			NodeHandle::invalid();
+
 
 		// 登録
 		springBoneSys.add(SpringBoneChain(
 			avatar,
 			nodes,
 			params,
-			resolveCenter(avatar, spring),
+			center,
 			colliders
 		));
-*/	}
+	}
 }
-
-
-PhysicsSystem phSys;
