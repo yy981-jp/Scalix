@@ -271,7 +271,6 @@ target_compile_definitions(${EXE_NAME} PRIVATE
 
 target_include_directories(${EXE_NAME} SYSTEM PRIVATE
 	${CMAKE_SOURCE_DIR}/external
-	${CMAKE_SOURCE_DIR}/external/nlohmann/include
 	${CMAKE_SOURCE_DIR}/external/asio/include
 	${CMAKE_SOURCE_DIR}/external/opencv/include
 	${CMAKE_SOURCE_DIR}/external/CLI11/include
@@ -292,6 +291,7 @@ target_link_libraries(${EXE_NAME} PRIVATE
 	yaml-cpp::yaml-cpp
 	SDL3::SDL3
 	SDL3_image::SDL3_image
+	nlohmann_json::nlohmann_json
 	VRM10::VRM10
 	${OpenCV_LIBS}
 
