@@ -7,10 +7,9 @@ TARGETS = [
 	"sxmp/external/mediapipe/compile_commands.json",
 ]
 
-# Windowsの絶対パスにある大文字のドライブ文字を検出する。
-# C:/... と C:\... の両方に対応。
-DRIVE_PATH = re.compile(rb'(?<![A-Za-z0-9_])([A-Z]):(?=[\\/])')
-
+# Windowsの絶対パスにある小文字のドライブ文字を検出する。
+# c:/... と c:\... の両方に対応。
+DRIVE_PATH = re.compile(rb'(?<![A-Za-z0-9_])([a-z]):(?=[\\/])')
 
 def normalize(path):
 	path = Path(path)
@@ -21,7 +20,7 @@ def normalize(path):
 
 	data = path.read_bytes()
 	fixed, count = DRIVE_PATH.subn(
-		lambda match: match.group(1).lower() + b":",
+		lambda match: match.group(1).upper() + b":",
 		data
 	)
 

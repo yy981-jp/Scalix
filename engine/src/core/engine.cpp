@@ -3,6 +3,9 @@
 #include <mocap/mocap.h>
 
 #include <stdexcept>
+#include <string>
+#include <cstring>
+#include <cstdint>
 #include <bx/math.h>
 
 #include <gfx/shader.h>
@@ -37,12 +40,15 @@ Engine::Engine(EngineMode emode): emode(emode) {
 	logo.draw();
 
 	// get window size
+	SDL_SyncWindow(window);
 	SDL_GetWindowSize(window, &width, &height);
 
 	// ===== bgfx初期化 =====
 	bgfx::PlatformData pd{};
 
-	SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	if (!props)
+		throw std::runtime_error(std::string("Get window properties: ") + SDL_GetError());
 
 	#if defined(_WIN32)
 		pd.nwh = SDL_GetPointerProperty(
@@ -51,13 +57,41 @@ Engine::Engine(EngineMode emode): emode(emode) {
 			nullptr
 		);
 	#elif defined(__linux__)
-		pd.nwh = reinterpret_cast<void*>(
-			SDL_GetNumberProperty(
+		const char* videoDriver = SDL_GetCurrentVideoDriver();
+		if (!videoDriver)
+			throw std::runtime_error("Get current SDL video driver");
+
+		if (std::strcmp(videoDriver, "x11") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
 				props,
-				SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
-				0
-			)
-		);
+				SDL_PROP_WINDOW_X11_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = reinterpret_cast<void*>(static_cast<std::uintptr_t>(
+				SDL_GetNumberProperty(
+					props,
+					SDL_PROP_WINDOW_X11_WINDOW_NUMBER,
+					0
+				)
+			));
+		} else if (std::strcmp(videoDriver, "wayland") == 0) {
+			pd.ndt = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER,
+				nullptr
+			);
+			pd.nwh = SDL_GetPointerProperty(
+				props,
+				SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER,
+				nullptr
+			);
+			pd.type = bgfx::NativeWindowHandleType::Wayland;
+		} else {
+			throw std::runtime_error(std::string("Unsupported SDL video driver: ") + videoDriver);
+		}
+
+		if (!pd.ndt || !pd.nwh)
+			throw std::runtime_error(std::string("Get native window handles for SDL video driver: ") + videoDriver);
 	#elif defined(__APPLE__)
 		pd.nwh = SDL_GetPointerProperty(
 			props,
@@ -71,8 +105,7 @@ Engine::Engine(EngineMode emode): emode(emode) {
 
 	bgfx::Init init{};
 	init.type = bgfx::RendererType::Count;
-
-	init.platformData.nwh = pd.nwh;
+	init.platformData = pd;
 
 	init.resolution.width = width;
 	init.resolution.height = height;
@@ -102,10 +135,10 @@ Engine::~Engine() = default;
 void Engine::tick() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_EVENT_QUIT) {
-            running = false;
-            continue;
-        }
+		if (event.type == SDL_EVENT_QUIT) {
+			running = false;
+			continue;
+		}
 
 		switch (event.type) {
 			case SDL_EVENT_KEY_DOWN:			onKeyDown(event.key);			break;
@@ -174,14 +207,13 @@ void Engine::update(float dt) {
 	if (gctx.cam_type == CameraType::DEBUG) cam0.update(
 		{0.0f, 0.7f, -5}, {0.0f, 0.7f, 0}
 	);
-	physicsSystem.tick(dt);
-
 	PoseFrame frame;
 	if (receiver && receiver->tick(frame)) {
 		poseSolver->solve(frame);
 	}
 
 	avatarSystem.update(gctx,dt);
+	physicsSystem.tick(dt);
 
 	mStat.relPos = {0, 0};
 }
@@ -215,9 +247,9 @@ void Engine::gameInit() {
 	if (!avaIdNode.is_null()) {
 		avaId = UUID::fromString(avaIdNode.get<std::string>());
 	} else {
-		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.glb";
+		const auto& dest = syspath.userdata / "avatars" / "00000000000000000000000000000000" / "model.vrm";
 		if (!fs::exists(dest)) {
-			const auto& orig = syspath.resource / "avatars" / "init.glb";
+			const auto& orig = syspath.resource / "avatars" / "init.vrm";
 			const auto& dest_parent = dest.parent_path();
 			if (!fs::exists(dest_parent))
 				fs::create_directories(dest_parent);
@@ -225,7 +257,7 @@ void Engine::gameInit() {
 		}
 		avaId = UUID{0,0};
 	}
-	avatarSystem.loadData(avaId);
+	avatarSystem.loadData(avaId,physicsSystem);
 
 
 	// ===== load Shader =====
@@ -250,13 +282,9 @@ void Engine::gameInit() {
 
 	elap.init();
 
-
 	avatarSystem.update(gctx,elap.get());
 
-
 	poseSolver = new PoseSolver{avatarSystem.player()};
-
-	physicsSystem.init(avatarSystem.player());
 
 	if (cfg.get()["mocap"].get<bool>()) {
 		receiver = std::make_unique<Recv>();

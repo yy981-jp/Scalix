@@ -1,4 +1,4 @@
-#include <gltf/loader.h>
+#include <loader/gltf.h>
 
 #include <tinygltf/tiny_gltf.h>
 #include <bx/math.h>
@@ -530,30 +530,32 @@ void GltfLoader::parse() {
 		if (!tn.translation.empty()) {
 			if (tn.translation.size() != 3)
 				throw std::runtime_error("node translation must have three components");
-			node.trs.pos.x = static_cast<float>(tn.translation[0]);
-			node.trs.pos.y = static_cast<float>(tn.translation[1]);
-			node.trs.pos.z = static_cast<float>(tn.translation[2]);
+			node.mtx.setPos({
+				(float)tn.translation[0],
+				(float)tn.translation[1],
+				(float)tn.translation[2]
+			});
 		}
 
 		if (!tn.rotation.empty()) {
 			if (tn.rotation.size() != 4)
 				throw std::runtime_error("node rotation must have four components");
-			node.trs.rot = {
+			node.mtx.setRot({
 				static_cast<float>(tn.rotation[0]),
 				static_cast<float>(tn.rotation[1]),
 				static_cast<float>(tn.rotation[2]),
 				static_cast<float>(tn.rotation[3])
-			};
+			});
 		}
 
 		if (!tn.scale.empty()) {
 			if (tn.scale.size() != 3)
 				throw std::runtime_error("node scale must have three components");
-			node.trs.scale = {
+			node.mtx.setScale({
 				static_cast<float>(tn.scale[0]),
 				static_cast<float>(tn.scale[1]),
 				static_cast<float>(tn.scale[2])
-			};
+			});
 		}
 
 		if (tn.mesh >= 0) {
@@ -788,7 +790,7 @@ void GltfLoader::load() {
 		} catch (const std::exception& e) {
 			printf("Error loading image[%d]: %s\n", imgIdx, e.what());
 		} catch (...) {
-			throw std::runtime_error("unknown error: gltf/loader - image");
+			throw std::runtime_error("unknown error: loader/gltf - image");
 		}
 	}
 

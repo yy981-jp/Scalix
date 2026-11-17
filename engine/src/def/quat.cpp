@@ -1,8 +1,8 @@
 #include <bx/math.h>
 #include <def/quat.h>
-
 #include <util/cache.h>
 #include <def/vec3.h>
+#include <physics/def.h>
 
 
 Quat::operator bx::Quaternion() const {
@@ -122,37 +122,37 @@ Quat Quat::fromAxisAngle(const vec3f& axis, float rad) {
 }
 
 Quat Quat::fromTo(vec3f from, vec3f to) {
-    from = bx::normalize(from);
-    to   = bx::normalize(to);
+	from = bx::normalize(from);
+	to   = bx::normalize(to);
 
-    float dot = bx::dot(from, to);
+	float dot = bx::dot(from, to);
 
-    if (dot > 0.9999f)
-        return {0, 0, 0, 1};
+	if (dot > 0.9999f)
+		return {0, 0, 0, 1};
 
-    if (dot < -0.9999f) {
-        vec3f axis = bx::cross({1, 0, 0}, from);
+	if (dot < -0.9999f) {
+		vec3f axis = bx::cross({1, 0, 0}, from);
 
-        if (bx::length(axis) < 0.0001f)
-            axis = bx::cross({0, 1, 0}, from);
+		if (bx::length(axis) < 0.0001f)
+			axis = bx::cross({0, 1, 0}, from);
 
-        axis = bx::normalize(axis);
-        return fromAxisAngle(axis, bx::kPi);
-    }
+		axis = bx::normalize(axis);
+		return fromAxisAngle(axis, bx::kPi);
+	}
 
-    vec3f axis = bx::cross(from, to);
+	vec3f axis = bx::cross(from, to);
 
-    float s = sqrtf(2.0f * (1.0f + dot));
+	float s = sqrtf(2.0f * (1.0f + dot));
 
-    Quat res{
-        axis.x / s,
-        axis.y / s,
-        axis.z / s,
-        s * 0.5f
-    };
+	Quat res{
+		axis.x / s,
+		axis.y / s,
+		axis.z / s,
+		s * 0.5f
+	};
 
-    res.normalize();
-    return res;
+	res.normalize();
+	return res;
 }
 
 
@@ -163,4 +163,25 @@ Quat Quat::inverse(const Quat& target) {
 		-target.z,
 		target.w
 	};
+}
+
+
+bool Quat::isSameRotation(const Quat& a, const Quat& b) {
+	const float dot = a.x * b.x + a.y * b.y
+		+ a.z * b.z + a.w * b.w;
+
+	const float lengthSqA = a.x * a.x + a.y * a.y
+		+ a.z * a.z + a.w * a.w;
+
+	const float lengthSqB = b.x * b.x + b.y * b.y
+		+ b.z * b.z + b.w * b.w;
+
+	if (lengthSqA <= def::epsilon * def::epsilon
+		|| lengthSqB <= def::epsilon * def::epsilon) {
+		return false;
+	}
+
+	constexpr float threshold = 1.0f - 1.0e-5f;
+
+	return dot * dot >= threshold * threshold * lengthSqA * lengthSqB;
 }

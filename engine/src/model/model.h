@@ -9,8 +9,7 @@
 #include <def/transform.h>
 #include <def/mtx.h>
 #include <model/humanoid.h>
-#include <model/rig.h>
-
+#include <loader/def.h>
 #include <anim/format.h>
 #include <core/nodeRegistry.h>
 
@@ -30,15 +29,7 @@ struct Node {
 
 	bool visible = true;
 
-	// pos: vec3f -- local座標
-	// rot: Quat  -- identity quaternion
-	// scale: vec3f -- {1,1,1}
-	Transform trs;
 	Mtx mtx;
-
-	Node() {
-		trs.scale = {1,1,1};
-	}
 };
 
 struct Skin {
@@ -54,11 +45,9 @@ enum class Status {
 /// @brief 構造そのもの (静的データ)
 struct Model {
 	Humanoid humanoid;
-	RigGraph rig;
 
-	void init() {
-		humanoid.init(*this);
-		// physics.init(*this);
+	void init(const LoadData& ld) {
+		humanoid.init(*this, ld);
 	}
 
 	// scalix側で用意した仮想的なroot
@@ -68,7 +57,7 @@ struct Model {
 
 	std::vector<Mesh> meshes;
 	std::vector<Texture> textures;
-	
+
 	std::vector<Node> nodes;
 
 	// NodeId to NodeHandle

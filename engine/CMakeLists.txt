@@ -233,11 +233,20 @@ add_dependencies(${EXE_NAME} ${EXE_NAME}_shaders)
 
 
 # External packages
+
+
+file(GLOB EXTERNAL_DIRS
+	"${CMAKE_SOURCE_DIR}/external/*"
+)
+list(APPEND CMAKE_PREFIX_PATH ${EXTERNAL_DIRS})
+
+
 find_package(bgfx CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_image CONFIG REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core videoio)
 find_package(yaml-cpp REQUIRED)
+
 
 if(WIN32 OR APPLE)
   find_package(Protobuf CONFIG REQUIRED)
@@ -262,7 +271,6 @@ target_compile_definitions(${EXE_NAME} PRIVATE
 
 target_include_directories(${EXE_NAME} SYSTEM PRIVATE
 	${CMAKE_SOURCE_DIR}/external
-	${CMAKE_SOURCE_DIR}/external/nlohmann/include
 	${CMAKE_SOURCE_DIR}/external/asio/include
 	${CMAKE_SOURCE_DIR}/external/opencv/include
 	${CMAKE_SOURCE_DIR}/external/CLI11/include
@@ -283,6 +291,8 @@ target_link_libraries(${EXE_NAME} PRIVATE
 	yaml-cpp::yaml-cpp
 	SDL3::SDL3
 	SDL3_image::SDL3_image
+	nlohmann_json::nlohmann_json
+	VRM10::VRM10
 	${OpenCV_LIBS}
 
 	protobuf::libprotobuf

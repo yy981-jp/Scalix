@@ -51,3 +51,6 @@
 [submodule "external/CLI11"]
 	path = external/CLI11
 	url = https://github.com/CLIUtils/CLI11.git
+[submodule "external/VRM10"]
+	path = external/VRM10
+	url = https://github.com/yy981-jp/VRM10.h.git

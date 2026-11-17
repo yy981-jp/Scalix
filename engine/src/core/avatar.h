@@ -22,12 +22,13 @@ struct Avatar {
 	// 親ボーン空間に変換する際はこちらを使う。globalMtxを使うと、アバターが
 	// 振り向く(yawが変わる)たびにトラッキングの基準がずれ、本来ローカルなはずの
 	// 動きがワールド軸に引きずられてしまう(PoseSolver参照)。
-	std::vector<Mtx> trackingMtx;
+	std::vector<Mtx> avatarSpaceMtx;
 	
 
 	vec3f pos = {0.0f, 0.0f, 0.0f};
 	float yaw = 0.0f;
 	vec3f scale = {1.0f, 1.0f, 1.0f};
+	Mtx avatarMtx;
 
 	Jump jump;
 	const float floor_y = 0;
@@ -40,18 +41,37 @@ struct Avatar {
 	AnimSystem anim;
 
 	Status status = Status::stay;
-	float speed = 7;
+	float speed;
 
 	AvatarId id;
 
+	void refreshTransforms();
 	void update(GlobalContext& keyStat, float dt);
 	void draw(Camera& cam);
 	
-	Avatar(const AvatarId& id);
+	Avatar(const AvatarId& id, LoadData& ld);
 	~Avatar();
 
 	Avatar(const Avatar&) = delete;
 	Avatar& operator=(const Avatar&) = delete;
 
 	Avatar(Avatar&&) noexcept = default;
+
+
+	void refreshSubtree(NodeHandle handle = NodeHandle::invalid()) {
+		if (!handle.isValid()) handle = model.root;
+		refreshSubtreeLoop++;
+		refreshSubtreeImpl(handle,globalMtx,avatarMtx);
+	}
+	void refreshSubtreeFor(std::vector<Mtx>& tMtx, const Mtx& tMtxRt) {
+		refreshSubtreeLoop++;
+		refreshSubtreeImpl(model.root,tMtx,tMtxRt);
+	}
+
+
+private:
+	std::vector<uint32_t> visited;
+	uint32_t refreshSubtreeLoop = 0;
+
+	void refreshSubtreeImpl(const NodeHandle& handle, std::vector<Mtx>& tMtx, const Mtx& tMtxRt);
 };

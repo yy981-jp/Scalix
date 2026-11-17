@@ -34,7 +34,7 @@ class NodeRegistry {
 public:
 	NodeHandle create(Avatar* avatar, NodeId id);
 	void destroy(NodeHandle h);
-	bool is_alive(NodeHandle h) const;
+	bool isAlive(NodeHandle h) const;
 	uint32_t size() const;
 
 	// void setAvatarSystemPtr(AvatarSystem* ptr) { avatarSys = ptr; };
