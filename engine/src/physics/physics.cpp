@@ -52,14 +52,14 @@ void PhysicsSystem::init(Avatar& avatar, const LoadData& ld) {
 					col.radius = shape.radius;
 
 					if constexpr (std::is_same_v<T, vrm10::CapsuleCollider>) {
-						col.shape = ColliderShape::Capsule;
+						col.shape = SpringBoneColliderShape::Capsule;
 						col.tail = {
 							shape.tail[0],
 							shape.tail[1],
 							shape.tail[2]
 						};
 					} else {
-						col.shape = ColliderShape::Sphere;
+						col.shape = SpringBoneColliderShape::Sphere;
 					}
 				}, source.shape);
 

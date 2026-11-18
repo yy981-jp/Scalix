@@ -7,7 +7,7 @@ namespace def {
 	constexpr float epsilon = 1.0e-6f;
 }
 
-enum class ColliderShape {
+enum class SpringBoneColliderShape {
 	Sphere,
 	Capsule
 };

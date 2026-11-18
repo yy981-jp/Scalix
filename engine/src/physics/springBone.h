@@ -20,7 +20,7 @@ struct SpringBoneParams {
 
 struct SpringBoneCollider {
 	NodeHandle node;
-	ColliderShape shape = ColliderShape::Sphere;
+	SpringBoneColliderShape shape = SpringBoneColliderShape::Sphere;
 	vec3f offset{};
 	vec3f tail{};
 	float radius = 0.0f;

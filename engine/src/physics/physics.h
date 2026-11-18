@@ -5,6 +5,11 @@
 #include <physics/util.h>
 
 
+struct CollideInfo {
+
+};
+
+
 class PhysicsSystem {
 	SpringBoneSystem springBoneSys;
 	ColliderSystem colliderSys;

@@ -1,6 +1,6 @@
 /**
 	@file
-	@brief loader/def.hの実態
+	@brief loader/def.hの実体
 */
 
 

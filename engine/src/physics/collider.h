@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <variant>
 
 #include <def/id.h>
 #include <def/vec3.h>
@@ -15,8 +16,55 @@ struct ColliderHandle {
 };
 
 
-struct Collider {
+// Collider shape
+namespace CLSH {
 	
+	struct Sphere {
+		NodeHandle node;
+		vec3f offset;
+		float radius;
+	};
+
+	struct Capsule {
+		NodeHandle node;
+		vec3f offset;
+		vec3f tail;
+
+		float radius;
+	};
+
+
+
+	#define func(AType,BType) bool operator()(const AType& a, const BType& b) const
+	#define func_m(AType,BType) func(BType,AType) { return this->operator()(b,a); } func(AType,BType)
+	struct ShapeVisitor {
+		func(Sphere,Sphere) {
+			// TODO
+		}
+		func_m(Sphere,Capsule) {
+			// TODO
+		}
+		func(Capsule,Capsule) {
+			// TODO
+		}
+	};
+	#undef func
+	#undef func_m
+};
+
+using ColliderData = std::variant<CLSH::Sphere,CLSH::Capsule>;
+
+
+template<typename T>
+concept ColliderType = std::assignable_from<ColliderData&, T>;
+
+
+
+
+
+
+struct Collider {
+	ColliderData data;
 };
 
 struct CollisionInfo {
@@ -32,6 +80,7 @@ class ColliderSystem {
 		uint32_t gen;
 	};
 
+	std::vector<CollisionInfo> collisions;
 	
 	// ↓ 頭が混乱しそうなので詳しく書いとく
 
@@ -46,6 +95,17 @@ class ColliderSystem {
 
 	// 再利用可能なデータ領域
 	std::vector<Collider> colliders;
+
+
+	void collide(const ColliderId& a_id, const ColliderId& b_id) {
+		const auto& a = colliders[a_id];
+		const auto& b = colliders[b_id];
+		bool colide = std::visit(CLSH::ShapeVisitor{},a.data,b.data);
+		if (!colide) return;
+
+		ColliderHandle a_hdl = {a_id, records[a_id].gen};
+		ColliderHandle b_hdl = {b_id, records[b_id].gen};
+	}
 
 
 public:
@@ -102,7 +162,22 @@ public:
 
 	
 	void tick() {
+		size_t aliveSize = alive.size();
+		// ia < ib を保証する
+		for (size_t ib = 0; ib < aliveSize; ib++) {
+			const ColliderId& b = aliveIndex[ib];
+			for (size_t ia = 0; ia < ib; ia++) {
+				const ColliderId& a = aliveIndex[ia];
+
+				collide(a,b);
+			}
+		}
 	};
+
+
+	const std::vector<CollisionInfo>& getCollisions() const {
+		return collisions;
+	}
 
 
 
