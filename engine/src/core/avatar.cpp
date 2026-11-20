@@ -114,11 +114,12 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	auto& headNode = nodeReg.get(headHandle);
 	headNode.mtx.setRot( Quat::fromAxisAngle({0,1,0}, head.yaw) );
 
-
 	// update avatar mtx
 	avatarMtx.setPos(pos);
 	avatarMtx.setRot(Quat::fromAxisAngle({0,1,0}, yaw));
 	avatarMtx.setScale(scale);
+
+	springBoneSys.tick(dt);
 }
 
 
@@ -144,6 +145,7 @@ void Avatar::draw(Camera& cam) {
 }
 
 Avatar::Avatar(const AvatarId& id, LoadData& ld): id(id), speed(3) {
+	// ===== load処理 =====
 	const fs::path base = syspath.userdata / "avatars" / id.hex();
 	GltfType type = GltfType::binary;
 	std::string path = (base / "model.vrm").string();
@@ -156,6 +158,14 @@ Avatar::Avatar(const AvatarId& id, LoadData& ld): id(id), speed(3) {
 	model.init(ld);
 
 	visited.resize(model.nodes.size(), 0);
+
+	refreshTransforms();
+
+
+	// ===== 初期化処理 =====
+
+	springBoneSys.init(*this,ld);
+
 
 	// anim.init("test.sxa",*this);
 }

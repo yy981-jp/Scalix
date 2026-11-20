@@ -168,6 +168,15 @@ noderegがavatar*まで管理すべきだろうか? 責務としてavatar*の管
 
 model Asset, instance の静的分離方式の構想もあるが、今のところ実装予定はない
 
+物理システムには2種類ある
+- PhysicsSystem:
+	globalに存在し、colliderなどavatar間の干渉がある場合のシステムを格納するシステム
+	内部にColliderSystemなどが存在する
+- AvatarPhysicsSystem:
+	実際にAvatarPhysicsSystemという名前があるわけではないものの、Avatarが格納する物理システム群を指す
+	avatar間の干渉が必要なく、avatar内で完結するものがこれに分類される
+	例を挙げると、SpringBoneSystemなど
+
 
 %%%%%%%%%% TODO %%%%%%%%%%
 Humanoid::init(): VRM.h(external)の修正が必要そう

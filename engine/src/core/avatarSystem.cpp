@@ -19,7 +19,6 @@ void AvatarSystem::loadData(AvatarId id, PhysicsSystem& physicsSystem) {
 	LoadData ld;
 	const auto res = avatars.try_emplace(id,id,ld);
 	auto& avatar = res.first->second;
-	avatar.refreshTransforms();
 	physicsSystem.init(avatar,ld);
 
 	if (!playableAvatar.isValid())

@@ -6,6 +6,8 @@
 #include <def/quat.h>
 #include <def/vec3.h>
 #include <physics/def.h>
+#include <loader/def.h>
+#include <model/model.h>
 
 
 struct Avatar;
@@ -71,6 +73,7 @@ class SpringBoneSystem {
 
 public:
 	void add(SpringBoneChain&& chain);
-	void clear();
+	void init(Avatar& avatar, const LoadData& ld);
+	// void clear();
 	void tick(float dt);
 };

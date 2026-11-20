@@ -11,7 +11,6 @@ struct CollideInfo {
 
 
 class PhysicsSystem {
-	SpringBoneSystem springBoneSys;
 	ColliderSystem colliderSys;
 
 
@@ -19,7 +18,7 @@ public:
 	void init(Avatar& avatar, const LoadData& ld);
 
 	void tick(float dt) {
-		springBoneSys.tick(dt);
+		colliderSys.tick();
 	}
 };
 

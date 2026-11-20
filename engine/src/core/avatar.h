@@ -4,6 +4,7 @@
 #include <model/humanoid.h>
 #include <model/avatarDef.h>
 #include <anim/animSystem.h>
+#include <physics/springBone.h>
 #include <util/jump.h>
 #include <def/euler.h>
 #include <def/pose.h>
@@ -39,6 +40,7 @@ struct Avatar {
 	static constexpr float headYawLimit = 0.5f; // 1.5も良かった
 
 	AnimSystem anim;
+	SpringBoneSystem springBoneSys;
 
 	Status status = Status::stay;
 	float speed;

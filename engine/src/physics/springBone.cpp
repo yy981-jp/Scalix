@@ -6,6 +6,8 @@
 
 #include <bx/math.h>
 
+
+#include <loader/data.h>
 #include <physics/springBone.h>
 #include <core/avatar.h>
 #include <core/nodeRegistry.h>
@@ -310,7 +312,6 @@ void SpringBoneChain::update(float dt) {
 			* Quat::fromTo(state.boneAxis, targetDirection) );
 		state.lastAppliedRotation = headNode.mtx.rot();
 
-		std::vector<bool> visited(avatar->model.nodes.size(), false);
 		avatar->refreshSubtree(state.head);
 	}
 }
@@ -333,11 +334,85 @@ void SpringBoneSystem::add(SpringBoneChain&& chain) {
 }
 
 
-void SpringBoneSystem::clear() {
-	chains.clear();
-	avatar = nullptr;
-}
+void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
+	const vrm10::SpringBone springBone = ld.vrm.springBone;
+	
+	std::vector<NodeHandle> nodes;
+	std::vector<SpringBoneParams> params;
+	for (const auto& spring: springBone.springs) {
+		int jointSize = spring.joints.size();
+		// シミュレーション可能なチェーンか確認
+		if (jointSize < 2) continue;
 
+		nodes.clear();	nodes.reserve(jointSize);
+		params.clear();	params.reserve(jointSize);
+
+		for (const auto& joint: spring.joints) {
+			// NodeIndex -> NodeHandle
+			nodes.push_back(avatar.model.nodeHandles[joint.node.value]);
+			// VRMデータ -> 物理パラメータ
+			SpringBoneParams param;
+			param.stiffness = joint.stiffness;
+			param.dragForce = joint.dragForce;
+			param.gravityPower = joint.gravityPower;
+			param.gravityDir = joint.gravityDir;
+			param.hitRadius = joint.hitRadius;
+			params.push_back(param);
+		}
+
+		// ColliderGroup -> Physics Collider
+		std::vector<SpringBoneCollider> colliders;
+		for (const auto& grIdx: spring.colliderGroups) {
+			const auto& group = springBone.colliderGroups[grIdx.value];
+
+			for (const auto& colIdx: group.colliders) {
+				const auto& source = springBone.colliders[colIdx.value];
+
+				SpringBoneCollider col;
+				col.node = avatar.model.nodeHandles[source.node.value];
+
+				std::visit([&](const auto& shape) {
+					using T = std::decay_t<decltype(shape)>;
+
+					col.offset = {
+						shape.offset[0],
+						shape.offset[1],
+						shape.offset[2]
+					};
+					col.radius = shape.radius;
+
+					if constexpr (std::is_same_v<T, vrm10::CapsuleCollider>) {
+						col.shape = SpringBoneColliderShape::Capsule;
+						col.tail = {
+							shape.tail[0],
+							shape.tail[1],
+							shape.tail[2]
+						};
+					} else {
+						col.shape = SpringBoneColliderShape::Sphere;
+					}
+				}, source.shape);
+
+				colliders.push_back(col);
+			}
+		}
+
+
+		NodeHandle center = spring.center.has_value()? 
+			avatar.model.nodeHandles[spring.center->value] : 
+			NodeHandle::invalid();
+
+
+		// 登録
+		add(SpringBoneChain(
+			avatar,
+			nodes,
+			params,
+			center,
+			colliders
+		));
+	}
+}
 
 void SpringBoneSystem::tick(float dt) {
 	if (!avatar || chains.empty() || !std::isfinite(dt) || dt <= 0.0f) return;

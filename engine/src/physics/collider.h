@@ -5,6 +5,8 @@
 
 #include <def/id.h>
 #include <def/vec3.h>
+#include <core/nodeRegistry.h>
+#include <core/avatar.h>
 
 
 class Collidertag {};
@@ -42,7 +44,7 @@ namespace CLSH {
 			// TODO
 		}
 		func_m(Sphere,Capsule) {
-			// TODO
+			
 		}
 		func(Capsule,Capsule) {
 			// TODO
@@ -64,11 +66,12 @@ concept ColliderType = std::assignable_from<ColliderData&, T>;
 
 
 struct Collider {
+	NodeHandle node;
 	ColliderData data;
 };
 
 struct CollisionInfo {
-
+	ColliderHandle a, b;
 };
 
 
