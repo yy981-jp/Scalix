@@ -24,7 +24,6 @@ Scalix is not a recreation of Unity or VRChat.
 - **Motion capture:** A MediaPipe-based pose-estimation backend (`sxmp`) and a receiver for pose data.
 - **Avatar physics:** VRM 1.0 `VRMC_springBone`-based simulation, including sphere and capsule colliders.
 - **UI:** An early-stage UI rendering foundation combining RmlUi with bgfx.
-- **Animation tools:** An experimental importer for Unity `.anim` files.
 - **Cross-platform development:** A CMake/Ninja build system with CI targeting Windows, Linux, and macOS. The MediaPipe backend is also built for all three platforms.
 
 VRM 1.0 support is partial. The current implementation focuses on humanoid information and `VRMC_springBone`; it does not imply complete support for every part of the VRM 1.0 specification, including MToon.
@@ -38,7 +37,6 @@ The RmlUi bgfx renderer is also an early implementation. Some rendering features
 | `engine/` | Main engine: rendering, avatar loading, skeletal animation, pose processing, and spring bones |
 | `sxmp/` | MediaPipe-based motion-capture backend |
 | `tracker/` | Python tools for camera input and recording or replaying tracking data |
-| `importer/` | Experimental importer for Unity `.anim` files (`sxim`) |
 | `shared/` | Protocol Buffers definitions shared by the engine and related tools |
 | `ui/` | bgfx renderer for RmlUi |
 | `resources/` | Default configuration and UI resources |
@@ -151,7 +149,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ~~~
 
-The main runtime target is `sl`, and the animation importer target is `sxim`.
+The main runtime target is `sl`.
 
 On Windows, you can optionally run the following target to copy runtime DLL dependencies alongside the executable:
 
