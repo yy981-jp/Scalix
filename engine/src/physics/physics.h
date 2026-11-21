@@ -2,7 +2,6 @@
 #include <core/avatarSystem.h>
 #include <physics/springBone.h>
 #include <physics/collider.h>
-#include <physics/util.h>
 
 
 struct CollideInfo {
@@ -10,11 +9,10 @@ struct CollideInfo {
 };
 
 
-class PhysicsSystem {
+struct PhysicsSystem {
 	ColliderSystem colliderSys;
 
 
-public:
 	void init(Avatar& avatar, const LoadData& ld);
 
 	void tick(float dt) {

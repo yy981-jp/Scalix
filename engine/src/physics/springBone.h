@@ -68,7 +68,6 @@ public:
 
 
 class SpringBoneSystem {
-	Avatar* avatar = nullptr;
 	std::vector<SpringBoneChain> chains;
 
 public:

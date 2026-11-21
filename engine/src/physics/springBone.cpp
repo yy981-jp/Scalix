@@ -206,7 +206,6 @@ SpringBoneChain::SpringBoneChain(
 
 void SpringBoneChain::prepareFrame() {
 	for (JointState& state: joints) {
-		if (!nodeReg.isAlive(state.head)) continue;
 		Node& node = nodeReg.get(state.head);
 
 		// If an animator changed this joint since the previous physics tick,
@@ -317,12 +316,10 @@ void SpringBoneChain::update(float dt) {
 }
 
 
-void SpringBoneSystem::add(SpringBoneChain&& chain) {
-	if (avatar && avatar != chain.avatar) {
-		throw std::invalid_argument("SpringBoneSystem cannot mix avatars");
-	}
+// ========== Sys ==========
 
-	avatar = chain.avatar;
+
+void SpringBoneSystem::add(SpringBoneChain&& chain) {
 	chains.emplace_back(std::move(chain));
 	std::stable_sort(
 		chains.begin(),
@@ -335,7 +332,7 @@ void SpringBoneSystem::add(SpringBoneChain&& chain) {
 
 
 void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
-	const vrm10::SpringBone springBone = ld.vrm.springBone;
+	const vrm10::SpringBone& springBone = ld.vrm.springBone;
 	
 	std::vector<NodeHandle> nodes;
 	std::vector<SpringBoneParams> params;
@@ -415,15 +412,11 @@ void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
 }
 
 void SpringBoneSystem::tick(float dt) {
-	if (!avatar || chains.empty() || !std::isfinite(dt) || dt <= 0.0f) return;
-
-	// Avoid an unstable Verlet step after a debugger pause or a long frame.
-	dt = std::min(dt, 1.0f / 30.0f);
+	if (chains.empty()) return;
 
 	for (SpringBoneChain& chain: chains) {
 		chain.prepareFrame();
 	}
-	avatar->refreshSubtree();
 
 	// Chains are ordered from ancestors to descendants. A solved parent
 	// refreshes its subtree before a dependent child chain is evaluated.
