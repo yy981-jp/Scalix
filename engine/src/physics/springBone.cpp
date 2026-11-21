@@ -215,7 +215,7 @@ void SpringBoneChain::prepareFrame() {
 			state.baseRotation = node.mtx.rot();
 		}
 
-		node.mtx.setRot(state.baseRotation);
+		// node.mtx.setRot(state.baseRotation);
 		state.lastAppliedRotation = state.baseRotation;
 	}
 }
@@ -307,8 +307,7 @@ void SpringBoneChain::update(float dt) {
 		targetDirection.normalize();
 
 		Node& headNode = nodeReg.get(state.head);
-		headNode.mtx.setRot( state.baseRotation
-			* Quat::fromTo(state.boneAxis, targetDirection) );
+		headNode.mtx.rotate( Quat::fromTo(state.boneAxis, targetDirection) );
 		state.lastAppliedRotation = headNode.mtx.rot();
 
 		avatar->refreshSubtree(state.head);

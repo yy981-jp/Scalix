@@ -29,6 +29,9 @@ struct Node {
 
 	bool visible = true;
 
+	// フレームの基準姿勢
+	Mtx baseMtx;
+	// basemMtxにspringboneなどの変形を加えた完成形
 	Mtx mtx;
 };
 

@@ -34,6 +34,9 @@ void Avatar::refreshTransforms() {
 
 void Avatar::update(GlobalContext& ctx, float dt) {
 	refreshTransforms();
+	for (auto& node: model.nodes) {
+		node.mtx = node.baseMtx;
+	}
 
 	// --- 移動 ---
 	float fx = -lutsv.getSin(yaw);
@@ -107,12 +110,12 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	// --- neck (pitch) ---
 	const NodeHandle& neckHandle = model.humanoid.bones[(size_t)HBT::neck];
 	auto& neckNode = nodeReg.get(neckHandle);
-	neckNode.mtx.setRot( Quat::fromAxisAngle({1,0,0}, head.pitch) );
+	neckNode.baseMtx.setRot( Quat::fromAxisAngle({1,0,0}, head.pitch) );
 
 	// --- head (yaw) ---
 	const NodeHandle& headHandle = model.humanoid.bones[(size_t)HBT::head];
 	auto& headNode = nodeReg.get(headHandle);
-	headNode.mtx.setRot( Quat::fromAxisAngle({0,1,0}, head.yaw) );
+	headNode.baseMtx.setRot( Quat::fromAxisAngle({0,1,0}, head.yaw) );
 
 	// update avatar mtx
 	avatarMtx.setPos(pos);
@@ -158,6 +161,9 @@ Avatar::Avatar(const AvatarId& id, LoadData& ld): id(id), speed(3) {
 	model.init(ld);
 
 	visited.resize(model.nodes.size(), 0);
+	for (auto& node: model.nodes) {
+		node.mtx = node.baseMtx;
+	}
 
 	refreshTransforms();
 

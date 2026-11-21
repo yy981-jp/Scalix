@@ -530,7 +530,7 @@ void GltfLoader::parse() {
 		if (!tn.translation.empty()) {
 			if (tn.translation.size() != 3)
 				throw std::runtime_error("node translation must have three components");
-			node.mtx.setPos({
+			node.baseMtx.setPos({
 				(float)tn.translation[0],
 				(float)tn.translation[1],
 				(float)tn.translation[2]
@@ -540,7 +540,7 @@ void GltfLoader::parse() {
 		if (!tn.rotation.empty()) {
 			if (tn.rotation.size() != 4)
 				throw std::runtime_error("node rotation must have four components");
-			node.mtx.setRot({
+			node.baseMtx.setRot({
 				static_cast<float>(tn.rotation[0]),
 				static_cast<float>(tn.rotation[1]),
 				static_cast<float>(tn.rotation[2]),
@@ -551,7 +551,7 @@ void GltfLoader::parse() {
 		if (!tn.scale.empty()) {
 			if (tn.scale.size() != 3)
 				throw std::runtime_error("node scale must have three components");
-			node.mtx.setScale({
+			node.baseMtx.setScale({
 				static_cast<float>(tn.scale[0]),
 				static_cast<float>(tn.scale[1]),
 				static_cast<float>(tn.scale[2])
