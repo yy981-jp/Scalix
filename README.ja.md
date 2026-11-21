@@ -24,7 +24,6 @@ ScalixはUnityやVRChatそのものを再実装するプロジェクトではあ
 - **モーションキャプチャ：** MediaPipeを利用した姿勢推定バックエンド（`sxmp`）と、姿勢データを受信する仕組み。
 - **アバター物理：** VRM 1.0の`VRMC_springBone`に基づく揺れ物シミュレーション。球体・カプセルコライダーに対応。
 - **UI：** RmlUiとbgfxを組み合わせたUI描画基盤（初期実装）。
-- **アニメーションツール：** Unityの`.anim`ファイルを扱う実験的なインポーター。
 - **クロスプラットフォーム開発：** CMakeとNinjaを使用したビルド環境。CIではWindows、Linux、macOSを対象とし、MediaPipeバックエンドも各プラットフォームでビルドしています。
 
 VRM 1.0への対応は部分的です。現時点ではヒューマノイド情報と`VRMC_springBone`を中心に実装しており、MToonを含むVRM 1.0の全仕様への対応を意味するものではありません。
@@ -38,7 +37,6 @@ RmlUiのbgfx描画バックエンドも初期実装であり、クリップマ�
 | `engine/` | 描画、アバター読み込み、スケルタルアニメーション、姿勢処理、Spring Boneなどを担うメインエンジン |
 | `sxmp/` | MediaPipeを利用したモーションキャプチャバックエンド |
 | `tracker/` | カメラ入力、トラッキングデータの記録・再生などを行うPythonツール |
-| `importer/` | Unityの`.anim`ファイルを扱う実験的なインポーター（`sxim`） |
 | `shared/` | エンジンと関連ツールで共有するProtocol Buffersの定義 |
 | `ui/` | RmlUi向けのbgfxレンダラー |
 | `resources/` | デフォルト設定やUIリソース |
@@ -151,7 +149,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ~~~
 
-主な実行ファイルのターゲット名は`sl`、アニメーションインポーターのターゲット名は`sxim`です。
+主な実行ファイルのターゲット名は`sl`です。
 
 Windowsでは、必要に応じて次のターゲットを実行すると、実行時に必要なDLLを実行ファイルのディレクトリへコピーできます。
 
