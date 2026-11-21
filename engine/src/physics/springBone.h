@@ -38,8 +38,6 @@ class SpringBoneChain {
 		vec3f boneAxis{};
 		float boneLength = 0.0f;
 
-		Quat baseRotation;
-		Quat lastAppliedRotation;
 		SpringBoneParams params;
 	};
 
@@ -51,7 +49,6 @@ class SpringBoneChain {
 	std::vector<JointState> joints;
 	std::vector<SpringBoneCollider> colliders;
 
-	void prepareFrame();
 	void update(float dt);
 
 	friend class SpringBoneSystem;

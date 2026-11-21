@@ -33,11 +33,6 @@ void Avatar::refreshTransforms() {
 
 
 void Avatar::update(GlobalContext& ctx, float dt) {
-	refreshTransforms();
-	for (auto& node: model.nodes) {
-		node.mtx = node.baseMtx;
-	}
-
 	// --- 移動 ---
 	float fx = -lutsv.getSin(yaw);
 	float fz =  lutsv.getCos(yaw);
@@ -123,6 +118,15 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	avatarMtx.setScale(scale);
 
 	springBoneSys.tick(dt);
+
+
+	
+	// nodeに加えられた処理を適用
+	refreshTransforms();
+	for (auto& node: model.nodes) {
+		node.mtx = node.baseMtx;
+	}
+
 }
 
 

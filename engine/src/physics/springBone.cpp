@@ -185,8 +185,6 @@ SpringBoneChain::SpringBoneChain(
 		state.currTail = tailEvaluation;
 		state.boneAxis = boneAxis;
 		state.boneLength = boneLength;
-		state.baseRotation = headNode.mtx.rot();
-		state.lastAppliedRotation = headNode.mtx.rot();
 		state.params = params[i];
 		joints.push_back(state);
 	}
@@ -200,23 +198,6 @@ SpringBoneChain::SpringBoneChain(
 		const NodeHandle parent = nodeReg.get(current).parent;
 		if (!parent.isValid()) break;
 		current = parent;
-	}
-}
-
-
-void SpringBoneChain::prepareFrame() {
-	for (JointState& state: joints) {
-		Node& node = nodeReg.get(state.head);
-
-		// If an animator changed this joint since the previous physics tick,
-		// use that new pose as the spring's base pose. Otherwise undo only
-		// the rotation written by the previous spring update.
-		if (!Quat::isSameRotation(node.mtx.rot(), state.lastAppliedRotation)) {
-			state.baseRotation = node.mtx.rot();
-		}
-
-		// node.mtx.setRot(state.baseRotation);
-		state.lastAppliedRotation = state.baseRotation;
 	}
 }
 
@@ -308,7 +289,6 @@ void SpringBoneChain::update(float dt) {
 
 		Node& headNode = nodeReg.get(state.head);
 		headNode.mtx.rotate( Quat::fromTo(state.boneAxis, targetDirection) );
-		state.lastAppliedRotation = headNode.mtx.rot();
 
 		avatar->refreshSubtree(state.head);
 	}
@@ -412,10 +392,6 @@ void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
 
 void SpringBoneSystem::tick(float dt) {
 	if (chains.empty()) return;
-
-	for (SpringBoneChain& chain: chains) {
-		chain.prepareFrame();
-	}
 
 	// Chains are ordered from ancestors to descendants. A solved parent
 	// refreshes its subtree before a dependent child chain is evaluated.
