@@ -63,7 +63,7 @@ namespace WSH {
 
 	#define func(Type) WorldCollider operator()(const CLSH::Type& col) const;
 	struct UpdateVisitor {
-		Mtx mtx;
+		const Mtx& mtx;
 
 		func(Sphere)
 		func(Capsule)

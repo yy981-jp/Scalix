@@ -101,6 +101,14 @@ vec3f vec3f::normalized() const {
 	return bx::normalize(*this);
 }
 
+vec3f vec3f::abs() const {
+	return vec3f(
+		std::abs(x),
+		std::abs(y),
+		std::abs(z)
+	);
+}
+
 
 vec3f vec3f::lerp(const vec3f& a, const vec3f& b, float t) {
 	return bx::lerp(a,b,t);

@@ -35,6 +35,7 @@ struct vec3f {
 
 	void normalize();
 	vec3f normalized() const;
+	vec3f abs() const;
 
 
 	static vec3f lerp(const vec3f& a, const vec3f& b, float t);
