@@ -3,7 +3,7 @@
 
 #include <def/view.h>
 
-DebugDraw debug;
+DebugDraw dd;
 
 DebugDraw::DebugDraw() {
 }

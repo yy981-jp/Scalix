@@ -221,7 +221,7 @@ void Engine::update(float dt) {
 void Engine::draw() {
 	avatarSystem.draw(shaders[static_cast<size_t>(ShaderId::tex)], u_bones);
 	grid.draw(shaders[static_cast<size_t>(ShaderId::grid)]);
-	debug.render(shaders[static_cast<size_t>(ShaderId::grid)]);
+	dd.render(shaders[static_cast<size_t>(ShaderId::grid)]);
 }
 
 void Engine::gameInit() {
@@ -270,7 +270,7 @@ void Engine::gameInit() {
 		(shaderDirectory / "fs_grid.bin").string()
 	);
 	
-	debug.init();
+	dd.init();
 
 	// const bgfx::Caps* caps = bgfx::getCaps();
 	// int maxMat4 = caps->limits.maxUniforms / 4;

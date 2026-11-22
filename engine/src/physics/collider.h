@@ -118,7 +118,7 @@ public:
 
 
 	void updateWorldShapes() {
-		wcls.clear();
+		wcls.resize(records.size());
 
 		for (ColliderId id: alive) {
 			const Collider& collider = colliders[id];
@@ -128,7 +128,7 @@ public:
 			// WorldCollider::shape を構築
 			wcl = std::visit(WSH::UpdateVisitor{mtx}, collider.data);
 
-			wcls.push_back(std::move(wcl));
+			wcls[id] = std::move(wcl);
 			
 		}
 	}
@@ -149,10 +149,10 @@ public:
 		// ia < ib を保証する
 		for (size_t ib = 0; ib < aliveSize; ib++) {
 			if (!enable[ib]) continue;
-			const ColliderId& b = aliveIndex[ib];
+			const ColliderId& b = alive[ib];
 			for (size_t ia = 0; ia < ib; ia++) {
 				if (!enable[ia]) continue;
-				const ColliderId& a = aliveIndex[ia];
+				const ColliderId& a = alive[ia];
 
 				collide(a,b);
 			}

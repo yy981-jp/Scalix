@@ -126,11 +126,11 @@ void PoseSolver::solve(const PoseFrame& frame) {
 void PoseSolver::debug_(const PoseFrame& frame) {
 	for (auto& lm : frame.landmarks) {
 		if (lm.visibility < 0.5) continue;
-		debug.drawCross(lm.pos + vec3f{0,2,0}, 0.01f, 0xffff0000u);
+		dd.drawCross(lm.pos + vec3f{0,2,0}, 0.01f, 0xffff0000u);
 	}
 
 	for (const auto& c : poseConnections) {
-		debug.drawLine(
+		dd.drawLine(
 			frame.landmarks[static_cast<size_t>(c.a)].pos + vec3f{0,2,0},
 			frame.landmarks[static_cast<size_t>(c.b)].pos + vec3f{0,2,0}
 		);
