@@ -179,15 +179,10 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 
 
 %%%%%%%%%% TODO %%%%%%%%%%
-Humanoid::init(): VRM.h(external)の修正が必要そう
-	-> VRM10.hとして新しく作る
+Collider周辺の整備を次の大きな目標とする
+	-> SpringBoneの衝突判定をColliderSystemに切り出す
 
 logを出力する仕組みが必要だ
-
-SpringBone.cppの例外処理は必要なんだろうか? VRM10.hの責務では?
-	-> おそらく対処済み 確認がめんどいから後の自分頼んだ
-
-Collider周辺の整備を次の大きな目標とする
 
 Engine::u_bonesはavatarSystemの責務か? ほかにも整理していきたい
 mesh::submit()使われてなくない? 使われてないコードをいつか一斉に整理したい

@@ -22,13 +22,11 @@ struct ColliderHandle {
 namespace CLSH {
 	
 	struct Sphere {
-		NodeHandle node;
 		vec3f offset;
 		float radius;
 	};
 
 	struct Capsule {
-		NodeHandle node;
 		vec3f offset;
 		vec3f tail;
 
@@ -70,20 +68,23 @@ struct Collider {
 	ColliderData data;
 };
 
-struct CollisionInfo {
-	ColliderHandle a, b;
+struct Contact {
+	ColliderHandle a;
+	ColliderHandle b;
+
+	vec3f point;
+	vec3f normal;
+	float penetration;
 };
 
 
 class ColliderSystem {
-	std::vector<CollisionInfo> info;
-
 	struct Entry {
 		ColliderId nextFree;
 		uint32_t gen;
 	};
 
-	std::vector<CollisionInfo> collisions;
+	std::vector<Contact> collisions;
 	
 	// ↓ 頭が混乱しそうなので詳しく書いとく
 
@@ -100,19 +101,27 @@ class ColliderSystem {
 	std::vector<Collider> colliders;
 
 
-	void collide(const ColliderId& a_id, const ColliderId& b_id) {
+	bool collide(const ColliderId& a_id, const ColliderId& b_id) {
 		const auto& a = colliders[a_id];
 		const auto& b = colliders[b_id];
 		bool colide = std::visit(CLSH::ShapeVisitor{},a.data,b.data);
-		if (!colide) return;
+		if (!colide) return false;
 
 		ColliderHandle a_hdl = {a_id, records[a_id].gen};
 		ColliderHandle b_hdl = {b_id, records[b_id].gen};
+
+		Contact collision{
+			.a = a_hdl,
+			.b = b_hdl,
+		};
+
+		collisions.push_back( std::move(collision) );
+		return true;
 	}
 
 
 public:
-	std::vector<CollisionInfo> getCollisionInfo() const { return info; }
+	const std::vector<Contact>& getCollisions() const { return collisions; }
 
 	ColliderHandle add(const Collider& collider) {
 		ColliderId id;
@@ -124,6 +133,7 @@ public:
 			// 新規確保
 			id = records.size();
 			records.emplace_back();
+			colliders.emplace_back();
 			aliveIndex.resize(records.size());
 		}
 		aliveIndex[id] = alive.size();
@@ -138,6 +148,17 @@ public:
 			.gen = gen
 		};
 	};
+
+	void updateWorldShapes() {
+		for (ColliderId id: alive) {
+			const Collider& collider = colliders[id];
+			// const Mtx& matrix = /* colliderに紐付くNodeのGlobal Mtx */;
+			const auto& nodeEnt = nodeReg.getEntry(collider.node);
+			// const Mtx& matrix = ;
+
+			// ローカル形状をWorld-space形状に変換
+		}
+	}
 
 
 	void destroy(const ColliderHandle& hdl) {
@@ -165,6 +186,8 @@ public:
 
 	
 	void tick() {
+		collisions.clear();
+		
 		size_t aliveSize = alive.size();
 		// ia < ib を保証する
 		for (size_t ib = 0; ib < aliveSize; ib++) {
@@ -178,20 +201,5 @@ public:
 	};
 
 
-	const std::vector<CollisionInfo>& getCollisions() const {
-		return collisions;
-	}
 
-
-
-};
-
-
-struct Contact {
-	ColliderHandle a;
-	ColliderHandle b;
-
-	vec3f point;
-	vec3f normal;
-	float penetration;
 };

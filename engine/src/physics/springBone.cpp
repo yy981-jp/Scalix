@@ -145,6 +145,8 @@ SpringBoneChain::SpringBoneChain(
 	if (hasCenter)
 		inverseCenter = Mtx::inverse(avatar.globalMtx[static_cast<int>(nodeReg.getId(center))]);
 
+	if (nodes.size() < 2) throw std::runtime_error("joint.size() < 2");
+
 	for (size_t i = 0; i + 1 < nodes.size(); ++i) {
 		const int headIndex = static_cast<int>(nodeReg.getId(nodes[i]));
 		const int tailIndex = static_cast<int>(nodeReg.getId(nodes[i + 1]));
@@ -203,10 +205,7 @@ SpringBoneChain::SpringBoneChain(
 
 
 void SpringBoneChain::update(float dt) {
-	if (!avatar || joints.empty()) return;
-
-	Mtx centerMatrix = Mtx::fromTRS(Transform{});
-	Mtx inverseCenter = Mtx::fromTRS(Transform{});
+	Mtx centerMatrix, inverseCenter;
 	float centerScale = 1.0f;
 
 	if (hasCenter) {

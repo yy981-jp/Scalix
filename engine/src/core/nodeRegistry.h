@@ -1,6 +1,7 @@
 #pragma once
 
 #include <def/node.h>
+#include <def/mtx.h>
 #include <model/avatarDef.h>
 
 #include <vector>
@@ -27,29 +28,20 @@ class NodeRegistry {
 	uint32_t freeHead = UINT32_MAX; // フリーリストの先頭
 	static constexpr uint32_t INVALID = std::numeric_limits<uint32_t>::max();
 
-	NodeHandle find(Entry entry, NodeId nodeId) const;
-
-	// AvatarSystem* avatarSys = nullptr;
 
 public:
 	NodeHandle create(Avatar* avatar, NodeId id);
 	void destroy(NodeHandle h);
-	bool isAlive(NodeHandle h) const;
+
 	uint32_t size() const;
 
-	// void setAvatarSystemPtr(AvatarSystem* ptr) { avatarSys = ptr; };
+	bool isAlive(NodeHandle h) const;
+	Entry& getEntry(NodeHandle h);
 
 	Node& get(NodeHandle h);
 	NodeId getId(NodeHandle h);
 	Avatar* getAvatar(NodeHandle h);
-	
-	const Entry& getEntry(NodeHandle h) const;
-	NodeHandle find(NodeHandle avaRefHandle, NodeId nodeId) const;
-
-	// ほぼデバッグ用
-	// 計算コスト的に過度な呼び出しには注意
-	NodeHandle findFromAvaId(AvatarId avatarId, NodeId nodeId) const;
-
+	Mtx& getGlobalMtx(NodeHandle h);
 };
 
 extern NodeRegistry nodeReg;

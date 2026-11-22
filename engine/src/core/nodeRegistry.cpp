@@ -42,66 +42,38 @@ void NodeRegistry::destroy(NodeHandle h) {
 	freeHead = h.id;
 }
 
-bool NodeRegistry::isAlive(NodeHandle h) const {
-	return h.isValid() && h.id < records.size() && records[h.id].gen == h.gen;
-}
-
 uint32_t NodeRegistry::size() const {
 	return aliveCount;
 }
 
-Node& NodeRegistry::get(NodeHandle h) {
-	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::get(): is not allive");
+bool NodeRegistry::isAlive(NodeHandle h) const {
+	return h.isValid() && h.id < records.size() && records[h.id].gen == h.gen;
+}
 
-	Entry& entry = records[h.id];
+NodeRegistry::Entry& NodeRegistry::getEntry(NodeHandle h) {
+	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
+	return records[h.id];
+}
+
+Node& NodeRegistry::get(NodeHandle h) {
+	Entry& entry = getEntry(h);
 	Node& node = entry.avatar->model.nodes[entry.node];
 	
 	return node;
 }
 
 NodeId NodeRegistry::getId(NodeHandle h) {
-	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
-
-	Entry& entry = records[h.id];
-	return entry.node;
+	return getEntry(h).node;
 }
 
 Avatar* NodeRegistry::getAvatar(NodeHandle h) {
-	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::getId():: is not allive");
-
-	Entry& entry = records[h.id];
-	return entry.avatar;
+	return getEntry(h).avatar;
 }
 
-const NodeRegistry::Entry& NodeRegistry::getEntry(NodeHandle h) const {
-	if (!isAlive(h)) throw std::runtime_error("NodeRegistry::getId():: is no allive");
-	return records[h.id];
+Mtx& NodeRegistry::getGlobalMtx(NodeHandle h) {
+	auto& entry = getEntry(h);
+	return entry.avatar->globalMtx[entry.node];
 }
-
-NodeHandle NodeRegistry::find(NodeRegistry::Entry entry, NodeId nodeId) const {
-	return entry.avatar->model.nodeHandles[nodeId];
-}
-
-NodeHandle NodeRegistry::find(NodeHandle avaRefHandle, NodeId nodeId) const {
-	return find(getEntry(avaRefHandle), nodeId);
-}
-
-
-NodeHandle NodeRegistry::findFromAvaId(AvatarId avatarId, NodeId nodeId) const {
-	for (uint32_t i = 0; i < records.size(); ++i) {
-		NodeHandle h{i, records[i].gen};
-
-		if (!isAlive(h))
-			continue;
-
-		const Entry& e = records[i];
-		if (e.avatarId == avatarId && e.node == nodeId)
-			return h;
-	}
-
-	return {};
-}
-
 
 
 NodeRegistry nodeReg;
