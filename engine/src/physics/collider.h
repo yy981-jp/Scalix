@@ -18,6 +18,11 @@ struct ColliderHandle {
 };
 
 
+// ==============================
+//			Local
+// ==============================
+
+
 // Collider shape
 namespace CLSH {
 	
@@ -32,41 +37,77 @@ namespace CLSH {
 
 		float radius;
 	};
-
-
-
-	#define func(AType,BType) bool operator()(const AType& a, const BType& b) const
-	#define func_m(AType,BType) func(BType,AType) { return this->operator()(b,a); } func(AType,BType)
-	struct ShapeVisitor {
-		func(Sphere,Sphere) {
-			// TODO
-		}
-		func_m(Sphere,Capsule) {
-			
-		}
-		func(Capsule,Capsule) {
-			// TODO
-		}
-	};
-	#undef func
-	#undef func_m
 };
 
 using ColliderData = std::variant<CLSH::Sphere,CLSH::Capsule>;
-
-
-template<typename T>
-concept ColliderType = std::assignable_from<ColliderData&, T>;
-
-
-
-
-
 
 struct Collider {
 	NodeHandle node;
 	ColliderData data;
 };
+
+
+
+// ==============================
+//			Global
+// ==============================
+
+struct WorldCollider;
+
+namespace WSH {
+	struct Sphere {
+		vec3f center{};
+		float radius = 0.0f;
+	};
+
+	struct Capsule {
+		vec3f head{};
+		vec3f tail{};
+		float radius = 0.0f;
+	};
+
+	
+
+	#define func(Type) WorldCollider operator()(const CLSH::Type& col) const;
+	struct UpdateVisitor {
+		Mtx mtx;
+
+		func(Sphere)
+		func(Capsule)
+	};
+	#undef func
+
+	#define func(AType,BType) bool operator()(const AType& a, const BType& b) const
+	#define func_m(AType,BType) func(BType,AType); func(AType,BType)
+	struct CollideVisitor {
+		func(Sphere,Sphere);
+		func_m(Sphere,Capsule);
+		func(Capsule,Capsule);
+	};
+	#undef func
+	#undef func_m
+
+}
+
+using WorldShape = std::variant<
+	WSH::Sphere,
+	WSH::Capsule
+>;
+
+// narrowphaseで用いる、純粋な空間や形状の情報を持つデータ
+struct WorldCollider {
+	WorldShape shape;
+	// AABB bounds;
+};
+
+
+// ==============================
+//			End Shapes
+// ==============================
+
+
+
+
 
 struct Contact {
 	ColliderHandle a;
@@ -100,11 +141,15 @@ class ColliderSystem {
 	// 再利用可能なデータ領域
 	std::vector<Collider> colliders;
 
+	// Global cache
+	// 毎フレーム更新するため、サイズ管理は不要
+	std::vector<WorldCollider> wcls;
+
 
 	bool collide(const ColliderId& a_id, const ColliderId& b_id) {
-		const auto& a = colliders[a_id];
-		const auto& b = colliders[b_id];
-		bool colide = std::visit(CLSH::ShapeVisitor{},a.data,b.data);
+		const auto& a = wcls[a_id];
+		const auto& b = wcls[b_id];
+		bool colide = std::visit(WSH::CollideVisitor{},a.shape,b.shape);
 		if (!colide) return false;
 
 		ColliderHandle a_hdl = {a_id, records[a_id].gen};
@@ -149,18 +194,6 @@ public:
 		};
 	};
 
-	void updateWorldShapes() {
-		for (ColliderId id: alive) {
-			const Collider& collider = colliders[id];
-			// const Mtx& matrix = /* colliderに紐付くNodeのGlobal Mtx */;
-			const auto& nodeEnt = nodeReg.getEntry(collider.node);
-			// const Mtx& matrix = ;
-
-			// ローカル形状をWorld-space形状に変換
-		}
-	}
-
-
 	void destroy(const ColliderHandle& hdl) {
 		if (!isAlive(hdl)) return;
 
@@ -184,15 +217,38 @@ public:
 				&& records[hdl.id].gen == hdl.gen;
 	}
 
-	
+
+	void updateWorldShapes() {
+		wcls.clear();
+
+		for (ColliderId id: alive) {
+			const Collider& collider = colliders[id];
+			const Mtx& mtx = nodeReg.getGlobalMtx(collider.node);
+
+			wcls.push_back(std::visit(WSH::UpdateVisitor{mtx}, collider.data));
+			
+		}
+	}
+
+	std::vector<bool> broadPhase() {
+		std::vector<bool> enable;
+		enable.resize(alive.size(),true);
+		// TODO
+		return enable;
+	}
+
 	void tick() {
 		collisions.clear();
+		updateWorldShapes();
+		std::vector<bool> enable = broadPhase();
 		
 		size_t aliveSize = alive.size();
 		// ia < ib を保証する
 		for (size_t ib = 0; ib < aliveSize; ib++) {
+			if (!enable[ib]) continue;
 			const ColliderId& b = aliveIndex[ib];
 			for (size_t ia = 0; ia < ib; ia++) {
+				if (!enable[ia]) continue;
 				const ColliderId& a = aliveIndex[ia];
 
 				collide(a,b);
