@@ -117,15 +117,18 @@ void Avatar::update(GlobalContext& ctx, float dt) {
 	avatarMtx.setRot(Quat::fromAxisAngle({0,1,0}, yaw));
 	avatarMtx.setScale(scale);
 
-	springBoneSys.tick(dt);
 
-
-	
-	// nodeに加えられた処理を適用
-	refreshTransforms();
+	// 基本姿勢を最終姿勢の初期値にする
 	for (auto& node: model.nodes) {
 		node.mtx = node.baseMtx;
 	}
+	// 基本姿勢からglobalMtxを構築
+	refreshTransforms();
+
+
+	// Modifier
+	springBoneSys.tick(dt);
+
 
 }
 
