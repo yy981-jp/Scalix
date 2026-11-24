@@ -5,7 +5,6 @@
 
 #include <physics/colliderDef.h>
 #include <core/nodeRegistry.h>
-#include <core/avatar.h>
 
 
 struct Contact {

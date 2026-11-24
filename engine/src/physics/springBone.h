@@ -6,6 +6,7 @@
 #include <def/quat.h>
 #include <def/vec3.h>
 #include <physics/def.h>
+#include <physics/collider.h>
 #include <loader/def.h>
 #include <model/model.h>
 
@@ -47,7 +48,7 @@ class SpringBoneChain {
 	uint32_t rootDepth = 0;
 
 	std::vector<JointState> joints;
-	std::vector<SpringBoneCollider> colliders;
+	// std::vector<SpringBoneCollider> colliders;
 
 	void update(float dt);
 
@@ -55,21 +56,23 @@ class SpringBoneChain {
 
 public:
 	SpringBoneChain(
-		Avatar& avatar,
 		const std::vector<NodeHandle>& nodes,
 		const std::vector<SpringBoneParams>& params,
 		NodeHandle center,
-		const std::vector<SpringBoneCollider>& colliders
+		const std::vector<ColliderHandle>& colliders
 	);
 };
 
 
 class SpringBoneSystem {
 	std::vector<SpringBoneChain> chains;
+	std::vector<ColliderHandle> entriedColliders;
 
 public:
 	void add(SpringBoneChain&& chain);
 	void init(Avatar& avatar, const LoadData& ld);
 	// void clear();
 	void tick(float dt);
+
+	~SpringBoneSystem();
 };

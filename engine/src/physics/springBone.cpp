@@ -8,7 +8,9 @@
 
 
 #include <loader/data.h>
+#include <physics/physics.h>
 #include <physics/springBone.h>
+#include <physics/collider.h>
 #include <core/avatar.h>
 #include <core/nodeRegistry.h>
 #include <def/mtx.h>
@@ -72,18 +74,12 @@ void resolveCollision(
 	float boneLength,
 	float hitRadius,
 	const SpringBoneCollider& collider,
-	const Avatar& avatar,
 	bool useCenter,
 	const Mtx& inverseCenter,
 	float centerScale,
 	const vec3f& fallbackDirection
 ) {
-	if (!nodeReg.isAlive(collider.node) || collider.radius <= 0.0f) return;
-
-	const int colliderIndex = static_cast<int>(nodeReg.getId(collider.node));
-	if (colliderIndex < 0 || colliderIndex >= static_cast<int>(avatar.globalMtx.size())) return;
-
-	const Mtx& colliderMatrix = avatar.globalMtx[colliderIndex];
+	const Mtx& colliderMatrix = nodeReg.getGlobalMtx(collider.node);
 	const vec3f colliderHeadWorld = collider.offset * colliderMatrix;
 	const vec3f colliderHead = toEvaluationPoint(
 		colliderHeadWorld, useCenter, inverseCenter
@@ -130,35 +126,27 @@ void resolveCollision(
 
 
 SpringBoneChain::SpringBoneChain(
-	Avatar& avatar,
 	const std::vector<NodeHandle>& nodes,
 	const std::vector<SpringBoneParams>& params,
 	NodeHandle center,
-	const std::vector<SpringBoneCollider>& colliders
+	const std::vector<ColliderHandle>& colliders
 ):
-	avatar(&avatar),
 	center(center),
 	hasCenter(center.isValid()),
-	colliders(colliders) {
+	avatar(avatar) {
 
 	Mtx inverseCenter;
 	if (hasCenter)
-		inverseCenter = Mtx::inverse(avatar.globalMtx[static_cast<int>(nodeReg.getId(center))]);
+		inverseCenter = Mtx::inverse(nodeReg.getGlobalMtx(center));
 
 	if (nodes.size() < 2) throw std::runtime_error("joint.size() < 2");
 
 	for (size_t i = 0; i + 1 < nodes.size(); ++i) {
-		const int headIndex = static_cast<int>(nodeReg.getId(nodes[i]));
-		const int tailIndex = static_cast<int>(nodeReg.getId(nodes[i + 1]));
-		if (headIndex < 0 || tailIndex < 0
-			|| headIndex >= static_cast<int>(avatar.globalMtx.size())
-			|| tailIndex >= static_cast<int>(avatar.globalMtx.size())) {
-			throw std::invalid_argument("SpringBone joint has no global transform");
-		}
+		const NodeHandle& headNHdl = nodes[i];
+		const NodeHandle& tailNHdl = nodes[i + 1];
 
-		const Node& headNode = nodeReg.get(nodes[i]);
-		const Mtx& headMatrix = avatar.globalMtx[headIndex];
-		const vec3f tailPosition = avatar.globalMtx[tailIndex].pos();
+		const Mtx& headMatrix = nodeReg.getGlobalMtx(headNHdl);
+		const vec3f tailPosition = nodeReg.getGlobalMtx(tailNHdl).pos();
 
 		// Store the child direction in the head joint's local coordinates.
 		const Mtx inverseHead = Mtx::inverse(headMatrix);
@@ -209,22 +197,14 @@ void SpringBoneChain::update(float dt) {
 	float centerScale = 1.0f;
 
 	if (hasCenter) {
-		const int centerIndex = static_cast<int>(nodeReg.getId(center));
-		if (centerIndex < 0 || centerIndex >= static_cast<int>(avatar->globalMtx.size())) return;
-
-		centerMatrix = avatar->globalMtx[centerIndex];
+		centerMatrix = nodeReg.getGlobalMtx(center);
 		centerScale = maxAbsComponent(centerMatrix.scale());
 		if (centerScale <= def::epsilon) return;
 		inverseCenter = Mtx::inverse(centerMatrix);
 	}
 
 	for (JointState& state: joints) {
-		if (!nodeReg.isAlive(state.head)) continue;
-
-		const int headIndex = static_cast<int>(nodeReg.getId(state.head));
-		if (headIndex < 0 || headIndex >= static_cast<int>(avatar->globalMtx.size())) continue;
-
-		const Mtx headMatrix = avatar->globalMtx[headIndex];
+		const Mtx headMatrix = nodeReg.getGlobalMtx(state.head);
 		const vec3f headPosition = toEvaluationPoint(
 			headMatrix.pos(), hasCenter, inverseCenter
 		);
@@ -261,20 +241,19 @@ void SpringBoneChain::update(float dt) {
 			/ std::max(centerScale, def::epsilon);
 		const float hitRadius = std::max(0.0f, state.params.hitRadius) * jointScale;
 
-		for (const SpringBoneCollider& collider: colliders) {
-			resolveCollision(
-				nextTail,
-				headPosition,
-				state.boneLength,
-				hitRadius,
-				collider,
-				*avatar,
-				hasCenter,
-				inverseCenter,
-				centerScale,
-				restDirection
-			);
-		}
+		// for (const SpringBoneCollider& collider: colliders) {
+		// 	resolveCollision(
+		// 		nextTail,
+		// 		headPosition,
+		// 		state.boneLength,
+		// 		hitRadius,
+		// 		collider,
+		// 		hasCenter,
+		// 		inverseCenter,
+		// 		centerScale,
+		// 		restDirection
+		// 	);
+		// }
 
 		state.currTail = nextTail;
 
@@ -309,6 +288,36 @@ void SpringBoneSystem::add(SpringBoneChain&& chain) {
 }
 
 
+namespace {
+
+
+#define func(Type) Collider operator()(vrm10::Type vrmcl) const
+struct Visitor {
+	func(SphereCollider) {
+		Collider col;
+		CLSH::Sphere shape;
+		shape.offset = vrmcl.offset;
+		shape.radius = shape.radius;
+
+		col.data = shape;
+		return col;
+	}
+	func(CapsuleCollider) {
+		Collider col;
+		CLSH::Sphere shape;
+		shape.offset = vrmcl.offset;
+		shape.radius = vrmcl.radius;
+
+		col.data = shape;
+		return col;
+	}
+};
+#undef func
+
+
+} // namespace
+
+
 void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
 	const vrm10::SpringBone& springBone = ld.vrm.springBone;
 	
@@ -336,39 +345,21 @@ void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
 		}
 
 		// ColliderGroup -> Physics Collider
-		std::vector<SpringBoneCollider> colliders;
+		std::vector<ColliderHandle> colliders;
 		for (const auto& grIdx: spring.colliderGroups) {
 			const auto& group = springBone.colliderGroups[grIdx.value];
 
 			for (const auto& colIdx: group.colliders) {
 				const auto& source = springBone.colliders[colIdx.value];
 
-				SpringBoneCollider col;
+				// Collider::dataを構築
+				Collider col = std::visit(Visitor{}, source.shape);
+
 				col.node = avatar.model.nodeHandles[source.node.value];
 
-				std::visit([&](const auto& shape) {
-					using T = std::decay_t<decltype(shape)>;
-
-					col.offset = {
-						shape.offset[0],
-						shape.offset[1],
-						shape.offset[2]
-					};
-					col.radius = shape.radius;
-
-					if constexpr (std::is_same_v<T, vrm10::CapsuleCollider>) {
-						col.shape = SpringBoneColliderShape::Capsule;
-						col.tail = {
-							shape.tail[0],
-							shape.tail[1],
-							shape.tail[2]
-						};
-					} else {
-						col.shape = SpringBoneColliderShape::Sphere;
-					}
-				}, source.shape);
-
-				colliders.push_back(col);
+				ColliderHandle hdl = phSys.colliderSys.add(col);
+				entriedColliders.push_back(hdl);
+				colliders.push_back(hdl);
 			}
 		}
 
@@ -380,7 +371,6 @@ void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
 
 		// 登録
 		add(SpringBoneChain(
-			avatar,
 			nodes,
 			params,
 			center,
@@ -397,4 +387,10 @@ void SpringBoneSystem::tick(float dt) {
 	for (SpringBoneChain& chain: chains) {
 		chain.update(dt);
 	}
+}
+
+SpringBoneSystem::~SpringBoneSystem() {
+	// for (auto hdl: entriedColliders) {
+	// 	phSys.colliderSys.destroy(hdl);
+	// }
 }
