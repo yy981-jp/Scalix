@@ -56,6 +56,7 @@ class SpringBoneChain {
 
 public:
 	SpringBoneChain(
+		Avatar* avatar, // ここは現在のアルゴリズムを維持する間だけ生かしておく
 		const std::vector<NodeHandle>& nodes,
 		const std::vector<SpringBoneParams>& params,
 		NodeHandle center,

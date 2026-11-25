@@ -126,6 +126,7 @@ void resolveCollision(
 
 
 SpringBoneChain::SpringBoneChain(
+	Avatar* avatar,
 	const std::vector<NodeHandle>& nodes,
 	const std::vector<SpringBoneParams>& params,
 	NodeHandle center,
@@ -371,6 +372,7 @@ void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
 
 		// 登録
 		add(SpringBoneChain(
+			&avatar,
 			nodes,
 			params,
 			center,
@@ -390,7 +392,7 @@ void SpringBoneSystem::tick(float dt) {
 }
 
 SpringBoneSystem::~SpringBoneSystem() {
-	// for (auto hdl: entriedColliders) {
-	// 	phSys.colliderSys.destroy(hdl);
-	// }
+	for (auto hdl: entriedColliders) {
+		phSys.colliderSys.destroy(hdl);
+	}
 }
