@@ -11,6 +11,16 @@ struct ColliderHandle {
 };
 
 
+struct Contact {
+	ColliderHandle a;
+	ColliderHandle b;
+
+	vec3f point;
+	vec3f normal;
+	float penetration;
+};
+
+
 // ==============================
 //			Local
 // ==============================
@@ -27,7 +37,6 @@ namespace CLSH {
 	struct Capsule {
 		vec3f offset;
 		vec3f tail;
-
 		float radius;
 	};
 };
@@ -70,12 +79,15 @@ namespace WSH {
 	};
 	#undef func
 
-	#define func(AType,BType) bool operator()(const AType& a, const BType& b) const
-	#define func_m(AType,BType) func(BType,AType); func(AType,BType)
+	#define func(AType,BType) bool operator()(const AType& a, const BType& b);
+	#define func_m(AType,BType) func(BType,AType); func(AType,BType);
 	struct CollideVisitor {
-		func(Sphere,Sphere);
-		func_m(Sphere,Capsule);
-		func(Capsule,Capsule);
+		vec3f normal;
+		float penetration = 0;
+
+		func(Sphere,Sphere)
+		func_m(Sphere,Capsule)
+		func(Capsule,Capsule)
 	};
 	#undef func
 	#undef func_m

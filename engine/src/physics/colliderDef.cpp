@@ -34,6 +34,7 @@ func(Capsule) {
 struct SegmentClosestResult {
 	vec3f pointA;
 	vec3f pointB;
+	vec3f delta;
 	float distanceSquared;
 };
 
@@ -96,21 +97,31 @@ SegmentClosestResult closestPoints(
 	const vec3f delta = pa - pb;
 
 	return {
-		pa,
-		pb,
-		dot(delta, delta)
+		.pointA = pa,
+		.pointB = pb,
+		.delta = delta,
+		.distanceSquared = dot(delta, delta)
 	};
 }
 
 
 // collide
-#define func(AType,BType) bool WSH::CollideVisitor::operator()(const AType& a, const BType& b) const
+#define func(AType,BType) bool WSH::CollideVisitor::operator()(const AType& a, const BType& b)
 #define func_m(AType,BType) func(BType,AType) { return this->operator()(b,a); } func(AType,BType)
 func(Sphere,Sphere) {
 	float rr = a.radius + b.radius;
 	vec3f delta = a.center - b.center;
-	return dot(delta,delta) < (rr * rr);
+	float distSq = dot(delta, delta);
+
+	if (!(distSq < rr * rr))
+		return false;
+
+	float dist = std::sqrt(distSq);
+	normal = delta / dist;
+	penetration = rr - dist;
+	return true;
 }
+
 func_m(Sphere,Capsule) {
 	float rr = a.radius + b.radius;
 	const vec3f& p = a.center;
@@ -122,26 +133,40 @@ func_m(Sphere,Capsule) {
 
 	const float denom = dot(ab, ab);
 
-	float d;
+	float distSq;
+	vec3f delta;
 	if (denom <= 0.0f) {
-		d = dot(ap,ap);
+		distSq = dot(ap,ap);
+		delta = ap;
 	} else {
 		float t = dot(ap, ab) / denom;
 		t = std::clamp(t, 0.0f, 1.0f);
 
 		const vec3f q = seg_a + ab * t;
-		const vec3f delta = p - q;
-		d = dot(delta, delta);
+		delta = p - q;
+		distSq = dot(delta, delta);
 	}
 	
-	return d < (rr * rr);
+	if (!(distSq < (rr * rr)))
+		return false;
+
+	float dist = std::sqrt(distSq);
+	normal = delta / dist;
+	penetration = rr - dist;
+	return true;
 }
 
 func(Capsule,Capsule) {
 	const auto result = closestPoints(a.head, a.tail, b.head, b.tail);
 	float rr = a.radius + b.radius;
 
-	return result.distanceSquared < (rr * rr);
+	if (!(result.distanceSquared < (rr * rr)))
+		return false;
+
+	float dist = std::sqrt(result.distanceSquared);
+	normal = result.delta / dist;
+	penetration = rr - dist;
+	return true;
 }
 #undef func
 #undef func_m

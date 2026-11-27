@@ -7,16 +7,6 @@
 #include <core/nodeRegistry.h>
 
 
-struct Contact {
-	ColliderHandle a;
-	ColliderHandle b;
-
-	vec3f point;
-	vec3f normal;
-	float penetration;
-};
-
-
 class ColliderSystem {
 	struct Entry {
 		ColliderId nextFree;
@@ -47,7 +37,8 @@ class ColliderSystem {
 	bool collide(const ColliderId& a_id, const ColliderId& b_id) {
 		const auto& a = wcls[a_id];
 		const auto& b = wcls[b_id];
-		bool colide = std::visit(WSH::CollideVisitor{},a.shape,b.shape);
+		WSH::CollideVisitor colVis; // TODO: ある程度安定したら最適化
+		bool colide = std::visit(colVis,a.shape,b.shape);
 		if (!colide) return false;
 
 		ColliderHandle a_hdl = {a_id, records[a_id].gen};
@@ -56,6 +47,7 @@ class ColliderSystem {
 		Contact collision{
 			.a = a_hdl,
 			.b = b_hdl,
+			.normal = colVis.normal,
 		};
 
 		collisions.push_back( std::move(collision) );

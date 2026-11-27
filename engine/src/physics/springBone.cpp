@@ -73,50 +73,52 @@ void resolveCollision(
 	const vec3f& head,
 	float boneLength,
 	float hitRadius,
-	const SpringBoneCollider& collider,
+	// const SpringBoneCollider& collider,
 	bool useCenter,
 	const Mtx& inverseCenter,
 	float centerScale,
 	const vec3f& fallbackDirection
 ) {
-	const Mtx& colliderMatrix = nodeReg.getGlobalMtx(collider.node);
-	const vec3f colliderHeadWorld = collider.offset * colliderMatrix;
-	const vec3f colliderHead = toEvaluationPoint(
-		colliderHeadWorld, useCenter, inverseCenter
-	);
+	// const Mtx& colliderMatrix = nodeReg.getGlobalMtx(collider.node);
+	// const vec3f colliderHeadWorld = collider.offset * colliderMatrix;
+	// const vec3f colliderHead = toEvaluationPoint(
+	// 	colliderHeadWorld, useCenter, inverseCenter
+	// );
 
-	vec3f closestPoint = colliderHead;
-	if (collider.shape == SpringBoneColliderShape::Capsule) {
-		const vec3f colliderTailWorld = collider.tail * colliderMatrix;
-		const vec3f colliderTail = toEvaluationPoint(
-			colliderTailWorld, useCenter, inverseCenter
-		);
-		const vec3f segment = colliderTail - colliderHead;
-		const float segmentLengthSquared = bx::dot(segment, segment);
+	// vec3f closestPoint = colliderHead;
+	// if (collider.shape == SpringBoneColliderShape::Capsule) {
+	// 	const vec3f colliderTailWorld = collider.tail * colliderMatrix;
+	// 	const vec3f colliderTail = toEvaluationPoint(
+	// 		colliderTailWorld, useCenter, inverseCenter
+	// 	);
+	// 	const vec3f segment = colliderTail - colliderHead;
+	// 	const float segmentLengthSquared = bx::dot(segment, segment);
 
-		if (segmentLengthSquared > def::epsilon) {
-			const float t = std::clamp(
-				bx::dot(tail - colliderHead, segment) / segmentLengthSquared,
-				0.0f,
-				1.0f
-			);
-			closestPoint = colliderHead + segment * t;
-		}
-	}
+	// 	if (segmentLengthSquared > def::epsilon) {
+	// 		const float t = std::clamp(
+	// 			bx::dot(tail - colliderHead, segment) / segmentLengthSquared,
+	// 			0.0f,
+	// 			1.0f
+	// 		);
+	// 		closestPoint = colliderHead + segment * t;
+	// 	}
+	// }
 
-	const float colliderScale = maxAbsComponent(colliderMatrix.scale())
-		/ std::max(centerScale, def::epsilon);
-	const float radius = collider.radius * colliderScale + hitRadius;
-	const vec3f delta = tail - closestPoint;
-	const float distance = length(delta);
+	// const float colliderScale = maxAbsComponent(colliderMatrix.scale())
+	// 	/ std::max(centerScale, def::epsilon);
+	// const float radius = collider.radius * colliderScale + hitRadius;
+	// const vec3f delta = tail - closestPoint;
+	// const float distance = length(delta);
 
-	if (distance >= radius) return;
+	// if (distance >= radius) return;
 
-	vec3f normal = distance > def::epsilon ? delta / distance : fallbackDirection;
-	if (length(normal) <= def::epsilon) normal = {0.0f, 1.0f, 0.0f};
-	else normal.normalize();
+	// vec3f normal = distance > def::epsilon ? delta / distance : fallbackDirection;
+	// if (length(normal) <= def::epsilon) normal = {0.0f, 1.0f, 0.0f};
+	// else normal.normalize();
 
-	tail = closestPoint + normal * radius;
+	phSys.colliderSys.tick(); // TODO: 暫定処置でしかない
+
+	tail += normal * penetrationDepth;
 	// Collision projection can change the segment length. Reapply the
 	// distance constraint exactly as in the reference algorithm.
 	constrainLength(tail, head, boneLength, fallbackDirection);
