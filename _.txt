@@ -179,6 +179,7 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 
 
 %%%%%%%%%% TODO %%%%%%%%%%
+collider: springboneで正常に動いていない 修正必要
 Collider layer 整理が必要
 
 Scalix改名予定

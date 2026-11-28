@@ -166,5 +166,8 @@ public:
 	};
 
 
+	void setPos(ColliderHandle handle, const vec3f& pos) {
+		
+	}
 
 };
