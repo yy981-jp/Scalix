@@ -30,9 +30,11 @@ struct SpringBoneCollider {
 };
 
 class SpringBoneChain {
+	// jointPair
 	struct JointState {
 		NodeHandle head;
 		NodeHandle tail;
+		ColliderHandle colHdl;
 
 		vec3f prevTail{};
 		vec3f currTail{};
@@ -67,7 +69,10 @@ public:
 
 class SpringBoneSystem {
 	std::vector<SpringBoneChain> chains;
-	std::vector<ColliderHandle> entriedColliders;
+	// vrm collider idx -> ColliderHandle
+	// 兼
+	// avatarが所有するcollider一覧
+	std::vector<ColliderHandle> colHandles;
 
 public:
 	void add(SpringBoneChain&& chain);

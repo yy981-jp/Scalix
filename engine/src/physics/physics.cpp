@@ -3,7 +3,7 @@
 
 
 void PhysicsSystem::init(Avatar& avatar, const LoadData& ld) {
-	
+
 }
 
 

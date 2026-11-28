@@ -13,7 +13,9 @@ class ColliderSystem {
 		uint32_t gen;
 	};
 
-	std::vector<Contact> collisions;
+	using ContactIdx = size_t;
+	// 衝突データ
+	std::vector<std::vector<Contact>> contacts;
 	
 	// ↓ 頭が混乱しそうなので詳しく書いとく
 
@@ -44,20 +46,24 @@ class ColliderSystem {
 		ColliderHandle a_hdl = {a_id, records[a_id].gen};
 		ColliderHandle b_hdl = {b_id, records[b_id].gen};
 
-		Contact collision{
-			.a = a_hdl,
-			.b = b_hdl,
+		Contact contact_a = {
+			.other = b_hdl,
 			.normal = colVis.normal,
+			.penetration = colVis.penetration
 		};
+		Contact contact_b = {
+			.other = a_hdl,
+			.normal = colVis.normal,
+			.penetration = colVis.penetration
+		};
+		contacts[a_hdl.id].push_back(std::move(contact_a));
+		contacts[b_hdl.id].push_back(std::move(contact_b));
 
-		collisions.push_back( std::move(collision) );
 		return true;
 	}
 
 
 public:
-	const std::vector<Contact>& getCollisions() const { return collisions; }
-
 	ColliderHandle add(const Collider& collider) {
 		ColliderId id;
 		if (freeHead != ColliderId::invalid()) {
@@ -69,6 +75,7 @@ public:
 			id = records.size();
 			records.emplace_back();
 			colliders.emplace_back();
+			contacts.emplace_back();
 			aliveIndex.resize(records.size());
 		}
 		aliveIndex[id] = alive.size();
@@ -84,7 +91,7 @@ public:
 		};
 	};
 
-	void destroy(const ColliderHandle& hdl) {
+	void destroy(ColliderHandle hdl) {
 		if (!isAlive(hdl)) return;
 
 		const ColliderId& idx  = aliveIndex[hdl.id];
@@ -101,8 +108,12 @@ public:
 		freeHead = hdl.id;
 	}
 
+	const std::vector<Contact>& getContact(ColliderHandle hdl) const {
+		return contacts[hdl.id];
+	}
 
-	bool isAlive(const ColliderHandle& hdl) const {
+
+	bool isAlive(ColliderHandle hdl) const {
 		return hdl.id < records.size()
 				&& records[hdl.id].gen == hdl.gen;
 	}
@@ -113,11 +124,13 @@ public:
 
 		for (ColliderId id: alive) {
 			const Collider& collider = colliders[id];
-			const Mtx& mtx = nodeReg.getGlobalMtx(collider.node);
 
 			WorldCollider wcl;
 			// WorldCollider::shape を構築
-			wcl = std::visit(WSH::UpdateVisitor{mtx}, collider.data);
+			if (nodeReg.isAlive(collider.node))
+				wcl = std::visit(WSH::UpdateVisitor{nodeReg.getGlobalMtx(collider.node)}, collider.data);
+			else
+				wcl = std::visit(WSH::UpdateVisitor{.mtx = {}}, collider.data);
 
 			wcls[id] = std::move(wcl);
 			
@@ -132,7 +145,9 @@ public:
 	}
 
 	void tick() {
-		collisions.clear();
+		for (auto& ent: contacts) {
+			ent.clear();
+		}
 		updateWorldShapes();
 		std::vector<bool> enable = broadPhase();
 		

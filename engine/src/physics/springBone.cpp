@@ -116,9 +116,13 @@ void resolveCollision(
 	// if (length(normal) <= def::epsilon) normal = {0.0f, 1.0f, 0.0f};
 	// else normal.normalize();
 
-	phSys.colliderSys.tick(); // TODO: 暫定処置でしかない
 
-	tail += normal * penetrationDepth;
+	// phSys.colliderSys.tick(); // TODO: 暫定処置でしかない
+	// phSys.colliderSys.getContactIdx()
+
+	// tail += normal * penetrationDepth;
+
+
 	// Collision projection can change the segment length. Reapply the
 	// distance constraint exactly as in the reference algorithm.
 	constrainLength(tail, head, boneLength, fallbackDirection);
@@ -132,32 +136,38 @@ SpringBoneChain::SpringBoneChain(
 	const std::vector<NodeHandle>& nodes,
 	const std::vector<SpringBoneParams>& params,
 	NodeHandle center,
-	const std::vector<ColliderHandle>& colliders
+	const std::vector<ColliderHandle>& probes
 ):
 	center(center),
 	hasCenter(center.isValid()),
 	avatar(avatar) {
 
+	const size_t pairCount = nodes.size() - 1;
+
+	if (nodes.size() < 2)
+		throw std::runtime_error("joint.size() < 2");
+
+	if (params.size() < pairCount || probes.size() != pairCount)
+		throw std::runtime_error("Invalid SpringBone pair data");
+
 	Mtx inverseCenter;
 	if (hasCenter)
 		inverseCenter = Mtx::inverse(nodeReg.getGlobalMtx(center));
 
-	if (nodes.size() < 2) throw std::runtime_error("joint.size() < 2");
-
-	for (size_t i = 0; i + 1 < nodes.size(); ++i) {
+	for (size_t i = 0; i < pairCount; ++i) {
 		const NodeHandle& headNHdl = nodes[i];
 		const NodeHandle& tailNHdl = nodes[i + 1];
 
 		const Mtx& headMatrix = nodeReg.getGlobalMtx(headNHdl);
 		const vec3f tailPosition = nodeReg.getGlobalMtx(tailNHdl).pos();
 
-		// Store the child direction in the head joint's local coordinates.
 		const Mtx inverseHead = Mtx::inverse(headMatrix);
 		vec3f boneAxis = tailPosition * inverseHead;
+
 		const float axisLength = length(boneAxis);
-		if (axisLength <= def::epsilon) {
+		if (axisLength <= def::epsilon)
 			throw std::invalid_argument("SpringBone joint pair has zero length");
-		}
+
 		boneAxis = boneAxis / axisLength;
 
 		const vec3f headEvaluation = toEvaluationPoint(
@@ -166,19 +176,22 @@ SpringBoneChain::SpringBoneChain(
 		const vec3f tailEvaluation = toEvaluationPoint(
 			tailPosition, hasCenter, inverseCenter
 		);
+
 		const float boneLength = length(tailEvaluation - headEvaluation);
-		if (boneLength <= def::epsilon) {
-			throw std::invalid_argument("SpringBone joint pair has zero length in its evaluation space");
-		}
+		if (boneLength <= def::epsilon)
+			throw std::invalid_argument(
+				"SpringBone joint pair has zero length in evaluation space"
+			);
 
 		JointState state;
-		state.head = nodes[i];
-		state.tail = nodes[i + 1];
+		state.head = headNHdl;
+		state.tail = tailNHdl;
 		state.prevTail = tailEvaluation;
 		state.currTail = tailEvaluation;
 		state.boneAxis = boneAxis;
 		state.boneLength = boneLength;
 		state.params = params[i];
+		state.colHdl = probes[i];
 		joints.push_back(state);
 	}
 
@@ -240,22 +253,25 @@ void SpringBoneChain::update(float dt) {
 
 		constrainLength(nextTail, headPosition, state.boneLength, restDirection);
 
-		const float jointScale = maxAbsComponent(headMatrix.scale())
-			/ std::max(centerScale, def::epsilon);
-		const float hitRadius = std::max(0.0f, state.params.hitRadius) * jointScale;
-
 		// for (const SpringBoneCollider& collider: colliders) {
-		// 	resolveCollision(
-		// 		nextTail,
-		// 		headPosition,
-		// 		state.boneLength,
-		// 		hitRadius,
-		// 		collider,
-		// 		hasCenter,
-		// 		inverseCenter,
-		// 		centerScale,
-		// 		restDirection
-		// 	);
+		auto& colSys = phSys.colliderSys;
+		colSys.tick();
+		for (auto& contact: colSys.getContact(state.colHdl)) {
+			nextTail += contact.normal * contact.penetration;
+		}
+
+
+		// resolveCollision(
+			// 	nextTail,
+			// 	headPosition,
+			// 	state.boneLength,
+			// 	hitRadius,
+			// 	collider,
+			// 	hasCenter,
+			// 	inverseCenter,
+			// 	centerScale,
+			// 	restDirection
+			// );
 		// }
 
 		state.currTail = nextTail;
@@ -300,16 +316,17 @@ struct Visitor {
 		Collider col;
 		CLSH::Sphere shape;
 		shape.offset = vrmcl.offset;
-		shape.radius = shape.radius;
+		shape.radius = vrmcl.radius;
 
 		col.data = shape;
 		return col;
 	}
 	func(CapsuleCollider) {
 		Collider col;
-		CLSH::Sphere shape;
+		CLSH::Capsule shape;
 		shape.offset = vrmcl.offset;
 		shape.radius = vrmcl.radius;
+		shape.tail = vrmcl.tail;
 
 		col.data = shape;
 		return col;
@@ -322,63 +339,115 @@ struct Visitor {
 
 
 void SpringBoneSystem::init(Avatar& avatar, const LoadData& ld) {
-	const vrm10::SpringBone& springBone = ld.vrm.springBone;
-	
+	const auto& springBone = ld.vrm.springBone;
+	auto& colSys = phSys.colliderSys;
+
+	// ==========================================
+	// 1. VRM ColliderのLayerを構築
+	// ==========================================
+
+	std::vector<DynamicBitset> layers(springBone.colliders.size());
+
+	for (size_t groupIdx = 0;
+		groupIdx < springBone.colliderGroups.size();
+		++groupIdx) {
+
+		const auto& group = springBone.colliderGroups[groupIdx];
+
+		for (const auto& colIdx : group.colliders) {
+			layers[colIdx.value].set(groupIdx);
+		}
+	}
+
+	// ==========================================
+	// 2. VRM Colliderを登録
+	// ==========================================
+
+	for (size_t i = 0; i < springBone.colliders.size(); ++i) {
+		const auto& source = springBone.colliders[i];
+
+		Collider col = std::visit(Visitor{}, source.shape);
+		col.node = avatar.model.nodeHandles[source.node.value];
+		col.layer = std::move(layers[i]);
+
+		ColliderHandle hdl = colSys.add(col);
+
+		// 全Colliderの所有権を管理
+		colHandles.push_back(hdl);
+	}
+
+	// ==========================================
+	// 3. SpringBoneを登録
+	// ==========================================
+
 	std::vector<NodeHandle> nodes;
 	std::vector<SpringBoneParams> params;
-	for (const auto& spring: springBone.springs) {
-		int jointSize = spring.joints.size();
-		// シミュレーション可能なチェーンか確認
+	std::vector<ColliderHandle> probes;
+
+	for (const auto& spring : springBone.springs) {
+		const size_t jointSize = spring.joints.size();
+
 		if (jointSize < 2) continue;
 
-		nodes.clear();	nodes.reserve(jointSize);
-		params.clear();	params.reserve(jointSize);
+		nodes.clear();
+		params.clear();
+		probes.clear();
 
-		for (const auto& joint: spring.joints) {
-			// NodeIndex -> NodeHandle
-			nodes.push_back(avatar.model.nodeHandles[joint.node.value]);
-			// VRMデータ -> 物理パラメータ
+		nodes.reserve(jointSize);
+		params.reserve(jointSize);
+		probes.reserve(jointSize - 1);
+
+		// Springが衝突対象とするLayer
+		DynamicBitset mask;
+
+		for (const auto& grIdx : spring.colliderGroups) {
+			mask.set(grIdx.value);
+		}
+
+		// Joint情報を読み込む
+		for (const auto& joint : spring.joints) {
+			nodes.push_back(
+				avatar.model.nodeHandles[joint.node.value]
+			);
+
 			SpringBoneParams param;
 			param.stiffness = joint.stiffness;
 			param.dragForce = joint.dragForce;
 			param.gravityPower = joint.gravityPower;
 			param.gravityDir = joint.gravityDir;
 			param.hitRadius = joint.hitRadius;
+
 			params.push_back(param);
 		}
 
-		// ColliderGroup -> Physics Collider
-		std::vector<ColliderHandle> colliders;
-		for (const auto& grIdx: spring.colliderGroups) {
-			const auto& group = springBone.colliderGroups[grIdx.value];
+		// JointPairごとにSpringBone側のSphereを生成
+		for (size_t i = 0; i + 1 < jointSize; ++i) {
+			Collider probe;
 
-			for (const auto& colIdx: group.colliders) {
-				const auto& source = springBone.colliders[colIdx.value];
+			CLSH::Sphere sphere;
+			sphere.radius = spring.joints[i].hitRadius;
 
-				// Collider::dataを構築
-				Collider col = std::visit(Visitor{}, source.shape);
+			probe.data = sphere;
 
-				col.node = avatar.model.nodeHandles[source.node.value];
+			// Node追従ではなく、シミュレーション位置を直接更新する
+			probe.node = NodeHandle::invalid();
+			probe.mask = mask;
+			ColliderHandle hdl = colSys.add(probe);
 
-				ColliderHandle hdl = phSys.colliderSys.add(col);
-				entriedColliders.push_back(hdl);
-				colliders.push_back(hdl);
-			}
+			colHandles.push_back(hdl);
+			probes.push_back(hdl);
 		}
 
+		NodeHandle center = spring.center.has_value()
+			? avatar.model.nodeHandles[spring.center->value]
+			: NodeHandle::invalid();
 
-		NodeHandle center = spring.center.has_value()? 
-			avatar.model.nodeHandles[spring.center->value] : 
-			NodeHandle::invalid();
-
-
-		// 登録
 		add(SpringBoneChain(
 			&avatar,
 			nodes,
 			params,
 			center,
-			colliders
+			probes
 		));
 	}
 }
@@ -394,7 +463,7 @@ void SpringBoneSystem::tick(float dt) {
 }
 
 SpringBoneSystem::~SpringBoneSystem() {
-	for (auto hdl: entriedColliders) {
+	for (auto hdl: colHandles) {
 		phSys.colliderSys.destroy(hdl);
 	}
 }

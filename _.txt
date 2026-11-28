@@ -179,6 +179,8 @@ model Asset, instance の静的分離方式の構想もあるが、今のとこ�
 
 
 %%%%%%%%%% TODO %%%%%%%%%%
+Collider layer 整理が必要
+
 Scalix改名予定
 	"LibreWeft"
 	未来の自分へ
